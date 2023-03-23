@@ -8,7 +8,7 @@
 		<!-- Animated Logo -->
 		<figure>
 			<section class="img-bg" />
-			<a href="/" >
+			<a href="/blog" class='hover:opacity-30' >
 			<!-- svelte-ignore a11y-missing-attribute -->
 			<img src="../src/lib/images/EP_logo.svg" />
 			</a>
