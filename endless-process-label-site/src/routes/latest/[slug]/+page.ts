@@ -1,5 +1,5 @@
+// todo: actually get the post data from the API
 import type { PageLoad } from './$types';
-import { currentPostTitle } from '$lib/stores/stores';
 
 let postTitle = '';
 
@@ -33,13 +33,12 @@ const query = `
     }
   `;
 
-// subscribe to the store called currentTitle
-currentPostTitle.subscribe(value => {value ? postTitle = value : postTitle = 'no title'});
+
   
 export const load = (({ params, fetch }) => {
+  postTitle = params.slug;
 
 async function getPostByID() {
-
   const response = await fetch(import.meta.env.VITE_PUBLIC_WORDPRESS_API_URL, {
     method: 'POST',
     headers: {
@@ -65,8 +64,6 @@ async function getPostByID() {
     error: new Error(`Could not load post.`)
   };
 }
-
-
 
   return {
     post: {

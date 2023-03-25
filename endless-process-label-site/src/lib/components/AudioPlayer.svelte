@@ -34,4 +34,4 @@ sound.on('play', function(){
     labelledby='Audio Player' />
 </span> -->
 
-<audio controls src="http://endlessprocessheadless.local/wp-content/uploads/2023/03/synthesized_audio.mp3"></audio>
+<audio controls src="http://localhost:10004/wp-content/uploads/2023/03/synthesized_audio.mp3"></audio>

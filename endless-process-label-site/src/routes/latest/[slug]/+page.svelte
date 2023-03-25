@@ -1,15 +1,16 @@
 <script lang="ts">
+  import type { PageData } from './$types';
 	import AudioPlayer from '$lib/components/AudioPlayer.svelte';
   import { currentPostTitle, currentPostContent } from '$lib/stores/stores';
 
-  let postTitle = '';
-  let postContent = '';
-  currentPostTitle.subscribe(value => {value ? postTitle = value : postTitle = 'no title'});
+  export let data: PageData;
+
+
   </script>
 
   <div class='m-0 p-6 bg-gradient-to-br from-surface-500 to-surface-800 ml-1 rounded-s'>
     <div class='bg-transparent p-3 text-warning-400 opacity-80'>
-      <h1 class=''>{postTitle}</h1>
+      <h1 class=''>{$currentPostTitle}</h1>
     </div>
   <section class='columns-2 p-3 '>
   {#if $currentPostContent }
@@ -25,7 +26,7 @@
     </article>
         <div class='bg-secondary-800 p-3 rounded-lg text-tertiary-400 text-right opacity-80'>
           <ul>
-          <li><a class='!no-underline' href='/'>{postTitle}</a></li>
+          <li><a class='!no-underline' href='/'>Listen links</a></li>
 
         </ul>
        

@@ -6,6 +6,7 @@ query GetPosts {
       nodes {
         id
         title
+        date
         content(format: RENDERED)
         featuredImage {
           node {
@@ -20,6 +21,7 @@ query GetPosts {
 
 
 export async function load({ fetch }) {
+
 	const response = await fetch(import.meta.env.VITE_PUBLIC_WORDPRESS_API_URL, {
         method: 'POST',
         headers: {
