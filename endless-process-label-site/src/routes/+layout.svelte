@@ -1,7 +1,5 @@
 <script>
-	// The ordering of these imports is critical to your app working properly
-	// import '@skeletonlabs/skeleton/themes/theme-seafoam.css';
-
+	// @Skeleton: The ordering of these imports is critical to your app working properly
 	// Your custom Skeleton theme:
 	import '../theme.postcss';
 	// If you have source.organizeImports set to true in VSCode, then it will auto change this ordering
@@ -10,17 +8,16 @@
 	import '../app.postcss';
 	//import skeletonUI components
 	import { AppShell, AppBar } from '@skeletonlabs/skeleton';
-	import { filter, BlueNight /* ... */  } from '@skeletonlabs/skeleton';
-
 	//import steeze-ui icon component
 	import {Icon} from '@steeze-ui/svelte-icon'
 	import {LogoDiscord, ChartMarimekko, ProgressBarRound } from '@steeze-ui/carbon-icons'
+	import AudioPlayer from '../lib/components/AudioPlayer.svelte';
 
 </script>
 
 <!-- App Shell -->
 <AppShell 	
-	class=" h-full p-1"
+	class="h-full p-1 bg-gradient-to-br from-slate-500 to-stone-800"
 	slotSidebarLeft="grid grid-cols-1"
 	slotSidebarRight="grid grid-cols-1"
 	slotPageContent="grid grid-cols-1"
@@ -28,7 +25,7 @@
 
 	<svelte:fragment slot="header">
 		<!-- App Bar -->
-		<AppBar>
+		<AppBar background="bg-surface-800">
 			<svelte:fragment slot="lead">
 			<div class="font-bold bg-gradient-to-br from-red-500 to-yellow-500 bg-clip-text text-transparent box-decoration-clone">
 				<a href="/" class="text-xl pr-6">endless</a>
@@ -38,24 +35,24 @@
 
 			</svelte:fragment>
 			
-			<svelte:fragment slot="trail">
+			<AudioPlayer/>
 
-
-			<div class="flex justify-start ">
-				<a class="logo-item w-200  p-2" href="/blog">
+			<svelte:fragment slot="trail" >
+			<div class="flex justify-start">
+				<a class="logo-item w-200 p-2" href="/blog">
 					<Icon src="{ChartMarimekko}" class="h-8" ></Icon>
 					<span>Latest</span>
 				</a>
-				<a class="logo-item p-2 " href="https://discord.gg/EXqV7W8Mt">
+				<a class="logo-item p-2 " href="/">
 					<Icon src="{ProgressBarRound}" class="h-8" ></Icon> 
 					<span>Releases</span>
 				</a>
-				<a class="logo-item p-2 " href="https://discord.gg/EXqV7W8Mt">
+				<a class="logo-item p-2 " href="/">
 					<Icon src="{LogoDiscord}" class="h-8" ></Icon>
-					<span>Community</span>
+					<span>Artists</span>
 				</a>
-	
 			</svelte:fragment>
+			
 		</AppBar>
 	</svelte:fragment>
 
