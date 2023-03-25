@@ -69,7 +69,7 @@ function handleCardLeave({e, cardIndex}: {e: MouseEvent, cardIndex: string}): vo
       </header>
 
           <section class='p-4 bg-surface-600 hover:bg-surface-400 hover:'>
-            <a class='!no-underline' href="/latest/{camelCaseNoWhiteSpace(title ?? id)}">
+            <a href="/latest/{camelCaseNoWhiteSpace(title ?? id)}">
             <h1>
                { title ?? 'New Post'}
             </h1>

@@ -35,7 +35,7 @@
 
 			</svelte:fragment>
 			
-			<AudioPlayer/>
+
 
 			<svelte:fragment slot="trail" >
 			<div class="flex justify-start">

@@ -1,3 +1,7 @@
+<script>
+	import AnimatedLogo from "$lib/components/AnimatedLogo.svelte";
+
+</script>
 
 
 <div class="container h-full mx-auto flex justify-center items-center">
@@ -8,9 +12,9 @@
 		<!-- Animated Logo -->
 		<figure>
 			<section class="img-bg" />
-			<a href="/blog" class='hover:opacity-30' >
-			<!-- svelte-ignore a11y-missing-attribute -->
-			<img src="../src/lib/images/EP_logo.svg" />
+			<a href="/blog" >
+			<!-- <img src="../src/lib/images/EP_logo.svg" alt="main logo" /> -->
+			<AnimatedLogo />
 			</a>
 		</figure>
 		<!-- / -->

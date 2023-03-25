@@ -1,7 +1,6 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Generator: Adobe Illustrator 24.1.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
-<svg  version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
-	 viewBox="0 0 180.4 136.2" style="enable-background:new 0 0 180.4 136.2;" xml:space="preserve">
+
+<svg class="hover:stroke-secondary-700 w-full" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 180.4 136.2"  xml:space="preserve">
 <style type="text/css">
 	.st0{clip-path:url(#SVGID_2_);}
 	.st1{fill:#202020;}
@@ -79,7 +78,7 @@
 	<g>
 		<g>
 			<defs>
-				<path id="SVGID_1_" d="M177,113.6l-22.8-12.4c0.3-0.3,0.6-0.6,0.9-0.9c0.3-0.3,0.5-0.7,0.7-1.1c0.2-0.4,0.3-0.8,0.4-1.2
+				<path id="SVGID_1_"  d="M177,113.6l-22.8-12.4c0.3-0.3,0.6-0.6,0.9-0.9c0.3-0.3,0.5-0.7,0.7-1.1c0.2-0.4,0.3-0.8,0.4-1.2
 					c0.1-0.4,0.2-0.8,0.2-1.2l22.8,12.4c0,0.4-0.1,0.8-0.2,1.2c-0.1,0.4-0.3,0.8-0.4,1.2c-0.2,0.4-0.4,0.7-0.7,1.1
 					C177.6,113,177.3,113.3,177,113.6z"/>
 			</defs>
@@ -159,7 +158,7 @@
 			<g class="st8">
 				<g>
 					<path class="st1" d="M123.3,121.1l-22.8-12.4l0.2,0.1l22.8,12.4L123.3,121.1"/>
-					<polyline class="st3" points="123.6,121.2 100.8,108.8 100.8,108.8 123.6,121.2 123.6,121.2 					"/>
+					<polyline class="st3" points="123.6,121.2 100.8,108.8 100.8,108.8 123.6,121.2 123.6,121.2"/>
 				</g>
 			</g>
 		</g>
@@ -456,7 +455,7 @@
 			</g>
 		</g>
 	</g>
-	<g>
+	<g >
 		<g>
 			<defs>
 				<path id="SVGID_45_" d="M101.9,8.2l22.8,12.4l-0.3,0.1c-0.1,0.1-0.3,0.1-0.4,0.2L101.2,8.6l0.4-0.2L101.9,8.2z"/>
