@@ -1,7 +1,8 @@
 <script lang="ts" >
 
   import type { PageData } from './$types';
-  import {currentPostTitle, currentPostContent, currentPostID, currentPostDate} from '$lib/stores/stores';
+  // import {currentPostTitle, currentPostContent, currentPostID, currentPostDate} from '$lib/stores/stores';
+  import { currentPost } from '$lib/stores/stores';
   const defaultFeaturedImage ='../src/lib/images/Default_Avatar.svg';
   export let data: PageData;
 
@@ -27,14 +28,19 @@ function trimAndAddReadMoreLink(content: string, cutOffIndex: number = 200): str
   return trimmedContentWithReadMore;
 }
 
+function repeatChar(char: string, i: number): string {
+  let str = '';
+  for (let j = 0; j < i; j++) {
+    str += char;
+  }
+  return str;
+}
+
 function handleCardEnter({e, cardIndex, title, content, featuredImageUrl, id, date}: {e: MouseEvent, cardIndex: string, title:string, content:HtmlContent, featuredImageUrl:Url, id:string, date:string}): void {
   const card = document.getElementById(cardIndex);
   if (card) {
     card.classList.add('brightness-125');
-    currentPostTitle.set(title);
-    currentPostContent.set(content);
-    currentPostID.set(id);
-    currentPostDate.set(formatDate(date));
+    currentPost.set({title, content, featuredImageUrl, id, date, cardIndex});
   }
 }
 
@@ -42,12 +48,14 @@ function handleCardLeave({e, cardIndex}: {e: MouseEvent, cardIndex: string}): vo
   const card = document.getElementById(cardIndex);
   if (card) {
     card.classList.remove('brightness-125');
-    currentPostTitle.set('');
+    currentPost.set({title: '', content: undefined, featuredImageUrl: undefined, id: '', date: '', cardIndex: ''});
   }
 }
 
 
 </script>
+
+
 
 
 <div class="p-2 space-y-8">
@@ -56,7 +64,7 @@ function handleCardLeave({e, cardIndex}: {e: MouseEvent, cardIndex: string}): vo
 
 {#if data }
     {#each data.posts as {id, title, featuredImage, content, date},index}
-   {@const cardIndex = '・ ' + formatDate(date)}
+   {@const cardIndex = repeatChar('═',index)+'・' + formatDate(date)}
    {@const routeSlug = camelCaseNoWhiteSpace(title ?? id)}
    {@const featuredImageUrl = featuredImage ? featuredImage.node.sourceUrl : defaultFeaturedImage}
     <div 
