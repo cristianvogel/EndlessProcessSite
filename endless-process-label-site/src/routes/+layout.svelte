@@ -9,58 +9,59 @@
 	//import skeletonUI components
 	import { AppShell, AppBar } from '@skeletonlabs/skeleton';
 	//import steeze-ui icon component
-	import {Icon} from '@steeze-ui/svelte-icon'
-	import {LogoDiscord, ChartMarimekko, ProgressBarRound } from '@steeze-ui/carbon-icons'
+	import { Icon } from '@steeze-ui/svelte-icon';
+	import { LogoDiscord, ChartMarimekko, ProgressBarRound } from '@steeze-ui/carbon-icons';
 	import ElementaryPlayer from '$lib/components/ElementaryPlayer.svelte';
-
-
+	import ElementaryViz from '$lib/components/ElementaryViz.svelte';
 </script>
 
-<!-- App Shell --> 
-<AppShell 	
+<!-- App Shell -->
+<AppShell
 	class="h-full p-1 bg-gradient-to-br from-slate-500 to-stone-800"
 	slotSidebarLeft="grid grid-cols-1"
 	slotSidebarRight="grid grid-cols-1"
 	slotPageContent="grid grid-cols-1"
 >
-
 	<svelte:fragment slot="header">
 		<!-- App Bar -->
 		<AppBar background="bg-surface-800">
 			<svelte:fragment slot="lead">
-			<div class="font-bold bg-gradient-to-br from-red-500 to-yellow-500 bg-clip-text text-transparent box-decoration-clone">
-				<a href="/" class="text-xl pr-6">endless</a>
-				<a href="/" class="text-xl pr-10">ssǝɔoɹd</a>
-			</div>
+				<div
+					class="font-bold bg-gradient-to-br from-red-500 to-yellow-500 bg-clip-text text-transparent box-decoration-clone"
+				>
+					<a href="/" class="text-xl pr-6">endless</a>
+					<a href="/" class="text-xl pr-10">ssǝɔoɹd</a>
+				</div>
 				<span class="divider-vertical h-10" />
+			</svelte:fragment>
 
-			</svelte:fragment>
-			
-			<ElementaryPlayer/>
-			
-			<svelte:fragment slot="trail" >
-			<div class="flex justify-start">
-				<a class="logo-item w-200 p-2" href="/blog">
-					<Icon src="{ChartMarimekko}" class="h-8" ></Icon>
-					<span>Latest</span>
-				</a>
-				<a class="logo-item p-2 " href="/">
-					<Icon src="{ProgressBarRound}" class="h-8" ></Icon> 
-					<span>Releases</span>
-				</a>
-				<a class="logo-item p-2 " href="/">
-					<Icon src="{LogoDiscord}" class="h-8" ></Icon>
-					<span>Artists</span>
-				</a>
-			</svelte:fragment>
-			
+			<ElementaryPlayer />
+
+			<svelte:fragment slot="trail">
+				<div class="flex justify-start">
+					<a class="logo-item w-200 p-2" href="/blog">
+						<Icon src={ChartMarimekko} class="h-8" />
+						<span>Latest</span>
+					</a>
+					<a class="logo-item p-2 " href="/">
+						<Icon src={ProgressBarRound} class="h-8" />
+						<span>Releases</span>
+					</a>
+					<a class="logo-item p-2 " href="/">
+						<Icon src={LogoDiscord} class="h-8" />
+						<span>Artists</span>
+					</a>
+				</div></svelte:fragment
+			>
 		</AppBar>
 	</svelte:fragment>
 
 	<svelte:fragment slot="footer">
-			<div class="card variant-soft p-2 m-0.5 flex justify-center items-center overflow-hidden text-xs">
-				Endless Process © 2023
-			</div>
+		<div
+			class="card variant-soft p-2 m-0.5 flex justify-center items-center overflow-hidden text-xs"
+		>
+			Endless Process © 2023
+		</div>
 	</svelte:fragment>
 	<slot />
 </AppShell>
