@@ -15,12 +15,12 @@
 
 		if (isPlaying) {
 			$AudioEngine.mute();
+			return;
 		} else {
 			$AudioEngine.unmute();
 		}
 		// pretty cool placeholder sound for now
 		$AudioEngine.demoSynth();
-		console.log($AudioEngine.state);
 	}
 </script>
 
