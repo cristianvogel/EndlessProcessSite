@@ -39,7 +39,7 @@ export async function load({ fetch }) {
         }
     };
 
-
+//todo: handle error with SvelteKit error page
 	if (!response) throw error(404);
 
 }

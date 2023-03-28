@@ -5,13 +5,12 @@
 
   export let data: PageData;
 
-
-  </script>
+</script>
 
   <div class='m-0 p-6 bg-gradient-to-br from-surface-500 to-surface-800 ml-1 rounded-s'>
     <div class='bg-transparent p-3 text-warning-400 opacity-80'>
-      <h1 class=''>{$currentPost.title}</h1>
       <h6 class='subheading'>{$currentPost.cardIndex}</h6>
+      <h1 class=''>{$currentPost.title}</h1>
     </div>
   <section class='columns-2 p-3 '>
   {#if $currentPost.content }

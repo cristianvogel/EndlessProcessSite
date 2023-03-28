@@ -1,10 +1,12 @@
 <script lang="ts" >
 
   import type { PageData } from './$types';
-  // import {currentPostTitle, currentPostContent, currentPostID, currentPostDate} from '$lib/stores/stores';
   import { currentPost } from '$lib/stores/stores';
+	
   const defaultFeaturedImage ='../src/lib/images/Default_Avatar.svg';
   export let data: PageData;
+
+
 
   function formatDate(date: string): string {
     const dateObj = new Date(date);
@@ -51,11 +53,7 @@ function handleCardLeave({e, cardIndex}: {e: MouseEvent, cardIndex: string}): vo
     currentPost.set({title: '', content: undefined, featuredImageUrl: undefined, id: '', date: '', cardIndex: ''});
   }
 }
-
-
 </script>
-
-
 
 
 <div class="p-2 space-y-8">
@@ -74,7 +72,7 @@ function handleCardLeave({e, cardIndex}: {e: MouseEvent, cardIndex: string}): vo
       on:mouseleave={(e)=>handleCardLeave( {e, cardIndex} )}
       >
       <header>
-        <span class="text-[0.5rem] pl-2 text-tertiary-300">{cardIndex} </span>
+        <span class="text-[0.5rem] pl-2 text-tertiary-300">{cardIndex}</span>
         <a href="/latest/{routeSlug}">
         <img src={ featuredImageUrl  } 
         alt={featuredImage ? featuredImage.node.altText : 'featured image'}

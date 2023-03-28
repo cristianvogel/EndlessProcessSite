@@ -11,11 +11,12 @@
 	//import steeze-ui icon component
 	import {Icon} from '@steeze-ui/svelte-icon'
 	import {LogoDiscord, ChartMarimekko, ProgressBarRound } from '@steeze-ui/carbon-icons'
-	import AudioPlayer from '../lib/components/AudioPlayer.svelte';
+	import ElementaryPlayer from '$lib/components/ElementaryPlayer.svelte';
+
 
 </script>
 
-<!-- App Shell -->
+<!-- App Shell --> 
 <AppShell 	
 	class="h-full p-1 bg-gradient-to-br from-slate-500 to-stone-800"
 	slotSidebarLeft="grid grid-cols-1"
@@ -35,8 +36,8 @@
 
 			</svelte:fragment>
 			
-
-
+			<ElementaryPlayer/>
+			
 			<svelte:fragment slot="trail" >
 			<div class="flex justify-start">
 				<a class="logo-item w-200 p-2" href="/blog">

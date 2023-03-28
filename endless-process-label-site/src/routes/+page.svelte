@@ -13,7 +13,6 @@
 		<figure>
 			<section class="img-bg" />
 			<a href="/blog" >
-			<!-- <img src="../src/lib/images/EP_logo.svg" alt="main logo" /> -->
 			<AnimatedLogo />
 			</a>
 		</figure>
