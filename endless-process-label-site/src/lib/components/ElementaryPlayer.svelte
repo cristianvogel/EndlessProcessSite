@@ -1,17 +1,29 @@
 <script lang="ts">
-	import { _AudioEngine as AudioEngine, audioStatus } from '$lib/stores/stores';
-	import { el } from '@elemaudio/core';
-	import { onMount } from 'svelte';
+	import {
+		ElementaryAudioEngine as AudioEngine,
+		audioStatus
+	} from '$lib/stores/stores';
+	import { onMount, tick } from 'svelte';
 
 	onMount(() => {
-		$AudioEngine.init(new AudioContext());
+		/**
+		 * Using the Cables audio context
+		 * but would probably need to have a fallback
+		 * in case the Cables patch doesn't exist
+		 */
+		// quick hack didn't work  though
+		// if (!$AudioEngine.ctx) {
+		// 	$AudioEngine.init(new AudioContext());
+		// 	console.log('El AudioEngine initialized with new AudioContext()');
+		// }
 	});
 
-	$: isPlaying = $audioStatus === 'playing';
+	let isPlaying: boolean = false;
+	$: isPlaying = ($audioStatus === 'running')
 	$: buttonPrompt = !isPlaying ? 'Play' : 'Stop';
 
 	function handleClick(ev: MouseEvent) {
-		if ($AudioEngine.ctx?.state !== 'running') $AudioEngine.resume();
+		if ($AudioEngine.state !== 'running') $AudioEngine.resume();
 
 		if (isPlaying) {
 			$AudioEngine.mute();

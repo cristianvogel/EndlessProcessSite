@@ -1,19 +1,21 @@
 <script>
-	import AnimatedLogo from "$lib/components/AnimatedLogo.svelte";
-
+	import Cables from '$lib/components/Cables.svelte';
+	import Splash from '$lib/components/Splash.svelte';
 </script>
 
+<Cables patch="EndProc010" />
 
-<div class="container h-full mx-auto flex justify-center items-center">
+<div class="container  h-full mx-auto flex justify-center items-center">
 	<div class="space-y-10 text-center">
-		<h2 class="font-bold bg-gradient-to-br from-red-500 to-yellow-500 bg-clip-text text-transparent box-decoration-clone">
+		<h2
+			class="font-bold bg-gradient-to-br from-red-500 to-yellow-500 bg-clip-text text-transparent box-decoration-clone"
+		>
 			Welcome to Endless Process
 		</h2>
 		<!-- Animated Logo -->
 		<figure>
-			<section class="img-bg" />
-			<a href="/blog" >
-			<AnimatedLogo />
+			<a href="/blog">
+				<Splash />
 			</a>
 		</figure>
 		<!-- / -->
@@ -21,8 +23,3 @@
 		<hr class="!border-t-8 !border-double" />
 	</div>
 </div>
-
-<!--
-	pulsing figure
--->
-

@@ -12,7 +12,6 @@
 	import { Icon } from '@steeze-ui/svelte-icon';
 	import { LogoDiscord, ChartMarimekko, ProgressBarRound } from '@steeze-ui/carbon-icons';
 	import ElementaryPlayer from '$lib/components/ElementaryPlayer.svelte';
-	import ElementaryViz from '$lib/components/ElementaryViz.svelte';
 </script>
 
 <!-- App Shell -->
