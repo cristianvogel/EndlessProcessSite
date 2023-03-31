@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 	// @Skeleton: The ordering of these imports is critical to your app working properly
 	// Your custom Skeleton theme:
 	import '../theme.postcss';
@@ -10,9 +10,30 @@
 	import { AppShell, AppBar } from '@skeletonlabs/skeleton';
 	//import steeze-ui icon component
 	import { Icon } from '@steeze-ui/svelte-icon';
-	import { LogoDiscord, ChartMarimekko, ProgressBarRound } from '@steeze-ui/carbon-icons';
+	import { LogoDiscord, ChartMarimekko, ProgressBarRound, Asterisk } from '@steeze-ui/carbon-icons';
 	import ElementaryPlayer from '$lib/components/ElementaryPlayer.svelte';
+	import { CablesAudioFileURL, CablesPatch, ElementaryAudioEngine as AudioEngine, audioStatus } from '$lib/stores/stores';
+
+
+
+
+let isPlaying: boolean = false;
+	$: isPlaying = ($audioStatus === 'running')
+
+	function handleAudioButtonClick( ) {
+		console.log('handleAudioButtonClick from button -> ', isPlaying);
+		 if ($AudioEngine.state !== 'running') { $AudioEngine.resume(); }
+		if (isPlaying) {
+			$AudioEngine.muteAndSuspend();
+		} else {
+			$AudioEngine.unmute();
+		}
+	}
+
+
 </script>
+
+
 
 <!-- App Shell -->
 <AppShell
@@ -33,8 +54,13 @@
 				</div>
 				<span class="divider-vertical h-10" />
 			</svelte:fragment>
-
-			<ElementaryPlayer />
+			
+			
+			<ElementaryPlayer on:mousedown={handleAudioButtonClick}/>
+			{#if $CablesPatch}
+				<Icon src={Asterisk} class="h-2 animate-pulse" /><span class='text-sm'>Patch initialised : Playing {$CablesAudioFileURL}</span>
+			{/if}
+			
 
 			<svelte:fragment slot="trail">
 				<div class="flex justify-start">
@@ -50,8 +76,7 @@
 						<Icon src={LogoDiscord} class="h-8" />
 						<span>Artists</span>
 					</a>
-				</div></svelte:fragment
-			>
+				</div></svelte:fragment>
 		</AppBar>
 	</svelte:fragment>
 

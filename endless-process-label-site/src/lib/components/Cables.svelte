@@ -1,19 +1,20 @@
 <script lang="ts">
-	import { CablesAudioContext, ElementaryAudioEngine } from '$lib/stores/stores';
+	
+	import { CablesAudioContext, CablesAudioFileURL, ElementaryAudioEngine, CablesPatch } from '$lib/stores/stores';
 	import { onDestroy, onMount } from 'svelte';
 	import { get } from 'svelte/store';
 
 	export let patch: string;
-	type Cables = { [key: string]: any };
+	export let change: boolean = false;
 
 	let pathPatch: string = `${patch}/patch.js`;
-	let cablesCanvas: HTMLCanvasElement;
+	let cablesCanvas: HTMLCanvasElement;	
+	let loadedTrack: string =  get(CablesAudioFileURL)[0];
 
 	const initializeCables = () => {
-		console.log('initializeCables: ', CABLES);
 		CABLES.patch = new CABLES.Patch({
 			patch: CABLES.exportedPatch,
-			prefixAssetPath: `/${patch}/`,
+			prefixAssetPath: `${patch}/`,
 			assetPath: '',
 			jsPath: '',
 			glCanvasId: `cables_${patch}`,
@@ -22,15 +23,20 @@
 			onPatchLoaded: patchInitialized,
 			onFinishedLoading: patchFinishedLoading,
 			canvas: { alpha: true, premultipliedAlpha: true },
-			masterVolume: 0.707
-		});
+			masterVolume: 0.707,
+			variables:{
+				"CablesAudioFileURL": loadedTrack,
+				"CablesMute": false,
+				"CablesTextUpdate": "Welcome"
+			}
+		})
+		CablesPatch.set(CABLES.patch);
 	};
-	onMount(() => {});
 
-	onDestroy(() => {
-		//mute cables patch audio context
-		$ElementaryAudioEngine.mute();
-	});
+	// onDestroy(() => {
+	// 	//mute cables patch when component is destroyed
+	// 	$ElementaryAudioEngine.muteAndSuspend();
+	// });
 
 	function showError(errId: number, errMsg: string) {
 		alert('An error occured: ' + errId + ', ' + errMsg);
@@ -45,7 +51,18 @@
 		console.log('Elem AudioEngine initialized with CablesAudioContext');
 	}
 
-	function patchFinishedLoading() {}
+	function patchFinishedLoading() {
+		spinText(null, "Welcome")
+	}
+
+	function spinText( e: Event | null,  prompt = ''  ) {
+	if ( $CablesPatch.hasOwnProperty('patch') ) {
+		console.log('spin and prompt');
+		$CablesPatch.config.spinAndPrompt("",prompt,"")
+	}
+	}
+
+
 </script>
 
 <svelte:head>
@@ -53,7 +70,7 @@
 </svelte:head>
 
 <div class="mb-4 h-screen">
-	<canvas
+	<canvas on:click={spinText}
 		class="z-0 absolute"
 		id="cables_{patch}"
 		width="100%"

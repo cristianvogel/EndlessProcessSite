@@ -1,8 +1,9 @@
 import type { AudioStatus } from 'src/typeDeclarations';
-import { audioStatus } from '$lib/stores/stores';
+import { audioStatus, CablesAudioFileURL, CablesPatch } from '$lib/stores/stores';
 import { el, type NodeRepr_t } from '@elemaudio/core';
 import WebRenderer from '@elemaudio/web-renderer';
 import { detunedSaws } from '$lib/audio/synths';
+import { get } from 'svelte/store';
 
 class AudioEngine {
 	_core: WebRenderer | null;
@@ -62,12 +63,11 @@ class AudioEngine {
 			numberOfOutputs: 1,
 			outputChannelCount: [2]
 		});
-		// now wire up the Elementary graph to the AudioContext
+		// now wire up the Elementary graph to the AudioContext output
 		node.connect(this._audioContext.destination);
 	}
 
 	_stateChangeHandler = () => {
-		console.log('Now baseState ▶︎ ', this.baseState);
 		this._state = this.baseState;
 		// reflect the state change in the store
 		audioStatus.update((_) => {
@@ -89,6 +89,8 @@ class AudioEngine {
 		});
 	}
 
+	// todo: differenciate between playing and running, its getting confusing
+	// the Audiocontext RUNS but it might not be PLAYING anything
 	public get isPlaying(): boolean {
 		return this._state === 'running' ? true : false;
 	}
@@ -119,7 +121,7 @@ class AudioEngine {
 	}
 
 	runFFT(): void {
-		if (this._state === 'playing') {
+		if (this._state === 'running') {
 			this.render(el.fft({ name: 'elFFT', key: 'fft' }, this._leftOut));
 		}
 	}
@@ -136,28 +138,45 @@ class AudioEngine {
 		});
 	}
 
-	mute(): void {
+	muteAndSuspend(): void {
+		console.log('mute and suspend');
 		this.renderChannels({ L: el.sm(0), R: el.sm(0) });
-		this._state = 'muted';
+		this.cablesAudio('mute');
+		this._suspend();
 		audioStatus.set(this._state);
-		console.log('mute & suspend');
-		// wait for 100 ms before suspending the audio context
-		setTimeout(() => {
-			this.suspend();
-		}, 100);
-	}
-
-	suspend() {
-		this._audioContext?.suspend().then(() => {
-			console.log('Current AC suspended');
-		});
 	}
 
 	unmute(): void {
-		this._state = 'playing';
+		console.log('unmuting -> ');
+		this.cablesAudio('unmute');
+		this._state = 'running';
+		this.resume();
 		audioStatus.set(this._state);
-		console.log('unmute');
-		this.runFFT();
+		//this.runFFT();
+	}
+
+	cablesAudio(state: 'mute' | 'unmute'): void {
+		// a function that swaps the elements of an array
+		function swap(arr: any[], i: number = 0, j: number = 1) {
+			[arr[i], arr[j]] = [arr[j], arr[i]];
+			return arr;
+		}
+
+		console.log('cables asked to ', state);
+		const audioAssets = get(CablesAudioFileURL);
+		CablesAudioFileURL.set(swap(audioAssets));
+		const nextTrack = get(CablesAudioFileURL)[0];
+		console.log('next track is ', nextTrack);
+		const patch = get(CablesPatch);
+		patch.setVariable('CablesMute', state === 'mute' ? '1' : '0');
+		patch.setVariable('CablesAudioFileURL', nextTrack);
+		patch.config.spinAndPrompt('', '∿', '');
+	}
+
+	_suspend(): void {
+		this._audioContext?.suspend().then(() => {
+			console.log('🔇 audiocontext suspended');
+		});
 	}
 }
 

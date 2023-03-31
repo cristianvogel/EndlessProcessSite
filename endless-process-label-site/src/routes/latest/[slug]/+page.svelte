@@ -5,6 +5,10 @@
 
   export let data: PageData;
 
+onbeforeunload = function () {
+  window.scrollTo(0, 0);
+};
+
 </script>
 
   <div class='m-0 p-6 bg-gradient-to-br from-surface-500 to-surface-800 ml-1 rounded-s'>
