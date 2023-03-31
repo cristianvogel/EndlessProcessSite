@@ -1,20 +1,19 @@
 <script lang="ts">
 	
 	import { CablesAudioContext, CablesAudioFileURL, ElementaryAudioEngine, CablesPatch } from '$lib/stores/stores';
-	import { onDestroy, onMount } from 'svelte';
 	import { get } from 'svelte/store';
 
 	export let patch: string;
 	export let change: boolean = false;
 
-	let pathPatch: string = `${patch}/patch.js`;
+	let pathPatch: string = `src/lib/cables/${patch}/patch.js`;
 	let cablesCanvas: HTMLCanvasElement;	
 	let loadedTrack: string =  get(CablesAudioFileURL)[0];
 
 	const initializeCables = () => {
 		CABLES.patch = new CABLES.Patch({
 			patch: CABLES.exportedPatch,
-			prefixAssetPath: `${patch}/`,
+			prefixAssetPath: `src/lib/cables/${patch}/`,
 			assetPath: '',
 			jsPath: '',
 			glCanvasId: `cables_${patch}`,
