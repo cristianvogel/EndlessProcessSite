@@ -4,7 +4,7 @@
 </script>
 
 
-<Cables patch="EndProc010" />
+<Cables patch="ENDPROC010" />
 <div class="container  h-full mx-auto flex justify-center items-center">
 	
 	<div class="space-y-10 text-center">

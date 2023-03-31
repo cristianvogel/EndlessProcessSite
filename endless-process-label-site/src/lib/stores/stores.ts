@@ -27,6 +27,6 @@ export const rawFFT: Writable<RawFFT> = writable({
 export const CablesPatch: Writable<any> = writable();
 export const CablesAudioContext: Writable<AudioContext> = writable();
 export const CablesAudioFileURL: Writable<Array<string>> = writable([
-	'audio/sound.mp3', // clear buffer
-	'audio/YohldteTvuezyz_AndersSkibsted.mp3'
+	'audio/YohldteTvuezyz_AndersSkibsted.mp3',
+	'audio/sound.mp3'
 ]);
