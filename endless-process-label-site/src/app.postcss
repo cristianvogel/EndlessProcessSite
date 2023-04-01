@@ -1,22 +1,25 @@
 /*place global styles here */
-html, body { @apply h-full overflow-hidden  bg-transparent;
-
+html,
+body {
+	@apply h-full overflow-hidden  bg-transparent;
 }
 
+.fading-bg {
+	@apply bg-gradient-to-b from-transparent to-surface-800;
+}
 
 a {
 	@apply !no-underline hover:!text-tertiary-400;
 }
 
 article,
+.has-small-font-size {
+	@apply text-sm md:text-base p-4 text-secondary-400;
+}
 
-	.has-small-font-size	{
-		@apply text-sm md:text-base p-4 text-secondary-400;
-	}
-
-	.has-text-align-center {
-		@apply text-center;
-	}
+.has-text-align-center {
+	@apply text-center;
+}
 
 figure {
 	@apply flex relative flex-col;
@@ -27,8 +30,7 @@ figure svg,
 }
 .img-bg {
 	@apply absolute z-[-1] rounded-full blur-[50px] transition-all;
-	animation: pulse 5s cubic-bezier(0, 0, 0, 0.5) infinite,
-		glow 5s linear infinite;
+	animation: pulse 5s cubic-bezier(0, 0, 0, 0.5) infinite, glow 5s linear infinite;
 }
 @keyframes glow {
 	0% {

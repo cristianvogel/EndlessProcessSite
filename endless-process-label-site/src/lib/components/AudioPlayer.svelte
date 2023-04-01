@@ -1,8 +1,6 @@
 <script lang="ts">
 
-
 </script>
-
 
 <audio controls controlsList="nodownload" 
 class="w-full h-6 opacity-80 hover:opacity-100"

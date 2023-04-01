@@ -10,11 +10,11 @@
 	import { AppShell, AppBar } from '@skeletonlabs/skeleton';
 	//import steeze-ui icon component
 	import { Icon } from '@steeze-ui/svelte-icon';
-	import { LogoDiscord, ChartMarimekko, ProgressBarRound, Asterisk } from '@steeze-ui/carbon-icons';
+	import { LogoDiscord, ChartMarimekko, ProgressBarRound } from '@steeze-ui/carbon-icons';
 	import ElementaryPlayer from '$lib/components/ElementaryPlayer.svelte';
 	import Cables from '$lib/components/Cables.svelte';
-	import { CablesAudioFileURL, CablesPatch, ElementaryAudioEngine as AudioEngine, audioStatus } from '$lib/stores/stores';
-	import { onMount } from 'svelte';
+	import { ElementaryAudioEngine as AudioEngine, audioStatus, CablesText } from '$lib/stores/stores';
+	import SplashPage from '$lib/components/SplashPage.svelte';
 
 $:spin = false;
 
@@ -44,13 +44,14 @@ function cablesScroller() {
 
 <!-- App Shell -->
 
-<!-- class="h-full p-1 bg-gradient-to-br from-slate-500 to-stone-800" -->
+<!-- fallback styling in case of no Canvas... 
+	class="h-full p-1 bg-gradient-to-br from-slate-500 to-stone-800" 
+-->
 <AppShell
 	class=" p-1 bg-transparent"
-	slotPageContent="grid grid-cols-1"
 	on:scroll ={cablesScroller}
 >
-<Cables patch="ENDPROC010" bg={true} bind:spin/>
+<!-- Persistant Appbar -->
 	<svelte:fragment slot="header">
 		<!-- App Bar -->
 		<AppBar background="bg-opacity-50 bg-surface-800">
@@ -58,16 +59,12 @@ function cablesScroller() {
 				<div
 					class="font-bold bg-gradient-to-br from-red-500 to-yellow-500 bg-clip-text text-transparent box-decoration-clone"
 				>
-					<a href="/" class="text-xl pr-6">endless</a>
-					<a href="/" class="text-xl pr-10">ssǝɔoɹd</a>
+					<a href="/" class="text-xl pr-6">{$CablesText[0]}{$CablesText[1]}</a>
 				</div>
 				<span class="divider-vertical h-10" />
 			</svelte:fragment>		
 			
 			<ElementaryPlayer on:mousedown={handleAudioButtonClick}/>
-			{#if $CablesPatch}
-				<Icon src={Asterisk} class="h-2 animate-pulse" /><span class='text-sm'>Patch initialised : Playing {$CablesAudioFileURL}</span>
-			{/if}
 
 			<svelte:fragment slot="trail">
 				<div class="flex justify-start">
@@ -86,13 +83,22 @@ function cablesScroller() {
 				</div></svelte:fragment>
 		</AppBar>
 	</svelte:fragment>
-
+	<svelte:fragment slot="pageHeader">
+	<Cables patch="ENDPROC010" bg={true} bind:spin/>
+	</svelte:fragment>
+	<svelte:fragment slot="pageFooter">
+		<SplashPage />
+		<slot />
+	</svelte:fragment>
 	<svelte:fragment slot="footer">
 		<div
-			class="card variant-soft p-2 m-0.5 flex justify-center items-center overflow-hidden text-xs"
+			class="card 
+			variant-soft p-2 m-0.5 
+			flex justify-center items-center overflow-hidden 
+			text-xs
+			fading-bg"
 		>
 			Endless Process © 2023
 		</div>
 	</svelte:fragment>
-	<slot />
 </AppShell>

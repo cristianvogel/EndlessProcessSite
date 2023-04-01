@@ -15,7 +15,7 @@ export const currentPost: Writable<CurrentPost> = writable({
 });
 
 /**
- * Keeping the audio renderer class in a store, adding functionality
+ * Keeping the audio engine class in a store, adding functionality
  * to it as and when needed.
  */
 export const ElementaryAudioEngine: Writable<typeof audio> = writable(audio);
@@ -24,9 +24,14 @@ export const rawFFT: Writable<RawFFT> = writable({
 	real: new Float32Array(0),
 	imag: new Float32Array(0)
 });
+
+/**
+ * Cables patch
+ */
 export const CablesPatch: Writable<any> = writable('loading');
 export const CablesAudioContext: Writable<AudioContext> = writable();
 export const CablesAudioFileURL: Writable<Array<string>> = writable([
 	'audio/YohldteTvuezyz_AndersSkibsted.mp3',
 	'audio/sound.mp3'
 ]);
+export const CablesText: Writable<Array<string>> = writable(['Endless', 'Process']);
