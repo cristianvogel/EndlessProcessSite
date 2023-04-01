@@ -159,10 +159,12 @@ class AudioEngine {
 		// a function that swaps the elements of an array
 		function swap(arr: any[], i: number = 0, j: number = 1) {
 			[arr[i], arr[j]] = [arr[j], arr[i]];
+			arr = [...arr, arr.length]; // add a new element to the array to trigger reactivity in subscribers
 			return arr;
 		}
+		// wouldn't this be better as a start/stop event inside the cables patch?
 
-		console.log('cables asked to ', state);
+		console.log('asking cables to ', state);
 		const audioAssets = get(CablesAudioFileURL);
 		CablesAudioFileURL.set(swap(audioAssets));
 		const nextTrack = get(CablesAudioFileURL)[0];
