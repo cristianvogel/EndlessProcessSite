@@ -24,7 +24,7 @@ export const rawFFT: Writable<RawFFT> = writable({
 	real: new Float32Array(0),
 	imag: new Float32Array(0)
 });
-export const CablesPatch: Writable<any> = writable();
+export const CablesPatch: Writable<any> = writable('loading');
 export const CablesAudioContext: Writable<AudioContext> = writable();
 export const CablesAudioFileURL: Writable<Array<string>> = writable([
 	'audio/YohldteTvuezyz_AndersSkibsted.mp3',

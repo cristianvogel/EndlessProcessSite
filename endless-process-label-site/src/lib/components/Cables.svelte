@@ -4,14 +4,31 @@
 	import { get } from 'svelte/store';
 
 	export let patch: string;
-	export let change: boolean = false;
+	export let bg: boolean = false;
+	export let spin: boolean = false;
 
-	let pathPatch: string = `src/lib/cables/${patch}/patch.js`;
-	let cablesCanvas: HTMLCanvasElement;	
-	let loadedTrack: string =  get(CablesAudioFileURL)[0];
+	let pathPatch: string = `src/lib/cables/${patch}/patch.js`;	
+	$: 
+		loadedTrack =  $CablesAudioFileURL[0] 
+	$: 
+		spin ? spinText([scrambleString("Endless"),scrambleString( "Process")]) : null
+
+	// function that scrambles a string
+	function scrambleString(str: string) {
+		let a = str.split(""),
+			n = a.length;
+
+		for (let i = n - 1; i > 0; i--) {
+			let j = Math.floor(Math.random() * (i + 1));
+			let tmp = a[i];
+			a[i] = a[j];
+			a[j] = tmp;
+		}
+		return a.join("");
+	}
 
 	const initializeCables = () => {
-		CABLES.patch = new CABLES.Patch({
+		CablesPatch.set ( new CABLES.Patch({
 			patch: CABLES.exportedPatch,
 			prefixAssetPath: `src/lib/cables/${patch}/`,
 			assetPath: '',
@@ -28,14 +45,9 @@
 				"CablesMute": false,
 				"CablesTextUpdate": "Welcome"
 			}
-		})
-		CablesPatch.set(CABLES.patch);
+		}))
 	};
 
-	// onDestroy(() => {
-	// 	//mute cables patch when component is destroyed
-	// 	$ElementaryAudioEngine.muteAndSuspend();
-	// });
 
 	function showError(errId: number, errMsg: string) {
 		alert('An error occured: ' + errId + ', ' + errMsg);
@@ -51,30 +63,32 @@
 	}
 
 	function patchFinishedLoading() {
-		spinText(null, "Welcome")
+		spinText(["Endless", "Process"])
 	}
 
-	function spinText( e: Event | null,  prompt = ''  ) {
-	if ( $CablesPatch.hasOwnProperty('patch') ) {
-		console.log('spin and prompt');
-		$CablesPatch.config.spinAndPrompt("",prompt,"")
+	function spinText(  prompts:string[] = ["",""]  ) {
+	if ( typeof $CablesPatch !== 'string' ) {
+			$CablesPatch.config.spinAndPrompt("",prompts[0],prompts[1])
+		}
 	}
-	}
-
 
 </script>
 
 <svelte:head>
 	<script src={pathPatch} on:load={initializeCables}></script>
+
+ 
 </svelte:head>
 
 <div class="mb-4 h-screen">
 	<canvas on:click={spinText}
-		class="z-0 absolute"
 		id="cables_{patch}"
 		width="100%"
 		height="100%"
-		style="width: 100%; height: 100%;"
-		bind:this={cablesCanvas}
+		style="width: 100%; height: 100%; z-index: {bg? -1: 0}; position: fixed;"
 	/>
 </div>
+
+<style>
+
+</style>

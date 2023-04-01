@@ -1,12 +1,14 @@
 <script lang="ts" >
 
+/**
+ * Blog posts layout page
+*/
+
   import type { PageData } from './$types';
   import { currentPost } from '$lib/stores/stores';
-	
+  import { onMount } from 'svelte';
   const defaultFeaturedImage ='../src/lib/images/Default_Avatar.svg';
   export let data: PageData;
-
-
 
   function formatDate(date: string): string {
     const dateObj = new Date(date);
@@ -38,11 +40,11 @@ function repeatChar(char: string, i: number): string {
   return str;
 }
 
-function handleCardEnter({e, cardIndex, title, content, featuredImageUrl, id, date}: {e: MouseEvent, cardIndex: string, title:string, content:HtmlContent, featuredImageUrl:Url, id:string, date:string}): void {
+function handleCardEnter({e, cardIndex, title, content, featuredImageUrl, id, date}: {e: MouseEvent, cardIndex: string, title:string, content:string, featuredImageUrl:string, id:string, date:string}): void {
   const card = document.getElementById(cardIndex);
   if (card) {
     card.classList.add('brightness-125');
-    currentPost.set({title, content, featuredImageUrl, id, date, cardIndex});
+    currentPost.set({title, content: {rawHTML: content, sanitisedHTML: ''} , featuredImageUrl, id, date, cardIndex});
   }
 }
 
@@ -55,7 +57,9 @@ function handleCardLeave({e, cardIndex}: {e: MouseEvent, cardIndex: string}): vo
 }
 </script>
 
+<!-- <Cables patch="ENDPROC_soft23" bg={true} /> -->
 
+<main>
 <div class="p-2 space-y-8">
 <h1 class='text-zinc'>Latest..</h1>
 <ul class="md:container md:mx-auto columns-3 gap-10 space-y-2 text-2xl max-w-prose">
@@ -102,3 +106,4 @@ function handleCardLeave({e, cardIndex}: {e: MouseEvent, cardIndex: string}): vo
 {/if}
 </ul>
 </div>
+</main>

@@ -12,10 +12,11 @@
 	import { Icon } from '@steeze-ui/svelte-icon';
 	import { LogoDiscord, ChartMarimekko, ProgressBarRound, Asterisk } from '@steeze-ui/carbon-icons';
 	import ElementaryPlayer from '$lib/components/ElementaryPlayer.svelte';
+	import Cables from '$lib/components/Cables.svelte';
 	import { CablesAudioFileURL, CablesPatch, ElementaryAudioEngine as AudioEngine, audioStatus } from '$lib/stores/stores';
+	import { onMount } from 'svelte';
 
-
-
+$:spin = false;
 
 let isPlaying: boolean = false;
 	$: isPlaying = ($audioStatus === 'running')
@@ -29,22 +30,30 @@ let isPlaying: boolean = false;
 			$AudioEngine.unmute();
 		}
 	}
+function cablesScroller() {
+		console.log('cablesScroller: ', spin);
+		spin = true;
+		setTimeout(() => {
+			spin = false;
+		}, 100);
+	}
+
 
 
 </script>
 
-
-
 <!-- App Shell -->
+
+<!-- class="h-full p-1 bg-gradient-to-br from-slate-500 to-stone-800" -->
 <AppShell
-	class="h-full p-1 bg-gradient-to-br from-slate-500 to-stone-800"
-	slotSidebarLeft="grid grid-cols-1"
-	slotSidebarRight="grid grid-cols-1"
+	class=" p-1 bg-transparent"
 	slotPageContent="grid grid-cols-1"
+	on:scroll ={cablesScroller}
 >
+<Cables patch="ENDPROC010" bg={true} bind:spin/>
 	<svelte:fragment slot="header">
 		<!-- App Bar -->
-		<AppBar background="bg-surface-800">
+		<AppBar background="bg-opacity-50 bg-surface-800">
 			<svelte:fragment slot="lead">
 				<div
 					class="font-bold bg-gradient-to-br from-red-500 to-yellow-500 bg-clip-text text-transparent box-decoration-clone"
@@ -53,27 +62,25 @@ let isPlaying: boolean = false;
 					<a href="/" class="text-xl pr-10">ssǝɔoɹd</a>
 				</div>
 				<span class="divider-vertical h-10" />
-			</svelte:fragment>
-			
+			</svelte:fragment>		
 			
 			<ElementaryPlayer on:mousedown={handleAudioButtonClick}/>
 			{#if $CablesPatch}
 				<Icon src={Asterisk} class="h-2 animate-pulse" /><span class='text-sm'>Patch initialised : Playing {$CablesAudioFileURL}</span>
 			{/if}
-			
 
 			<svelte:fragment slot="trail">
 				<div class="flex justify-start">
-					<a class="logo-item w-200 p-2" href="/blog">
+					<a class="logo-item w-200 p-2" href="/blog" data-sveltekit-noscroll>
 						<Icon src={ChartMarimekko} class="h-8" />
 						<span>Latest</span>
 					</a>
 					<a class="logo-item p-2 " href="/">
-						<Icon src={ProgressBarRound} class="h-8" />
+						<Icon src={ProgressBarRound} class="h-8" data-sveltekit-noscroll/>
 						<span>Releases</span>
 					</a>
 					<a class="logo-item p-2 " href="/">
-						<Icon src={LogoDiscord} class="h-8" />
+						<Icon src={LogoDiscord} class="h-8" data-sveltekit-noscroll/>
 						<span>Artists</span>
 					</a>
 				</div></svelte:fragment>

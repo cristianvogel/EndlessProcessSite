@@ -1,12 +1,15 @@
 <script>
+	// Splash opening screen
 	import Cables from '$lib/components/Cables.svelte';
 	import Splash from '$lib/components/Splash.svelte';
+	import { onMount } from 'svelte';
+
+
+
 </script>
 
-
-<Cables patch="ENDPROC010" />
-<div class="container  h-full mx-auto flex justify-center items-center">
-	
+<!-- svelte-ignore a11y-click-events-have-key-events -->
+<div class="container  h-full mx-auto flex justify-center items-center" on:mousedown>
 	<div class="space-y-10 text-center">
 		<h2
 			class="font-bold bg-gradient-to-br from-red-500 to-yellow-500 bg-clip-text text-transparent box-decoration-clone"
@@ -15,7 +18,7 @@
 		</h2>
 		<!-- Animated Logo -->
 		<figure>
-			<a href="/blog">
+			<a href="/blog" data-sveltekit-noscroll>
 				<Splash />
 			</a>
 		</figure>
@@ -24,3 +27,4 @@
 		<hr class="!border-t-8 !border-double" />
 	</div>
 </div>
+
