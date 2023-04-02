@@ -3,17 +3,19 @@
 /**
  * Blog posts layout page
 */
-
-  import { currentPost } from '$lib/stores/stores';
+  	import { Icon } from '@steeze-ui/svelte-icon';
+	import { CaretSortDown  } from '@steeze-ui/carbon-icons';
+  import { singlePost } from '$lib/stores/stores';
   import { Utils } from '$lib/classes/Utils';
-  const defaultFeaturedImage ='../src/lib/images/Default_Avatar.svg';
+  const defaultFeaturedImage = '/Default_Avatar.svg';
   export let data: any;
    
+  // the singPost store is set here and then used in the single post view
 function handleCardEnter({e, cardIndex, title, content, featuredImageUrl, id, date}: {e: MouseEvent, cardIndex: string, title:string, content:string, featuredImageUrl:string, id:string, date:string}): void {
   const card = document.getElementById(cardIndex);
   if (card) {
     card.classList.add('brightness-125');
-    currentPost.set({title, content: {rawHTML: content, sanitisedHTML: ''} , featuredImageUrl, id, date, cardIndex});
+    singlePost.set({title, content: {rawHTML: content, sanitisedHTML: content} , featuredImageUrl, id, date, cardIndex});
   }
 }
 
@@ -21,14 +23,15 @@ function handleCardLeave({e, cardIndex}: {e: MouseEvent, cardIndex: string}): vo
   const card = document.getElementById(cardIndex);
   if (card) {
     card.classList.remove('brightness-125');
-    currentPost.set({title: '', content: undefined, featuredImageUrl: undefined, id: '', date: '', cardIndex: ''});
+    // singlePost.set({title: '', content:  { rawHTML: '', sanitisedHTML: '' }, featuredImageUrl: undefined, id: '', date: '', cardIndex: ''});
   }
 }
 </script>
 
 <main>
 <div class="p-2 space-y-8">
-<h1 class='text-zinc'>Latest..</h1>
+<!-- <h1 class='text-zinc'>Latest..</h1> -->
+<Icon src={CaretSortDown} class="h-8 animate-pulse"/>
 <ul class="md:container md:mx-auto columns-3 gap-10 space-y-8 text-2xl max-w-prose">
 
 {#if data }
@@ -61,6 +64,7 @@ function handleCardLeave({e, cardIndex}: {e: MouseEvent, cardIndex: string}): vo
          </section>
       
       <section class='card-footer p-2 w-full ' >
+        <!-- todo: sanitise HTML for production -->
          {@html Utils.trimAndAddReadMoreLink( content ?? 'No content')}
       </section>
    </div>
@@ -69,7 +73,7 @@ function handleCardLeave({e, cardIndex}: {e: MouseEvent, cardIndex: string}): vo
     
 
    {:else}
-   <p>No posts to display.</p>
+   <p>Error loading data. Please try again.</p>
 {/if}
 </ul>
 </div>

@@ -2,10 +2,10 @@
 
 import { writable, type Writable } from 'svelte/store';
 import { audio } from '$lib/classes/AudioEngine';
-import type { AudioStatus, CurrentPost, RawFFT } from 'src/typeDeclarations';
+import type { AudioStatus, SinglePost, RawFFT } from 'src/typeDeclarations';
 
 // Todo: Implement sanitiser for the content
-export const currentPost: Writable<CurrentPost> = writable({
+export const singlePost: Writable<SinglePost> = writable({
 	title: '',
 	content: { rawHTML: '', sanitisedHTML: '' },
 	featuredImageURL: '',

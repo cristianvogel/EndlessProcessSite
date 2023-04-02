@@ -31,7 +31,7 @@ let isPlaying: boolean = false;
 		}
 	}
 function cablesScroller() {
-		console.log('cablesScroller: ', spin);
+	//	console.log('cablesScroller: ', spin);
 		spin = true;
 		setTimeout(() => {
 			spin = false;
