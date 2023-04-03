@@ -13,5 +13,5 @@ function MyComposite({ props, children }): NodeRepr_t {
 }
 
 export function detunedSaws(props, frequency: NodeRepr_t | number): NodeRepr_t {
-    return createNode(MyComposite, props, [frequency]);
+	return createNode(MyComposite, props, [frequency]);
 }

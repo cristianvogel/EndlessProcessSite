@@ -1,11 +1,7 @@
 <script lang="ts">
-	import {
-		ElementaryAudioEngine as AudioEngine,
-		audioStatus
-	} from '$lib/stores/stores';
+	import { Audio } from '$lib/stores/AudioEngine';
+	import { storeHighlightJs } from '@skeletonlabs/skeleton';
 	import { onMount, tick } from 'svelte';
-
-	
 
 	onMount(() => {
 		/**
@@ -19,14 +15,12 @@
 		// 	console.log('El AudioEngine initialized with new AudioContext()');
 		// }
 	});
+	const { isPlaying, audioStatus } = Audio.stores
 
-	let isPlaying: boolean = false;
-	$: isPlaying = ($audioStatus === 'running')
-	$: buttonPrompt = !isPlaying ? 'Play' : 'Stop';
 </script>
 
-{#if $AudioEngine}
+{#if $audioStatus !== 'closed'}
 	<button class="rounded-full bg-secondary-500 text-xs p-2" on:mousedown >
-		{buttonPrompt} Audio
+		{$isPlaying ? 'stop' : 'play'} Audio
 	</button>
 {/if}
