@@ -2,10 +2,24 @@
  * some useful routines, mostly written by Copilot
  */
 
-const Utils = {
+export const Wait = {
+	forNull: async function (variable: any, interval = 100): Promise<void> {
+		await new Promise<void>((resolve) =>
+			setInterval(() => (variable !== null ? resolve() : null), interval)
+		);
+	},
+
+	forTrue: async function (variable: boolean | null, interval = 100): Promise<void> {
+		await new Promise<void>((resolve) =>
+			setInterval(() => (variable ? null : resolve()), interval)
+		);
+	}
+};
+
+export const Utils = {
 	formatDate(date: string): string {
 		const dateObj = new Date(date);
-		const options = { year: 'numeric', month: 'long', day: 'numeric' };
+		const options: any = { year: 'numeric', month: 'long', day: 'numeric' };
 		return dateObj.toLocaleDateString('en-US', options);
 	},
 
@@ -65,4 +79,4 @@ const Utils = {
 	}
 };
 
-export { Utils };
+

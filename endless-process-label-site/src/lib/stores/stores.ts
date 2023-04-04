@@ -12,7 +12,6 @@ export const singlePost: Writable<SinglePost> = writable({
 	date: '',
 	cardIndex: ''
 });
-
 export const rawFFT: Writable<RawFFT> = writable({
 	real: new Float32Array(0),
 	imag: new Float32Array(0)
@@ -28,4 +27,9 @@ export const CablesAudioFileURL: Writable<Array<string>> = writable([
 	'audio/sound.mp3'
 ]);
 export const CablesText: Writable<Array<string>> = writable(['Endless', 'Process']);
+
+/**
+ * Audio engine
+ */
+export const Samples: Writable<ArrayBuffer> = writable();
 export const EndNodes: Writable<any> = writable({ elem: null, cables: null });

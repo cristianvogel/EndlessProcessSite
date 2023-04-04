@@ -1,6 +1,6 @@
 <script lang="ts">
 // Single post view
-import AudioPlayer from '$lib/components/AudioPlayer.svelte';
+import AudioPlayer from '$lib/components/EmbeddedAudioPlayer.svelte';
 import { singlePost } from '$lib/stores/stores';
 const { content, title } = $singlePost
 

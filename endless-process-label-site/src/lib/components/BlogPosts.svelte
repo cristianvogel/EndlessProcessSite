@@ -3,11 +3,11 @@
 /**
  * Blog posts layout page
 */
-  	import { Icon } from '@steeze-ui/svelte-icon';
+  import { Icon } from '@steeze-ui/svelte-icon';
 	import { CaretSortDown  } from '@steeze-ui/carbon-icons';
   import { singlePost } from '$lib/stores/stores';
   import { Utils } from '$lib/classes/Utils';
-  
+  import TestAudioComponent from '$lib/components/TestAudioComponent.svelte';
   const defaultFeaturedImage = '/Default_Avatar.svg';
   export let data: any;
    
@@ -34,6 +34,7 @@ function handleCardLeave({e, cardIndex}: {e: MouseEvent, cardIndex: string}): vo
 <!-- <h1 class='text-zinc'>Latest..</h1> -->
 <Icon src={CaretSortDown} class="h-8 animate-pulse"/>
 <ul class="md:container md:mx-auto columns-3 gap-10 space-y-8 text-2xl max-w-prose">
+  <TestAudioComponent/>
 
 {#if data }
     {#each data.posts as {id, title, featuredImage, content, date},index}

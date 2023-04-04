@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { Audio } from '$lib/stores/AudioEngine';
-	import { storeHighlightJs } from '@skeletonlabs/skeleton';
-	import { onMount, tick } from 'svelte';
+	import { Icon } from '@steeze-ui/svelte-icon';
+	import {PauseOutline, PlayOutline} from '@steeze-ui/carbon-icons';
+	import { onMount } from 'svelte';
 
 	onMount(() => {
 		/**
@@ -20,7 +21,16 @@
 </script>
 
 {#if $audioStatus !== 'closed'}
-	<button class="rounded-full bg-secondary-500 text-xs p-2" on:mousedown >
-		{$isPlaying ? 'stop' : 'play'} Audio
+	<div class="flex justify-start">
+	<button class= { $isPlaying ? 
+	'rounded-full bg-secondary-600 p-0' :
+	'rounded-full bg-secondary-800 p-0' }
+	on:mousedown >
+		<Icon src= { $isPlaying ? PauseOutline : PlayOutline } 
+		class={ $isPlaying ? 
+		'h-8 fill-secondary-200' : 
+		'h-8 fill-secondary-300 animate-pulse' }
+		data-sveltekit-noscroll />
 	</button>
+	</div>
 {/if}
