@@ -1,12 +1,9 @@
-import type { AudioStatus, StereoSignal } from 'src/typeDeclarations';
-import { CablesAudioFileURL, CablesPatch } from '$lib/stores/stores';
-import { el, type NodeRepr_t } from '@elemaudio/core';
-import WebRenderer from '@elemaudio/web-renderer';
-import { detunedSaws } from '$lib/audio/synths';
 import { get, derived, writable, type Writable } from 'svelte/store';
-import { dualDelay } from '$lib/audio/effects';
-import { getContext } from 'svelte';
-import { Wait } from '$lib/classes/Utils';
+import type { StereoSignal, AudioEngineStatus } from 'src/typeDeclarations';
+import { el, type NodeRepr_t } from '@elemaudio/core';
+import { detunedSaws } from '$lib/audio/synths';
+import { CablesPatch } from '$lib/stores/stores';
+import WebRenderer from '@elemaudio/web-renderer';
 
 // Store as OOPS/TS Singleton design pattern. Reference https://javascript.plainenglish.io/writing-a-svelte-store-with-typescript-22fa1c901a4
 
@@ -16,26 +13,27 @@ class AudioEngine {
 
 	constructor(
 		zeroDC: NodeRepr_t = el.const({ value: 0 }),
-		private _status: Writable<AudioStatus> = writable('loading'),
-		private _isPlaying: Writable<boolean> = writable(false),
+		private _AudioEngineStatus: Writable<AudioEngineStatus> = writable('loading'),
+		private _contextIsRunning: Writable<boolean> = writable(false),
 		private _elemLoaded: Writable<boolean> = writable(false),
-		private audioContext: Writable<AudioContext> = writable(),
-		private endNodes: Writable<any> = writable({ elem: null, cables: null }),
+		private _audioContext: Writable<AudioContext> = writable(),
+		private _endNodes: Writable<any> = writable({ elem: null, cables: null }),
 		public elemStereoOut: Writable<StereoSignal> = writable({
 			left: zeroDC,
 			right: zeroDC
-		})
+		}),
+		public DEFAULT_VFS_PATH: string = '/vfs/ENDPROC/defaultAudio.wav'
 	) {
 		this.#core = null;
-		this.masterVolume = 0.1;
+		this.masterVolume = 1;
 	}
 
 	get stores() {
 		return {
-			audioStatus: this._status,
-			isPlaying: this._isPlaying,
-			actx: this.audioContext,
-			endNodes: this.endNodes,
+			audioStatus: this._AudioEngineStatus,
+			isRunning: this._contextIsRunning,
+			actx: this._audioContext,
+			endNodes: this._endNodes,
 			stereoOutSignal: this.elemStereoOut
 		};
 	}
@@ -49,11 +47,13 @@ class AudioEngine {
 			Audio.actx = ctx;
 			console.log('Passing existing AudioContext', Audio.actx);
 		} else {
-			Audio.actx = new AudioContext();
+			// Audio.actx = new AudioContext();
+			console.log('No context!');
 		}
 
 		// BaseAudioContext state change callback
-		this.actx.addEventListener('statechange', this._stateChangeHandler);
+		this.actx.addEventListener('statechange', Audio._stateChangeHandler);
+
 		// Elementary load callback
 		Audio.#core.on('load', async () => {
 			console.log('Elementary loaded 🔊?', Audio.elemLoaded);
@@ -85,64 +85,90 @@ class AudioEngine {
 				this._elemLoaded.set(true);
 				return node;
 			});
-		this.resumeContext();
+		this.routeToCables(this.elemEndNode);
 	}
 
-	async updateVFS(samples: ArrayBuffer) {
+	connectToDestination(node: AudioNode) {
+		node.connect(this.actx.destination);
+	}
+
+	routeToCables(node: AudioNode) {
+		const merge = new ChannelMergerNode(this.actx, { numberOfInputs: 1 });
+		Audio.elemEndNode.connect(merge);
+		get(CablesPatch).getVar('CablesAnalyzerNodeInput').setValue(merge);
+		this.connectToDestination(merge);
+		console.log('Elem routed to CablesAnalyzer');
+	}
+
+	async updateVFS(samples: ArrayBuffer, vfsPath: string = Audio.DEFAULT_VFS_PATH) {
 		// Update the virtual file system only when the audio context is ready
-
-		if (!this._elemLoaded) {
-			console.log('Elementary not loaded yet, waiting...');
+		let sampleBuffer;
+		try {
+			sampleBuffer = await Audio.actx?.decodeAudioData(samples);
+		} catch (error) {
+			throw new Error('SampleBuffer data is not available');
+		} finally {
+			console.log(
+				'actx converted sampleBuffer with length ',
+				sampleBuffer?.getChannelData(0).length
+			);
 		}
-		let sampleBuffer = await Audio.actx.decodeAudioData(samples);
-		console.log('actx converted sampleBuffer with length ', sampleBuffer.getChannelData(0).length);
-		Audio.#core?.updateVirtualFileSystem({
-			'/vfs/ENDPROC010/sound.wav': sampleBuffer.getChannelData(0)
-		});
+		const vfsDictionary = {
+			[vfsPath]: sampleBuffer?.getChannelData(0)
+		};
+		Audio.#core?.updateVirtualFileSystem(vfsDictionary);
+	}
 
+	vfsSamplePlay(options: {
+		vfsPath?: string;
+		trigger?: NodeRepr_t | number;
+		rate?: NodeRepr_t | number;
+	}) {
+		let { vfsPath: path, trigger = 1, rate = 1 } = options;
+		if (!path || path.length < 1) path = Audio.DEFAULT_VFS_PATH;
 		Audio.renderChannels({
-			left: el.sample({ path: '/vfs/ENDPROC010/sound.wav' }, 1, 1),
-			right: el.sample({ path: '/vfs/ENDPROC010/sound.wav' }, 1, 1)
+			left: el.sample({ path: path, channel: 0 }, trigger, rate),
+			right: el.sample({ path: path, channel: 0 }, trigger, rate)
 		});
 	}
 
 	get contextAndStatus() {
-		return derived([this.audioContext, this._status], ([$audioContext, $status]) => {
+		return derived([Audio._audioContext, Audio._AudioEngineStatus], ([$audioContext, $status]) => {
 			return { context: $audioContext, status: $status };
 		});
 	}
 
 	get actx() {
-		return get(this.contextAndStatus).context;
+		return get(Audio.contextAndStatus).context;
 	}
 
-	get audioStatus() {
-		return get(this.contextAndStatus).status;
+	get status() {
+		return get(Audio.contextAndStatus).status;
 	}
 
 	get elemLoaded() {
-		return get(this._elemLoaded);
+		return get(Audio._elemLoaded);
 	}
 	// todo: differenciate between playing and running, its getting confusing
 	// the Audiocontext RUNS but it might not be PLAYING anything
 	get isPlaying(): boolean {
-		return get(this._isPlaying);
+		return get(Audio._contextIsRunning);
 	}
 
 	get isMuted(): boolean {
-		return get(this._isPlaying);
+		return !get(Audio._contextIsRunning);
 	}
 
 	get cablesEndNode() {
-		return get(this.endNodes).cables;
+		return get(Audio._endNodes).cables;
 	}
 
 	get elemEndNode() {
-		return get(this.endNodes).elem;
+		return get(Audio._endNodes).elem;
 	}
 
-	get baseState(): AudioStatus {
-		return this.actx.state || 'error';
+	get baseState(): AudioEngineStatus {
+		return Audio.actx.state as AudioEngineStatus;
 	}
 
 	get stereoOut(): StereoSignal {
@@ -155,51 +181,38 @@ class AudioEngine {
 	}
 
 	set actx(newCtx: AudioContext) {
-		this.audioContext.update(() => newCtx);
+		this._audioContext.update(() => newCtx);
 	}
 
-	set audioStatus(newStatus: AudioStatus) {
-		this._status.update(() => newStatus);
+	set status(newStatus: AudioEngineStatus) {
+		this._AudioEngineStatus.update(() => newStatus);
 	}
 	set cablesEndNode(node: AudioNode) {
-		this.endNodes.update((n) => {
+		this._endNodes.update((n) => {
 			n.cables = node;
 			return n;
 		});
 	}
 
 	set elemEndNode(node: AudioNode) {
-		this.endNodes.update((n) => {
+		this._endNodes.update((n) => {
 			n.elem = node;
 			return n;
 		});
 	}
 
-	connectEndNodes() {
-		const c: AudioNode = Audio.cablesEndNode as GainNode;
-		if (!c) return;
-
-		const e: AudioNode = Audio.elemEndNode as AudioNode;
-		console.log('Nodes are valid and connected! 🎉: ');
-		e.connect(Audio.actx.destination);
-
-		//c.connect(e);
-	}
-
 	_stateChangeHandler = () => {
-		const statusUpdate = Audio.actx.state;
-		this._isPlaying.update(() => {
-			return statusUpdate === 'running' ? true : false;
+		Audio._contextIsRunning.update(() => {
+			return Audio.actx.state === 'running';
 		});
-		Audio._status.update(() => {
-			console.log('Audio status updated to ', statusUpdate);
-			return statusUpdate;
+		Audio._AudioEngineStatus.update(() => {
+			return Audio.baseState;
 		});
 	};
 
 	resumeContext(): void {
 		Audio.actx.resume().then(() => {
-			console.log('AudioContext resumed.');
+			console.log('AudioContext is ', Audio.status);
 		});
 	}
 
@@ -215,7 +228,9 @@ class AudioEngine {
 	 * Render DC Blocked signals as left and right output signals
 	 */
 	renderChannels(channels: StereoSignal): void {
-		Wait.forTrue(Audio.elemLoaded);
+		if (CABLES.WEBAUDIO.getAudioContext() !== Audio.actx) {
+			Audio.actx = CABLES.WEBAUDIO._audioContext = Audio.actx;
+		}
 		Audio.stereoOut = { left: el.dcblock(channels.left), right: el.dcblock(channels.right) };
 		Audio.#core?.render(
 			el.mul(el.sm(Audio.masterVolume), Audio.stereoOut.left),
@@ -224,7 +239,9 @@ class AudioEngine {
 	}
 
 	runFFT(): void {
-		if (Audio.audioStatus === 'running') {
+		// not working yet
+		console.log('running fft');
+		if (Audio.isPlaying) {
 			Audio.render(el.fft({ name: 'elFFT', key: 'fft' }, Audio.stereoOut.left));
 		}
 	}
@@ -250,58 +267,26 @@ class AudioEngine {
 	 * Mute Elementary's final gain node and suspend the audio context
 	 * optionally, send a Mute message to Cables patch
 	 */
-	muteAndSuspend(muteCables: boolean = true): void {
-		console.log('mute and suspend');
+	pauseAudioEngine(pauseCables: boolean = false): void {
+		console.log('pausing audio engine');
 		Audio.renderChannels({
 			left: el.sm(0),
 			right: el.sm(0)
 		});
-		if (muteCables) Audio.cablesAudio('mute');
-		Audio.suspendAfterMs(500);
+		if (pauseCables) Audio.pauseCables('pause');
+		Audio.status = 'paused';
 	}
 
+	// todo: decide what to play when unmuted action
 	unmute(): void {
-		console.log('unmuting -> ');
-		Audio.cablesAudio('unmute');
-		Audio.resumeContext();
-		if (Audio.#core) {
-			const cablesStereoIn: StereoSignal = {
-				left: dualDelay({ len: 1000, fb: 0.3 }, el.in({ channel: 0 }), el.in({ channel: 1 })),
-				right: dualDelay({ len: 1000, fb: 0.3 }, el.in({ channel: 1 }), el.in({ channel: 0 }))
-			};
+		console.log('un-muting audio engine');
+		Audio.status = 'playing';
+		Audio.vfsSamplePlay({});
+		// Audio.runFFT();
+	}
 
-			Audio.renderChannels(cablesStereoIn);
-		}
-		//Audio.runFFT();
-	}
-	/**
-	 * Dummy playlist for testing
-	 **/
-	cablesAudio(state: 'mute' | 'unmute'): void {
-		// a function that swaps the elements of an array
-		function swap(arr: any[], i: number = 0, j: number = 1) {
-			[arr[i], arr[j]] = [arr[j], arr[i]];
-			arr = [...arr, arr.length]; // add a new element to the array to trigger reactivity in subscribers
-			return arr;
-		}
-		// wouldn't this be better as a start/stop event inside the cables patch?
-		const audioAssets = get(CablesAudioFileURL);
-		CablesAudioFileURL.set(swap(audioAssets));
-		const nextTrack = get(CablesAudioFileURL)[0];
-		const patch = get(CablesPatch);
-		patch.setVariable('CablesMute', state === 'mute' ? '1' : '0');
-		patch.setVariable('CablesAudioFileURL', nextTrack);
-	}
-	// setup the Cables to Elementary connection
-	getCablesAudioNode(varCablesGainNode: any): void {
-		let cablesConnection: GainNode;
-		if (varCablesGainNode.getValue()) {
-			cablesConnection = varCablesGainNode.getValue();
-			console.log('Cables GainNode → ', cablesConnection);
-			Audio.cablesEndNode = cablesConnection;
-		} else {
-			console.log(`Can't find Cables Patch GainNode!...`);
-		}
+	pauseCables(state: 'pause' | 'resume'): void {
+		// todo: pause or resume Cables patch
 	}
 
 	suspend(): void {
@@ -312,10 +297,8 @@ class AudioEngine {
 
 	suspendAfterMs(ms: number = 100): void {
 		new Promise((res) => setTimeout(res, ms)).then(() => {
-			this.renderChannels({ left: el.sm(0), right: el.sm(0) });
-			Audio.actx.suspend().then(() => {
-				console.log('🔇 audiocontext suspended');
-			});
+			Audio.renderChannels({ left: el.sm(0), right: el.sm(0) });
+			Audio.suspend();
 		});
 	}
 }
