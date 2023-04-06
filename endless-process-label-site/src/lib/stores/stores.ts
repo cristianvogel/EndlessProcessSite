@@ -1,7 +1,7 @@
 // CAV: This file is used to define the stores used in the app
 
 import { writable, type Writable } from 'svelte/store';
-import type { SinglePost, RawFFT } from 'src/typeDeclarations';
+import type { SinglePost, RawFFT, PlaylistContainer } from 'src/typeDeclarations';
 
 // Todo: Implement sanitiser for the content
 export const singlePost: Writable<SinglePost> = writable({
@@ -21,15 +21,21 @@ export const rawFFT: Writable<RawFFT> = writable({
  * Cables patch
  */
 export const CablesPatch: Writable<any> = writable('...loading...');
-// export const CablesAudioContext: Writable<AudioContext> = writable();
-export const CablesAudioFileURL: Writable<Array<string>> = writable([
-	'audio/YohldteTvuezyz_AndersSkibsted.mp3',
-	'audio/sound.mp3'
-]);
+export const CablesAudioContext: Writable<AudioContext> = writable();
+export const CablesIsLoaded: Writable<boolean> = writable(false);
 export const CablesText: Writable<Array<string>> = writable(['Endless', 'Process']);
 
 /**
  * Audio engine
  */
-export const Samples: Writable<ArrayBuffer> = writable();
+export const Samples: Writable<ArrayBuffer | null> = writable(null);
 export const EndNodes: Writable<any> = writable({ elem: null, cables: null });
+
+/**
+ * Playlist
+ */
+export const Playlist: Writable<PlaylistContainer> = writable({
+	VFS_PREFIX: '/vfs/ENDPROC/',
+	currentTrack: { name: '', url: '', loaded: false },
+	playlist: ['YohldteTvuezyz_AndersSkibsted.mp3', 'sound.mp3']
+});

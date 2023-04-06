@@ -1,14 +1,15 @@
 <script lang="ts">
 	
 	import { 
-			CablesAudioFileURL, 
 			CablesPatch,
-			CablesText
+			CablesText,
+			CablesIsLoaded,
+			CablesAudioContext,
+			Playlist
 		} from '$lib/stores/stores';
 	import { Audio } from '$lib/stores/AudioEngine';
 	import { onMount } from 'svelte';
 	import { Utils } from '$lib/classes/Utils';
-	import { tick } from 'svelte';
 
 	export let patch: string;
 	export let bg: boolean = false;
@@ -17,26 +18,11 @@
 	const { endNodes } = Audio.stores
 		
 	let pathPatch: string = `src/lib/cables/${patch}/patch.js`;	
-	$: loadedTrack =  $CablesAudioFileURL[0] 
+	$: loadedTrack =  $Playlist.currentTrack.name;
 	$: if (spin) { 
 		CablesText.set( [ Utils.rotateString($CablesText[0]), Utils.rotateString($CablesText[1]) ] )
 		spinText($CablesText) 
 	}
-	
-	$: tick().then( ()=> {
-		if (typeof $CablesPatch !== 'string' ) {
-			$CablesPatch.getVar('CablesGainNode').on("change", 
-			(function( newValue:GainNode ) {
-				if (!newValue || $endNodes.cables != null ) return
-				console.log ( 'Patched valid Cables end node', newValue)
-				Audio.cablesEndNode = newValue;	
-				Audio.connectEndNodes();
-   			 }))
-		} else {
-			// spinner whilst CablesPatch loads?
-			CablesText.set( [ Utils.rotateString($CablesText[0]), Utils.rotateString($CablesText[1]) ] )
-		}
-	})
 	
 
 	const initializeCables = () => {
@@ -52,13 +38,12 @@
 			onFinishedLoading: patchFinishedLoading,
 			canvas: { alpha: true, premultipliedAlpha: true },
 			variables:{
-				"CablesAudioFileURL": loadedTrack,
 				"CablesMute": false,
-				"CablesTextUpdate": "Welcome"
+				"CablesTextUpdate": "Endless Process",
+				"CablesAnalyzerNodeInput": {}
 			}
 		}))
 	};
-
 
 	function showError(errId: number, errMsg: string) {
 		alert('An error occured: ' + errId + ', ' + errMsg);
@@ -66,16 +51,18 @@
 
 	function patchInitialized() {
 		console.log('Cables Patch initialized');
-		Audio.init(CABLES.WEBAUDIO.getAudioContext());
-		console.log('Initialising AudioEngine (with CablesAudioContext) and', Audio.audioStatus);			
 	} 
 
 	function patchFinishedLoading() {
-		spinText(["Endless", "Process"])
+		$CablesIsLoaded = true;
+		$CablesAudioContext = CABLES.WEBAUDIO.getAudioContext()
+		spinText(["Endless", "Process"]);
+		Audio.init($CablesAudioContext);
+		console.log('Initialising AudioEngine with CablesAudioContex', $CablesAudioContext.sampleRate,' Status: ', Audio.status);		
 	}
 
 	function spinText(  prompts:string[] = ["End","Proc"]  ) {
-	if ( typeof $CablesPatch !== 'string' ) {
+	if ( $CablesIsLoaded ) {
 			$CablesPatch.config.spinAndPrompt('',prompts[0],prompts[1]) // bug in Cables won't pass first arg
 		}
 	}

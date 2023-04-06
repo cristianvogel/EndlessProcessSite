@@ -4,17 +4,32 @@
 
 export const Wait = {
 	forNull: async function (variable: any, interval = 100): Promise<void> {
-		await new Promise<void>((resolve) =>
-			setInterval(() => (variable !== null ? resolve() : null), interval)
-		);
+		console.log('waiting for null...');
+		await new Promise<void>((resolve) => {
+			const timer = setInterval(() => {
+				if (variable !== null) {
+					console.log('Not Null!');
+					clearInterval(timer);
+					resolve();
+				}
+			}, interval);
+		});
 	},
 
 	forTrue: async function (variable: boolean | null, interval = 100): Promise<void> {
-		await new Promise<void>((resolve) =>
-			setInterval(() => (variable ? null : resolve()), interval)
-		);
+		console.log('waiting for true...');
+		await new Promise<void>((resolve) => {
+			const timer = setInterval(() => {
+				if (variable === true) {
+					console.log('Truthy!');
+					clearInterval(timer);
+					resolve();
+				}
+			}, interval);
+		});
 	}
 };
+
 
 export const Utils = {
 	formatDate(date: string): string {

@@ -9,8 +9,11 @@ const config = {
 
 	kit: {
 		adapter: adapter(),
-		alias:{
-			$stores: '/src/stores/stores.js',
+		alias: {
+			$stores: '/src/stores/stores.js'
+		},
+		csrf: {
+			checkOrigin: false
 		}
 	}
 };

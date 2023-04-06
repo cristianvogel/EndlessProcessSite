@@ -10,41 +10,45 @@
 	import { LogoDiscord, ChartMarimekko, ProgressBarRound } from '@steeze-ui/carbon-icons';
 	import ElementaryPlayer from '$lib/components/ElementaryPlayer.svelte';
 	import Cables from '$lib/components/Cables.svelte';
-	import { CablesText } from '$lib/stores/stores';
+	import { CablesText, Samples } from '$lib/stores/stores';
 	import { Audio } from '$lib/stores/AudioEngine';
 	import SplashPage from '$lib/components/SplashPage.svelte';
+	import TestAudioComponent from '$lib/components/TestAudioComponent.svelte';
 
-	$:spin = false;
-	
-	const { resumeContext, muteAndSuspend , unmute } = Audio;
-	const { isPlaying, audioStatus } = Audio.stores
-	
-	function handleAudioButtonClick( ) {
-		if ($audioStatus !== 'running') { resumeContext(); }
-		if ($isPlaying) {
-			muteAndSuspend();
+	const { resumeContext, pauseAudioEngine, unmute } = Audio;
+	const { audioStatus } = Audio.stores;
+
+	$: isPlaying = $audioStatus === 'playing';
+	$: spin = false;
+	$: if ($Samples) {
+		console.log('$Samples?.byteLength: ', $Samples?.byteLength, '')
+		if ($Samples.byteLength > 0) Audio.updateVFS($Samples)
+	}
+
+	function handleAudioButtonClick() {
+		if ($audioStatus === 'suspended') {
+			resumeContext();
+		}
+		if (isPlaying) {
+			pauseAudioEngine();
 		} else {
 			unmute();
 		}
 	}
 	function cablesScroller() {
-			spin = true;
-			setTimeout(() => {
-				spin = false;
-			}, 100);
-		}
-
+		spin = true;
+		setTimeout(() => {
+			spin = false;
+		}, 100);
+	}
 </script>
 
 <!-- App Shell -->
 <!-- todo: fallback styling in case of no Canvas... 
 	class="h-full p-1 bg-gradient-to-br from-slate-500 to-stone-800" 
 -->
-<AppShell
-	class=" p-1 bg-transparent"
-	on:scroll ={cablesScroller}
->
-<!-- Persistent Appbar in Skeleton header slot -->
+<AppShell class=" p-1 bg-transparent" on:scroll={cablesScroller}>
+	<!-- Persistent Appbar in Skeleton header slot -->
 	<svelte:fragment slot="header">
 		<AppBar background="bg-opacity-50 bg-surface-800">
 			<svelte:fragment slot="lead">
@@ -54,12 +58,12 @@
 					<a href="/" class="text-xl pr-6">{$CablesText[0]}{$CablesText[1]}</a>
 				</div>
 				<span class="divider-vertical h-10" />
-			</svelte:fragment>		
+			</svelte:fragment>
 
-<!-- Persistent Audio controls  -->
-			<ElementaryPlayer on:mousedown={handleAudioButtonClick}/>
+			<!-- Persistent Audio controls  -->
+			<ElementaryPlayer on:mousedown={handleAudioButtonClick} />
 
-<!-- Persistent nav buttons -->
+			<!-- Persistent nav buttons -->
 			<svelte:fragment slot="trail">
 				<div class="flex justify-start">
 					<a class="logo-item w-200 p-2" href="/blog" data-sveltekit-noscroll>
@@ -67,25 +71,26 @@
 						<span>Latest</span>
 					</a>
 					<a class="logo-item p-2 " href="/">
-						<Icon src={ProgressBarRound} class="h-8" data-sveltekit-noscroll/>
+						<Icon src={ProgressBarRound} class="h-8" data-sveltekit-noscroll />
 						<span>Releases</span>
 					</a>
 					<a class="logo-item p-2 " href="/">
-						<Icon src={LogoDiscord} class="h-8" data-sveltekit-noscroll/>
+						<Icon src={LogoDiscord} class="h-8" data-sveltekit-noscroll />
 						<span>Artists</span>
 					</a>
-				</div></svelte:fragment>
+				</div></svelte:fragment
+			>
 		</AppBar>
 	</svelte:fragment>
 	<svelte:fragment slot="pageHeader">
-	<Cables patch="ENDPROC010" bg={true} bind:spin/>
+		<Cables patch="ENDPROC010" bg={true} bind:spin />
 	</svelte:fragment>
 	<svelte:fragment slot="pageFooter">
 		<SplashPage />
 		<slot />
 	</svelte:fragment>
 
-<!-- persistent footer in Skeleton footer slot -->
+	<!-- persistent footer in Skeleton footer slot -->
 	<svelte:fragment slot="footer">
 		<div
 			class="card 
@@ -94,6 +99,7 @@
 			text-xs
 			fading-bg"
 		>
+			<TestAudioComponent />
 			Endless Process © 2023
 		</div>
 	</svelte:fragment>

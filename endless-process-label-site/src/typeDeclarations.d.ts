@@ -8,7 +8,14 @@ interface SinglePost {
 	date: string;
 	cardIndex: string;
 }
-type AudioStatus = 'closed' | 'suspended' | 'running' | 'muted' | 'loading';
+
+type AudioEngineStatus = 'suspended' | 'loading' | 'playing' | 'paused' | 'closed ' | 'running';
+type PlaylistContainer = {
+	VFS_PREFIX: string;
+	currentTrack: { name?: string; url: string; loaded: boolean };
+	playlist: Array<string>;
+};
+
 type HtmlContent = { rawHTML: string; sanitisedHTML: string };
 type Url = string;
 // type Post = { title: string; content?: HtmlContent };

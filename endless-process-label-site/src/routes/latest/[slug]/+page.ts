@@ -1,4 +1,5 @@
 // todo: actually get the post data from the API
+// this is placeholder code and is not being used
 import type { PageLoad } from './$types';
 
 let postTitle = '';

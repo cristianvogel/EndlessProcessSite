@@ -2,10 +2,10 @@ import { get, derived, writable, type Writable } from 'svelte/store';
 import type { StereoSignal, AudioEngineStatus } from 'src/typeDeclarations';
 import { el, type NodeRepr_t } from '@elemaudio/core';
 import { detunedSaws } from '$lib/audio/synths';
-import { CablesPatch } from '$lib/stores/stores';
+import { CablesPatch, Playlist } from '$lib/stores/stores';
 import WebRenderer from '@elemaudio/web-renderer';
 
-// Store as OOPS/TS Singleton design pattern. Reference https://javascript.plainenglish.io/writing-a-svelte-store-with-typescript-22fa1c901a4
+// Store as OOPS/TS Singleton design pattern.
 
 class AudioEngine {
 	#core: WebRenderer | null;
@@ -22,10 +22,11 @@ class AudioEngine {
 			left: zeroDC,
 			right: zeroDC
 		}),
-		public DEFAULT_VFS_PATH: string = '/vfs/ENDPROC/defaultAudio.wav'
+		public DEFAULT_VFS_PATH: string
 	) {
 		this.#core = null;
 		this.masterVolume = 1;
+		this.DEFAULT_VFS_PATH = get(Playlist).VFS_PREFIX;
 	}
 
 	get stores() {
@@ -124,11 +125,11 @@ class AudioEngine {
 		trigger?: NodeRepr_t | number;
 		rate?: NodeRepr_t | number;
 	}) {
-		let { vfsPath: path, trigger = 1, rate = 1 } = options;
-		if (!path || path.length < 1) path = Audio.DEFAULT_VFS_PATH;
+		let { vfsPath = Audio.DEFAULT_VFS_PATH, trigger = 1, rate = 1 } = options;
+
 		Audio.renderChannels({
-			left: el.sample({ path: path, channel: 0 }, trigger, rate),
-			right: el.sample({ path: path, channel: 0 }, trigger, rate)
+			left: el.sample({ path: vfsPath, channel: 0 }, trigger, rate),
+			right: el.sample({ path: vfsPath, channel: 0 }, trigger, rate)
 		});
 	}
 
