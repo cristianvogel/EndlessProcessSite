@@ -19,27 +19,24 @@ query GetPosts {
   }
  `;
 
-
 export async function load({ fetch }) {
-
 	const response = await fetch(import.meta.env.VITE_PUBLIC_WORDPRESS_API_URL, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({query}),
-    });
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json'
+		},
+		body: JSON.stringify({ query })
+	});
 
-    if (response.ok) {
-        const responseObj = await response.json();
-        const posts = responseObj.data.posts.nodes;
+	if (response.ok) {
+		const responseObj = await response.json();
+		const posts = responseObj.data.posts.nodes;
 
-        return {     
-                posts          
-        }
-    };
+		return {
+			posts
+		};
+	}
 
-//todo: handle error with SvelteKit error page
+	//todo: handle error with SvelteKit error page
 	if (!response) throw error(404);
-
 }

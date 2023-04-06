@@ -1,6 +1,7 @@
 <script>
 	// Splash opening
 	import SplashSVG from '$lib/components/SplashSVG.svelte';
+	import TestAudioComponent from './TestAudioComponent.svelte';
 
 </script>
 
@@ -14,6 +15,7 @@
 		</h2>
 			<a href="/blog" data-sveltekit-noscroll>
 				<SplashSVG />
+				<TestAudioComponent />
 			</a>
 		<h3 class="font-bold text-zinc">𝐍-Dimensional<br>Music.</h3>
 		<hr class="!border-t-8 !border-double" />

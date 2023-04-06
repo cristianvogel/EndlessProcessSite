@@ -36,40 +36,37 @@ const query = `
 
 
   
-export const load = (({ params, fetch }) => {
-  postTitle = params.slug;
+export const load = async ({ params }) => {
+	postTitle = params.slug;
 
-async function getPostByID() {
-  const response = await fetch(import.meta.env.VITE_PUBLIC_WORDPRESS_API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      query,
-      variables: {
-        slug: postTitle,
-      }
-    }),
-  });
+	const response = await fetch(import.meta.env.VITE_PUBLIC_WORDPRESS_API_URL, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json'
+		},
+		body: JSON.stringify({
+			query,
+			variables: {
+				slug: postTitle
+			}
+		})
+	});
 
-  if (response.ok) {
-    const responseObj = await response.json();
-    const { post } = responseObj.data;
-    return {
-        post 
-    };
-  }
-  return {
-    status: response.status,
-    error: new Error(`Could not load post.`)
-  };
-}
+	try {
+		if (!response.ok) {
+			throw new Error(`Could not load post. Status: ${response.status}`);
+		}
 
-  return {
-    post: {
-      post: getPostByID(),
-      title: params.slug
-    }
-  };
-}) satisfies PageLoad;
+		const responseObj = await response.json();
+		const { post } = responseObj.data;
+		return {
+			post,
+			title: params.slug
+		};
+	} catch (error) {
+		console.log('Error:', error);
+		return {
+			error: error
+		};
+	}
+};

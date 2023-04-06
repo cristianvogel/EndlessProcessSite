@@ -10,20 +10,16 @@
 	import { LogoDiscord, ChartMarimekko, ProgressBarRound } from '@steeze-ui/carbon-icons';
 	import ElementaryPlayer from '$lib/components/ElementaryPlayer.svelte';
 	import Cables from '$lib/components/Cables.svelte';
-	import { CablesText, Samples } from '$lib/stores/stores';
+	import { CablesText } from '$lib/stores/stores';
 	import { Audio } from '$lib/stores/AudioEngine';
 	import SplashPage from '$lib/components/SplashPage.svelte';
-	import TestAudioComponent from '$lib/components/TestAudioComponent.svelte';
+	
 
 	const { resumeContext, pauseAudioEngine, unmute } = Audio;
 	const { audioStatus } = Audio.stores;
 
 	$: isPlaying = $audioStatus === 'playing';
 	$: spin = false;
-	$: if ($Samples) {
-		console.log('$Samples?.byteLength: ', $Samples?.byteLength, '')
-		if ($Samples.byteLength > 0) Audio.updateVFS($Samples)
-	}
 
 	function handleAudioButtonClick() {
 		if ($audioStatus === 'suspended') {
@@ -99,7 +95,6 @@
 			text-xs
 			fading-bg"
 		>
-			<TestAudioComponent />
 			Endless Process © 2023
 		</div>
 	</svelte:fragment>

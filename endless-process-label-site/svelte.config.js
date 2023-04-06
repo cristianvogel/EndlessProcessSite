@@ -11,9 +11,6 @@ const config = {
 		adapter: adapter(),
 		alias: {
 			$stores: '/src/stores/stores.js'
-		},
-		csrf: {
-			checkOrigin: false
 		}
 	}
 };

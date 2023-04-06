@@ -1,13 +1,17 @@
 <script lang='ts'>
 	// Landing page route
 	import type { PageData } from './$types';
-	import { Samples } from '$lib/stores/stores';
+	import { get } from 'svelte/store';
+	import { Audio } from '$lib/stores/AudioEngine';
+	import { RawAudioBufferStore } from '$lib/stores/stores';
 	
 
 	export let data: PageData;
 
 	if (data.body) {
-		$Samples = data.body;
+		RawAudioBufferStore.set( { header: data.header, body: data.body} );
+		Audio.updateVFS( get(RawAudioBufferStore)  );
 	}
 
+	
 </script>
