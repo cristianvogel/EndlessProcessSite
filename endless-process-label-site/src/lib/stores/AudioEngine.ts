@@ -9,6 +9,8 @@ import type {
 import { samplesPlayer, smoothMute, stereoOut } from '$lib/audio/AudioFunctions';
 import { CablesPatch, Playlist, RawAudioBufferStore } from '$lib/stores/stores';
 import WebRenderer from '@elemaudio/web-renderer';
+import type { NodeRepr_t } from '@elemaudio/core';
+import { detunedSaws } from '$lib/audio/composites';
 import { el } from '@elemaudio/core';
 
 // Store as OOPS/TS Singleton design pattern.
@@ -148,7 +150,7 @@ class AudioEngine {
 		console.log('Core render...');
 		if (!Audio.#core || !stereoSignal) return;
 		const final = stereoOut(stereoSignal);
-		Audio.#core.render(final);
+		Audio.#core.render(final.left, final.right);
 	}
 
 	/**
@@ -169,7 +171,7 @@ class AudioEngine {
 	 */
 	pauseAudioEngine(pauseCables: boolean = false): void {
 		console.log('pausing audio engine');
-		smoothMute();
+		Audio.render(smoothMute());
 		if (pauseCables) Audio.pauseCables('pause');
 		Audio.status = 'paused';
 	}
@@ -207,7 +209,7 @@ class AudioEngine {
 		});
 	}
 
-	get masterVolume() {
+	get masterVolume(): number | NodeRepr_t {
 		return get(Audio._masterVolume);
 	}
 
@@ -250,7 +252,7 @@ class AudioEngine {
 		return Audio.actx.state as AudioEngineStatus;
 	}
 
-	set masterVolume(normLevel: number) {
+	set masterVolume(normLevel: number | NodeRepr_t) {
 		Audio._masterVolume.update(() => normLevel);
 	}
 

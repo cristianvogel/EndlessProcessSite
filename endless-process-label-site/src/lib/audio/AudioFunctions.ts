@@ -101,19 +101,4 @@ export function testTone(): StereoSignal {
 	};
 }
 
-// /**
-//  * @description Render a stereo signal
-//  */
-// export function renderStereo(stereoSignal: StereoSignal): void {
-// 	const cablesAudioContext = CABLES.WEBAUDIO.getAudioContext();
-// 	// this check is maybe not required.
-// 	if (cablesAudioContext !== null && cablesAudioContext !== Audio.actx) {
-// 		Audio.actx = CABLES.WEBAUDIO._audioContext;
-// 	}
-// 	// check if the Audio.status is muted
-// 	if (Audio.isMuted) {
-// 		return;
-// 	}
 
-// 	// render with a method call to the AudioEngine
-// }

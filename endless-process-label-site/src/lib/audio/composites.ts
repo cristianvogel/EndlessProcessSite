@@ -27,13 +27,22 @@ export function detunedSaws(
 }
 
 //--- attenuate --------------------------------------------------------
+
 function _attenuate({ props, children }): Signal {
 	const key = props.key || 'attenuate_' + Utils.generateRandomKey();
-	return resolve(el.mul({ key: key }, props.level, el.sm(children[0].left)));
+	return resolve(el.mul({ key: key }, props.level, children[0]));
 }
 
-export function attenuate(props: { level: Signal | number; key?: string }, signal: Signal): Signal {
+export function attenuate(
+	props: {
+		level: Signal | number;
+		key?: string;
+	},
+	signal: Signal
+): Signal {
 	return createNode(_attenuate, props, [signal]);
 }
 
+
+//-----------
 
