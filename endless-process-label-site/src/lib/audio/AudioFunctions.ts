@@ -4,7 +4,7 @@
 import { get } from 'svelte/store';
 import { Audio } from '$lib/stores/AudioEngine';
 import { el } from '@elemaudio/core';
-import { detunedSaws, cleanStereoOut } from '$lib/audio/composites';
+import { detunedSaws, attenuate } from '$lib/audio/composites';
 import type { StereoSignal, Signal, SamplerOptions } from 'src/typeDeclarations';
 
 /**
@@ -38,27 +38,35 @@ export function smoothMute(): StereoSignal {
 }
 
 /**
- * @description Stereo out, no DC offset
+ * @description Stereo output
  */
 
-interface cleanStereoOut {
-	props: { level: Signal | number };
+interface stereoOut {
 	stereoSignal: StereoSignal;
+	key: string;
 }
 
-export function stereoOut(stereoSignal: StereoSignal): StereoSignal {
-	const level = get(Audio.stores.masterVolume);
-	console.log('level', level);
-	return cleanStereoOut(
-		{
-			level: el.sm(level)
-		},
-		stereoSignal
-	);
+export function stereoOut(stereoSignal: StereoSignal, key: string = ''): StereoSignal {
+	return {
+		left: attenuate(
+			{
+				level: Audio.masterVolume,
+				key: key + '_master_L'
+			},
+			stereoSignal.left
+		),
+		right: attenuate(
+			{
+				level: Audio.masterVolume,
+				key: key + '_master_R'
+			},
+			stereoSignal.right
+		)
+	};
 }
 
 /**
- * @description demo synth with two detuned saws
+ * @description demo synth with two dualSaws in stereo
  */
 
 interface detunedSaws {
@@ -68,10 +76,21 @@ interface detunedSaws {
 
 export function demoSynth(): StereoSignal {
 	return {
-		left: detunedSaws({ ampMod: el.cycle(1 / 3) }, el.const({ key: 'L1', value: 60 })),
-		right: detunedSaws({ ampMod: el.cycle(0.5) }, el.const({ key: 'R1', value: 90 }))
+		left: detunedSaws(
+			{
+				ampMod: el.cycle(1 / 3)
+			},
+			el.const({ key: 'L1', value: 60 })
+		),
+		right: detunedSaws(
+			{
+				ampMod: el.cycle(0.5)
+			},
+			el.const({ key: 'R1', value: 62 })
+		)
 	};
 }
+
 /**
  * @description Stereo test tone
  */

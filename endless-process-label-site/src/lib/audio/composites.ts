@@ -4,11 +4,12 @@
  */
 
 import { createNode, el, resolve } from '@elemaudio/core';
+import { Utils } from '$lib/classes/Utils';
 import type { StereoSignal, Signal } from 'src/typeDeclarations';
 
 //--- detunedSaws --------------------------------------------------------
 
-function dualSaw({ props, children }): Signal {
+function _dualSaw({ props, children }): Signal {
 	return resolve(
 		el.mul(
 			props.ampMod,
@@ -22,25 +23,17 @@ export function detunedSaws(
 	props: { ampMod: Signal | number },
 	frequency: Signal | number
 ): Signal {
-	return createNode(dualSaw, props, [frequency]);
+	return createNode(_dualSaw, props, [frequency]);
 }
 
-//--- cleanStereoOut --------------------------------------------------------
-
-function leftOut({ props, children }): Signal {
-	return resolve(el.mul(props.level, el.sm(children[0].left)));
+//--- attenuate --------------------------------------------------------
+function _attenuate({ props, children }): Signal {
+	const key = props.key || 'attenuate_' + Utils.generateRandomKey();
+	return resolve(el.mul({ key: key }, props.level, el.sm(children[0].left)));
 }
 
-function rightOut({ props, children }): Signal {
-	return resolve(el.mul(props.level, el.sm(children[0].right)));
+export function attenuate(props: { level: Signal | number; key?: string }, signal: Signal): Signal {
+	return createNode(_attenuate, props, [signal]);
 }
 
-export function cleanStereoOut(
-	props: { level: Signal | number },
-	stereoSignal: StereoSignal
-): StereoSignal {
-	return {
-		left: createNode(leftOut, props, [stereoSignal.left]),
-		right: createNode(rightOut, props, [stereoSignal.right])
-	};
-}
+

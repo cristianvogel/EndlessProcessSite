@@ -20,7 +20,6 @@ class AudioEngine {
 	_elemLoaded: Writable<boolean>;
 	_audioContext: Writable<AudioContext>;
 	_endNodes: Writable<any>;
-	elemStereoOut: Writable<StereoSignal>;
 	_masterVolume: Writable<number | Signal>;
 	DEFAULT_VFS_PATH: string;
 
@@ -33,7 +32,6 @@ class AudioEngine {
 		this._elemLoaded = writable(false);
 		this._audioContext = writable();
 		this._endNodes = writable({ elem: null, cables: null });
-		this.elemStereoOut = writable();
 		this.DEFAULT_VFS_PATH = '/VFS/EndProc/Playlist/';
 	}
 
@@ -43,7 +41,6 @@ class AudioEngine {
 			isRunning: Audio._contextIsRunning,
 			actx: Audio._audioContext,
 			endNodes: Audio._endNodes,
-			stereoOutSignal: Audio.elemStereoOut,
 			masterVolume: Audio._masterVolume
 		};
 	}
@@ -144,6 +141,19 @@ class AudioEngine {
 		// maybe try and load another file?
 	}
 
+	/**
+	 * Main Render function, with options
+	 */
+	render(stereoSignal: StereoSignal, options?: { mono?: boolean }): void {
+		console.log('Core render...');
+		if (!Audio.#core || !stereoSignal) return;
+		const final = stereoOut(stereoSignal);
+		Audio.#core.render(final);
+	}
+
+	/**
+	 * @description: Plays samples from a VFS path, with options
+	 */
 	playFromVFS(props: SamplerOptions) {
 		Audio.render(samplesPlayer(props));
 	}
@@ -153,19 +163,6 @@ class AudioEngine {
 			console.log('AudioContext is ', Audio.status);
 		});
 	}
-
-	/**
-	 * Main Render function
-	 */
-	// todo: add a mono option to render mono signal to both channels
-	// const { mono = false } = options || {};
-	render(stereoSignal: StereoSignal, options?: { mono?: boolean }): void {
-		console.log('Core render...');
-		if (!Audio.#core || !stereoSignal) return;
-		const final = stereoOut(stereoSignal);
-		Audio.#core.render(final);
-	}
-
 	/**
 	 * Mute Elementary's final gain node and but keep the audio context running
 	 * optionally, send a Mute message to Cables patch
@@ -210,6 +207,10 @@ class AudioEngine {
 		});
 	}
 
+	get masterVolume() {
+		return get(Audio._masterVolume);
+	}
+
 	get contextAndStatus() {
 		return derived([Audio._audioContext, Audio._AudioEngineStatus], ([$audioContext, $status]) => {
 			return { context: $audioContext, status: $status };
@@ -249,13 +250,8 @@ class AudioEngine {
 		return Audio.actx.state as AudioEngineStatus;
 	}
 
-	get stereoOut(): StereoSignal {
-		// Elementary's stereo output signals
-		return get(Audio.elemStereoOut);
-	}
-
-	set stereoOut({ left, right }: { left: Signal; right: Signal }) {
-		Audio.elemStereoOut.update(() => ({ left, right }));
+	set masterVolume(normLevel: number) {
+		Audio._masterVolume.update(() => normLevel);
 	}
 
 	set actx(newCtx: AudioContext) {

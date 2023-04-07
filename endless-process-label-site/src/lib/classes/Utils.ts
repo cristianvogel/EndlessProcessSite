@@ -32,6 +32,10 @@ export const Wait = {
 
 
 export const Utils = {
+	generateRandomKey(): string {
+		return Math.random().toString(36);
+	},
+
 	formatDate(date: string): string {
 		const dateObj = new Date(date);
 		const options: any = { year: 'numeric', month: 'long', day: 'numeric' };
