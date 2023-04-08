@@ -10,10 +10,8 @@ import { samplesPlayer, smoothMute, stereoOut } from '$lib/audio/AudioFunctions'
 import { CablesPatch, Playlist, RawAudioBufferStore } from '$lib/stores/stores';
 import WebRenderer from '@elemaudio/web-renderer';
 import type { NodeRepr_t } from '@elemaudio/core';
-import { detunedSaws } from '$lib/audio/composites';
-import { el } from '@elemaudio/core';
 
-// Store as OOPS/TS Singleton design pattern.
+// OOPS/TS Singleton design pattern.
 
 class AudioEngine {
 	#core: WebRenderer | null;
@@ -37,17 +35,11 @@ class AudioEngine {
 		this.DEFAULT_VFS_PATH = '/VFS/EndProc/Playlist/';
 	}
 
-	get stores() {
-		return {
-			audioStatus: Audio._AudioEngineStatus,
-			isRunning: Audio._contextIsRunning,
-			actx: Audio._audioContext,
-			endNodes: Audio._endNodes,
-			masterVolume: Audio._masterVolume
-		};
-	}
-
-	// Initialise the Elementary audio engine
+	/**
+	 * @description Initialise the Elementary audio engine asynchronously
+	 * and store it in the Audio singleton as a static property
+	 * called Audio.elemEndNode
+	 */
 	async init(ctx?: AudioContext): Promise<void> {
 		Audio.#core = new WebRenderer();
 
@@ -56,32 +48,8 @@ class AudioEngine {
 			Audio.actx = ctx;
 			console.log('Passing existing AudioContext', Audio.actx);
 		} else {
-			// Audio.actx = new AudioContext();
 			console.log('No context!');
 		}
-
-		// BaseAudioContext state change callback
-		Audio.actx.addEventListener('statechange', Audio._stateChangeHandler);
-
-		// Elementary load callback
-		Audio.#core.on('load', async () => {
-			console.log('Elementary loaded 🔊?', Audio.elemLoaded);
-		});
-		// Elementary error reporting
-		Audio.#core.on('error', function (e) {
-			console.error(e);
-		});
-		// Elementary FFT callback
-		Audio.#core.on('fft', function (e) {
-			// do something with the FFT data
-			console.count('fft');
-		});
-		// Elementary meter callback
-		Audio.#core.on('meter', function (e) {
-			if (e.source === 'cables') {
-				console.log(e.max);
-			}
-		});
 
 		// Elementary connecting promise
 		Audio.elemEndNode = await Audio.#core
@@ -95,59 +63,111 @@ class AudioEngine {
 				return node;
 			});
 		Audio.routeToCables(Audio.elemEndNode);
-	}
 
+		/* ---- Callbacks ----------------- */
+
+		// BaseAudioContext state change callback
+		Audio.actx.addEventListener('statechange', Audio._stateChangeHandler);
+
+		// Elementary load callback
+		Audio.#core.on('load', async () => {
+			console.log('Elementary loaded 🔊?', Audio.elemLoaded);
+		});
+
+		// Elementary error reporting
+		Audio.#core.on('error', function (e) {
+			console.error(e);
+
+			if (typeof e === 'string' && e.includes('Failed to find resource')) {
+				console.warn('Failed to find VFS resource..trying again');
+				Audio.#core?.updateVirtualFileSystem(get(RawAudioBufferStore).body);
+			}
+		});
+
+		// Elementary FFT callback
+		Audio.#core.on('fft', function (e) {
+			// do something with the FFT data
+			console.count('fft');
+		});
+
+		// Elementary meter callback
+		Audio.#core.on('meter', function (e) {
+			if (e.source === 'cables') {
+				console.log(e.max);
+			}
+		});
+	}
+	/*---- Callback handlers ------------------------------*/
+	_stateChangeHandler = () => {
+		Audio._contextIsRunning.update(() => {
+			return Audio.actx.state === 'running';
+		});
+		Audio._AudioEngineStatus.update(() => {
+			return Audio.baseState;
+		});
+	};
+
+	/*---- Implementated Methods  ------------------------------*/
+	/**
+	 * @description Connect a node to the BaseAudioContext destination
+	 */
 	connectToDestination(node: AudioNode) {
 		node.connect(Audio.actx.destination);
 	}
 
+	/**
+	 *  @description Routing the Elementary graph into the Cables.gl visualiser
+	 */
 	routeToCables(node: AudioNode) {
 		const merge = new ChannelMergerNode(Audio.actx, { numberOfInputs: 1 });
 		Audio.elemEndNode.connect(merge);
-		get(CablesPatch).getVar('CablesAnalyzerNodeInput').setValue(merge);
+		const gain = new GainNode(Audio.actx, { gain: 10 }); // boost the send into Cables visualiser
+		get(CablesPatch).getVar('CablesAnalyzerNodeInput').setValue(merge.connect(gain));
 		Audio.connectToDestination(merge);
-		console.log('Elem routed to CablesAnalyzer');
 	}
 
 	/**
-	 * Elementary Audio WebRenderer uses a virtual file system to reference audio files.
+	 * @description Elementary Audio WebRenderer uses a virtual file system to reference audio files.
 	 * https://www.elementary.audio/docs/packages/web-renderer#virtual-file-system
 	 */
 	async updateVFS(rawAudioBuffer: RawAudioBuffer) {
-		// Update the virtual file system using data loaded from the +page.ts load() and
-		// only when the audio context is ready
-
-		const { body, header } = rawAudioBuffer;
-		let sampleBuffer: AudioBuffer | null = null;
-		let vfsDictionary;
-
-		// we need audio context in order to decode the audio data
-		while (!Audio.actx) {
-			await new Promise((resolve) => setTimeout(resolve, 100));
-		}
-
-		try {
-			sampleBuffer = await Audio.actx.decodeAudioData(body as ArrayBuffer);
-		} catch (error) {
-			console.log(new Error('Raw data was not decoded'), error);
-			sampleBuffer = this.actx?.createBuffer(1, 1, 44100);
-		} finally {
-			const { vfsPath } = header;
-			console.log('Decoded raw data ', sampleBuffer?.getChannelData(0).length, ' to ', vfsPath);
-			vfsDictionary = {
-				[`${vfsPath}`]: sampleBuffer?.getChannelData(0)
+		// Update the virtual file system using data loaded from the +page.ts load() function
+		// and eventually from the Playlist store when that is done
+		let vfsDictionaryEntry;
+		this.decodeRawBuffer(rawAudioBuffer).then(([decoded, vfsPath]) => {
+			vfsDictionaryEntry = {
+				[`${vfsPath}`]: decoded?.getChannelData(0)
 			};
-		}
-		Audio.#core?.updateVirtualFileSystem(vfsDictionary);
-		// need to handle empty file errors here
-		// maybe try and load another file?
+			Audio.#core?.updateVirtualFileSystem(vfsDictionaryEntry);
+		});
 	}
 
 	/**
-	 * Main Render function, with options
+	 * @description Decodes the raw audio buffer into an AudioBuffer, asynchonously with guards
 	 */
-	render(stereoSignal: StereoSignal, options?: { mono?: boolean }): void {
-		console.log('Core render...');
+	async decodeRawBuffer(rawAudioBuffer: RawAudioBuffer): Promise<[AudioBuffer | null, string]> {
+		const { body, header } = rawAudioBuffer;
+		let decoded: AudioBuffer | null = null;
+		// we need audio context in order to decode the audio data
+		while (!Audio.actx || !body) {
+			await new Promise((resolve) => setTimeout(resolve, 100));
+		}
+		try {
+			decoded = await Audio.actx.decodeAudioData(body as ArrayBuffer);
+		} catch (error) {
+			console.log(new Error('Raw data was not decoded'));
+			decoded = Audio.actx?.createBuffer(1, 1, 44100);
+		} finally {
+			const { vfsPath } = header;
+			console.log('Decoded audio with length ', decoded?.getChannelData(0).length, ' to ', vfsPath);
+		}
+		return [decoded, header.vfsPath];
+	}
+
+	/**
+	 * @description Wraps the Elementary core Render function
+	 */
+	render(stereoSignal: StereoSignal): void {
 		if (!Audio.#core || !stereoSignal) return;
 		const final = stereoOut(stereoSignal);
 		Audio.#core.render(final.left, final.right);
@@ -159,15 +179,19 @@ class AudioEngine {
 	playFromVFS(props: SamplerOptions) {
 		Audio.render(samplesPlayer(props));
 	}
-
+	/**
+	 * @description: Tries to resume the base AudioContext
+	 */
 	resumeContext(): void {
+		if (!Audio.actx) return;
 		Audio.actx.resume().then(() => {
-			console.log('AudioContext is ', Audio.status);
+			console.log('AudioContext resume ⚙︎');
 		});
 	}
 	/**
+	 * @description
 	 * Mute Elementary's final gain node and but keep the audio context running
-	 * optionally, send a Mute message to Cables patch
+	 * , send a Mute message to Cables patch
 	 */
 	pauseAudioEngine(pauseCables: boolean = false): void {
 		console.log('pausing audio engine');
@@ -209,6 +233,17 @@ class AudioEngine {
 		});
 	}
 
+	/*---- Getters and Setters --------------------------------*/
+	get stores() {
+		return {
+			audioStatus: Audio._AudioEngineStatus,
+			isRunning: Audio._contextIsRunning,
+			actx: Audio._audioContext,
+			endNodes: Audio._endNodes,
+			masterVolume: Audio._masterVolume
+		};
+	}
+
 	get masterVolume(): number | NodeRepr_t {
 		return get(Audio._masterVolume);
 	}
@@ -230,8 +265,7 @@ class AudioEngine {
 	get elemLoaded() {
 		return get(Audio._elemLoaded);
 	}
-	// todo: differenciate between playing and running, its getting confusing
-	// the Audiocontext RUNS but it might not be PLAYING anything
+
 	get isRunning(): boolean {
 		return get(Audio._contextIsRunning);
 	}
@@ -276,15 +310,6 @@ class AudioEngine {
 			return n;
 		});
 	}
-
-	_stateChangeHandler = () => {
-		Audio._contextIsRunning.update(() => {
-			return Audio.actx.state === 'running';
-		});
-		Audio._AudioEngineStatus.update(() => {
-			return Audio.baseState;
-		});
-	};
 }
 
 export const Audio: AudioEngine = new AudioEngine();

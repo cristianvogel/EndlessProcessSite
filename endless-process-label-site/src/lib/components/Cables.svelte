@@ -23,6 +23,7 @@
 		CablesText.set( [ Utils.rotateString($CablesText[0]), Utils.rotateString($CablesText[1]) ] )
 		spinText($CablesText) 
 	}
+
 	
 
 	const initializeCables = () => {

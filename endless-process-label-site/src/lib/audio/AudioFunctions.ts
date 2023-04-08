@@ -1,11 +1,10 @@
 /**
  * Elementary functional audio programming
  */
-import { get } from 'svelte/store';
 import { Audio } from '$lib/stores/AudioEngine';
 import { el } from '@elemaudio/core';
 import { detunedSaws, attenuate } from '$lib/audio/composites';
-import type { StereoSignal, Signal, SamplerOptions } from 'src/typeDeclarations';
+import type { StereoSignal, SamplerOptions } from 'src/typeDeclarations';
 
 /**
  * @description Samples player
@@ -41,11 +40,6 @@ export function smoothMute(): StereoSignal {
  * @description Stereo output
  */
 
-interface stereoOut {
-	stereoSignal: StereoSignal;
-	key: string;
-}
-
 export function stereoOut(stereoSignal: StereoSignal, key: string = ''): StereoSignal {
 	return {
 		left: attenuate(
@@ -67,12 +61,8 @@ export function stereoOut(stereoSignal: StereoSignal, key: string = ''): StereoS
 
 /**
  * @description demo synth with two dualSaws in stereo
+ * uses detunedSaws interface
  */
-
-interface detunedSaws {
-	props: { ampMod: number };
-	frequency: Signal | number;
-}
 
 export function demoSynth(): StereoSignal {
 	return {

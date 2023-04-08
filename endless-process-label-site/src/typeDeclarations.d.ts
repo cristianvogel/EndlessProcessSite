@@ -14,7 +14,7 @@ type AudioEngineStatus = 'suspended' | 'loading' | 'playing' | 'paused' | 'close
 
 type PlaylistContainer = {
 	VFS_PREFIX: string;
-	currentTrack: { name?: string; url: string; loaded: boolean };
+	currentTrack: { name: string; url: string; loaded: boolean };
 	playlist: Array<string>;
 };
 
@@ -37,7 +37,19 @@ type SamplerOptions = {
 };
 type Signal = NodeRepr_t;
 
-type RawAudioBuffer = {
+export type RawAudioBuffer = {
 	header: { name: string; bytes: number; vfsPath: string };
 	body: ArrayBuffer | null;
 };
+
+//════════╡ AudioEngine :: Interfaces ╞═══════
+
+interface detunedSaws {
+	props: { ampMod: number };
+	frequency: Signal | number;
+}
+
+interface stereoOut {
+	props: {};
+	stereoSignal: StereoSignal;
+}
