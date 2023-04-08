@@ -5,14 +5,17 @@
 	import { Audio } from '$lib/stores/AudioEngine';
 	import { RawAudioBufferStore } from '$lib/stores/stores';
 	
-	
-
 	export let data: PageData;
 
-	if (data.body) {
-		RawAudioBufferStore.set( { header: data.header, body: data.body} );
-		Audio.updateVFS( get(RawAudioBufferStore)  );
-	}
+	data.buffers.forEach( buffer  => {
+		console.log('Page data => ', buffer.header, buffer.body);
+	});
+
+
+	// if (data.body) {
+	// 	RawAudioBufferStore.set( { header: data.header, body: data.body} );
+	// 	Audio.updateVFS( get(RawAudioBufferStore)  );
+	// }
 
 	
 </script>

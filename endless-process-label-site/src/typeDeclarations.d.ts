@@ -39,7 +39,7 @@ type Signal = NodeRepr_t;
 
 export type RawAudioBuffer = {
 	header: { name: string; bytes: number; vfsPath: string };
-	body: ArrayBuffer | null;
+	body: ArrayBuffer | Promise<ArrayBuffer>;
 };
 
 //════════╡ AudioEngine :: Interfaces ╞═══════
