@@ -6,8 +6,10 @@ import type {
 	RawAudioBuffer,
 	SamplerOptions
 } from 'src/typeDeclarations';
+
 import { samplesPlayer, smoothMute, stereoOut } from '$lib/audio/AudioFunctions';
-import { CablesPatch, Playlist, RawAudioBufferStore } from '$lib/stores/stores';
+import { channelExtensionFor } from '$lib/classes/Utils';
+import { CablesPatch, VFS_PATH_PREFIX, Playlist } from '$lib/stores/stores';
 import WebRenderer from '@elemaudio/web-renderer';
 import type { NodeRepr_t } from '@elemaudio/core';
 
@@ -26,7 +28,7 @@ class AudioEngine {
 	constructor() {
 		this.#core = null;
 		this._masterVolume = writable(1); // default master volume
-		this.DEFAULT_VFS_PATH = get(Playlist).VFS_PREFIX;
+		this.DEFAULT_VFS_PATH = get(VFS_PATH_PREFIX);
 		this._AudioEngineStatus = writable('loading');
 		this._contextIsRunning = writable(false);
 		this._elemLoaded = writable(false);
@@ -46,7 +48,7 @@ class AudioEngine {
 		// Choose a context to use
 		if (ctx) {
 			Audio.actx = ctx;
-			console.log('Passing existing AudioContext', Audio.actx);
+			console.log('Passing existing AudioContext');
 		} else {
 			console.log('No context!');
 		}
@@ -77,11 +79,6 @@ class AudioEngine {
 		// Elementary error reporting
 		Audio.#core.on('error', function (e) {
 			console.error(e);
-
-			if (typeof e === 'string' && e.includes('Failed to find resource')) {
-				console.warn('Failed to find VFS resource..trying again');
-				Audio.#core?.updateVirtualFileSystem(get(RawAudioBufferStore).body);
-			}
 		});
 
 		// Elementary FFT callback
@@ -132,12 +129,23 @@ class AudioEngine {
 	 */
 	async updateVFS(rawAudioBuffer: RawAudioBuffer) {
 		// Update the virtual file system using data loaded from the +page.ts load() function
-		// and eventually from the Playlist store when that is done
-		let vfsDictionaryEntry;
+		// todo: better typing for vfsDictionaryEntry
+
+		let vfsDictionaryEntry: any;
+
 		this.decodeRawBuffer(rawAudioBuffer).then(([decoded, vfsPath]) => {
-			vfsDictionaryEntry = {
-				[`${vfsPath}`]: decoded?.getChannelData(0)
-			};
+			if (!decoded) {
+				console.warn('decoding audio buffer failed.');
+				return;
+			}
+			// adds a channel extension to the path for each channel, the extension starts at 1 (not 0)
+			for (let i = 0; i < decoded.numberOfChannels; i++) {
+				vfsDictionaryEntry = {
+					...vfsDictionaryEntry,
+					[`${vfsPath}${channelExtensionFor(i + 1)}`]: decoded.getChannelData(i)
+				};
+			}
+			console.info('VFS entry: ', vfsDictionaryEntry);
 			Audio.#core?.updateVirtualFileSystem(vfsDictionaryEntry);
 		});
 	}
@@ -146,6 +154,8 @@ class AudioEngine {
 	 * @description Decodes the raw audio buffer into an AudioBuffer, asynchonously with guards
 	 */
 	async decodeRawBuffer(rawAudioBuffer: RawAudioBuffer): Promise<[AudioBuffer | null, string]> {
+		const stopwatch = Date.now();
+		while (!rawAudioBuffer) await new Promise((resolve) => setTimeout(resolve, 100));
 		const { body, header } = rawAudioBuffer;
 		let decoded: AudioBuffer | null = null;
 		// we need audio context in order to decode the audio data
@@ -159,8 +169,17 @@ class AudioEngine {
 			decoded = Audio.actx?.createBuffer(1, 1, 44100);
 		} finally {
 			const { vfsPath } = header;
-			console.log('Decoded audio with length ', decoded?.getChannelData(0).length, ' to ', vfsPath);
+			console.log(
+				'Decoded audio with length ',
+				decoded?.getChannelData(0).length,
+				' to ',
+				vfsPath,
+				' in ',
+				Date.now() - stopwatch,
+				'ms'
+			);
 		}
+
 		return [decoded, header.vfsPath];
 	}
 
@@ -169,6 +188,7 @@ class AudioEngine {
 	 */
 	render(stereoSignal: StereoSignal): void {
 		if (!Audio.#core || !stereoSignal) return;
+		Audio.status = 'playing';
 		const final = stereoOut(stereoSignal);
 		Audio.#core.render(final.left, final.right);
 	}
@@ -193,31 +213,37 @@ class AudioEngine {
 	 * Mute Elementary's final gain node and but keep the audio context running
 	 * , send a Mute message to Cables patch
 	 */
-	pauseAudioEngine(pauseCables: boolean = false): void {
-		console.log('pausing audio engine');
+	mute(pauseCables: boolean = false): void {
+		let currentTrackname;
+		const unsubscribe = Playlist.subscribe((container) => {
+			currentTrackname = container.currentTrack.name;
+		});
 		Audio.render(smoothMute());
-		if (pauseCables) Audio.pauseCables('pause');
 		Audio.status = 'paused';
+		if (pauseCables) Audio.pauseCables('pause');
+		unsubscribe();
 	}
+	// todo: pause or resume Cables patch
+	pauseCables(state: 'pause' | 'resume'): void {}
 
 	/**
 	 * Unmute aka 'Play'
 	 */
 	unmute(): void {
-		console.log('un-muting audio engine');
+		let currentTrackname;
+		const unsubscribe = Playlist.subscribe((container) => {
+			currentTrackname = container.currentTrack.name;
+		});
 		// try to resume the context if it's suspended
 		if (Audio.status === 'suspended' || 'closed') {
 			Audio.resumeContext();
 		}
-		Audio.status = 'playing';
-		const { header } = get(RawAudioBufferStore);
-		Audio.playFromVFS({ vfsPath: header.vfsPath });
-
-		// Audio.runFFT();
-	}
-
-	pauseCables(state: 'pause' | 'resume'): void {
-		// todo: pause or resume Cables patch
+		// play the current track
+		Audio.playFromVFS({
+			vfsPath: `${get(VFS_PATH_PREFIX)}${currentTrackname}`,
+			trigger: 1
+		});
+		unsubscribe();
 	}
 
 	suspend(): void {
@@ -259,7 +285,7 @@ class AudioEngine {
 	}
 
 	get status() {
-		return get(Audio.contextAndStatus).status;
+		return get(Audio._AudioEngineStatus);
 	}
 
 	get elemLoaded() {
