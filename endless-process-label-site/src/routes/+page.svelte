@@ -1,22 +1,34 @@
 <script lang='ts'>
 	// Landing page route
 	import type { PageData } from './$types';
-	import { get } from 'svelte/store';
 	import { Audio } from '$lib/stores/AudioEngine';
-	import { RawAudioBufferStore } from '$lib/stores/stores';
-	
+	import { Playlist } from '$lib/stores/stores';
+
 	export let data: PageData;
 
-	data.buffers.forEach( buffer  => {
-		console.log('Page data => ', buffer.header, buffer.body);
-	});
+	// parallel array of promises refined with the help of ChatGPT3
+	// https://chat.openai.com/chat/8bb60bdf-3a51-49d6-bc42-c097c015982b
+
+let parallel: Array<any> = [];
+
+Promise.all(data.buffers).then(buffers => {
+  for (let i = 0; i < buffers.length; i++) {
+    const track = buffers[i];
+    parallel.push(async () => {
+      const buffer = await track.body;
+      return Audio.updateVFS({
+        header: track.header,
+        body: buffer
+      });
+    });
+  }
+
+  Promise.all(parallel.map(func => func())).then(tracks => {
+    console.log('All ',tracks.length,' audio tracks decoded 🤖 ');
+    // set the current track to the first track loaded from the playlist
+    $Playlist.currentTrack.name = buffers[0].header.name;
+  });
+});
 
 
-	// if (data.body) {
-	// 	RawAudioBufferStore.set( { header: data.header, body: data.body} );
-	// 	Audio.updateVFS( get(RawAudioBufferStore)  );
-	// }
-
-	
 </script>
-

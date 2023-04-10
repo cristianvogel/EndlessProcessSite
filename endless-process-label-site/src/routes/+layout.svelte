@@ -16,8 +16,7 @@
 	/**
 	 * @description ----------------------------------------------
 	 * a special interactive effect for the Cables canvas
-	 * triggers a spin animation when the user scrolls
-	 * via store subscription
+	 * triggers a spin animation via store subscription on page scrolling
 	*/
 	function cablesScroller() {
 		spin = true;

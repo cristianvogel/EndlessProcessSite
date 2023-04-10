@@ -1,68 +1,61 @@
 /**
- * Prototype of an audio loader
- * Will get fetch target URL from the Playlist
+ * Audio file ingestor
+ * Will get fetch target URL from the Playlist store
+ * todo: load all files from a folder.. maybe via a folder iterator that sets the playlist store property?
  */
 
 import { get } from 'svelte/store';
-import { Playlist } from '$lib/stores/stores';
-import type { RawAudioBuffer } from 'src/typeDeclarations.js';
+import { Playlist, VFS_PATH_PREFIX } from '$lib/stores/stores';
+import type { PlaylistContainer, RawAudioBuffer } from 'src/typeDeclarations.js';
+import { error } from '@sveltejs/kit';
 
-const sourceURL_prefix = '/src/lib/audio/';
-const { playlist } = get(Playlist);
+const sourceURL_prefix = get(VFS_PATH_PREFIX);
+let playlist: Array<string> = [];
+
+const unsubscribe = Playlist.subscribe((container: PlaylistContainer) => {
+	playlist = container.playlist;
+});
 
 const target = (entry: string, i: number): string => `${sourceURL_prefix}${entry}`;
 
 export async function load({ fetch }) {
-	console.log('Playlist is ', playlist);
-
 	let responses: Array<any> = [];
-	let rawAudioBuffers: Array<RawAudioBuffer> = [];
+	let rawAudioBuffers: Array<Promise<any>> = [];
 
 	for (let i = 0; i < playlist.length; i++) {
 		const entry = playlist[i];
 		const loadFrom: string = target(entry, i);
-		console.log('Loading ', loadFrom);
+		console.log('Fetching ', loadFrom);
+		const stopwatch = Date.now();
 		responses.push(await fetch(loadFrom));
-
-		console.log('responses ', responses.length);
+		console.log(' in ', Date.now() - stopwatch, 'ms');
 	}
 
 	for (let i = 0; i < responses.length; i++) {
 		const response = responses[i];
-		let samplesBuffer = await response.arrayBuffer();
-		if (response.ok && samplesBuffer.byteLength > 1) {
-			console.log('sampleBuffer fetch ok');
-			rawAudioBuffers.push({
+
+		const rawArrayBuffer = async () => {
+			return await response.arrayBuffer();
+		};
+
+		if (response.ok) {
+			const structuredAudioBuffer: RawAudioBuffer = {
 				header: {
 					name: playlist[i],
-					bytes: samplesBuffer.byteLength,
+					bytes: 0,
 					vfsPath: sourceURL_prefix + playlist[i]
 				},
-				body: samplesBuffer
-			});
+				body: rawArrayBuffer()
+			};
+			const wrap = async () => {
+				return structuredAudioBuffer;
+			};
+			rawAudioBuffers.push(wrap());
+		} else {
+			console.log('ArrayBuffer fetch failed 😿');
+			throw error(404);
 		}
 	}
-
-	console.log('rawAudioBuffers ', rawAudioBuffers);
+	unsubscribe();
 	return { buffers: rawAudioBuffers };
 }
-
-
-// export async function load({ fetch }) {
-// 	const response: Response = await fetch(target);
-// 	let sampleBuffer: ArrayBuffer = await response.arrayBuffer();
-
-// 		console.log('sampleBuffer fetch ok');
-// 		const result: RawAudioBuffer = {
-// 			header: {
-// 				name: playlist[0],
-// 				bytes: sampleBuffer.byteLength,
-// 				vfsPath: target
-// 			},
-// 			body: sampleBuffer
-// 		};
-// 		return result;
-
-// 	//todo: handle error with SvelteKit error page
-// 	if (!response || !sampleBuffer || sampleBuffer.byteLength < 1) throw error(404);
-// }

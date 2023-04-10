@@ -2,7 +2,7 @@
 	import { Audio } from '$lib/stores/AudioEngine';
 	import { Icon } from '@steeze-ui/svelte-icon';
 	import {PauseOutline, PlayOutline, QueryQueue } from '@steeze-ui/carbon-icons';
-	import { Playlist } from '$lib/stores/stores';
+	import { Playlist, VFS_PATH_PREFIX } from '$lib/stores/stores';
 	import PlaylistView from './PlaylistView.svelte';
 	const { audioStatus } = Audio.stores
 	
@@ -12,14 +12,17 @@
 
 	$: tracklisting = $Playlist.playlist;
 	$: isPlaying = $audioStatus === 'playing';
-
+	$: currentTrack = $Playlist.currentTrack;	
 
 	function HandlePlaylistChoice(e:any) {
 		showPlaylist = false;
-		Playlist.update((playlist) => {
-			playlist.currentTrack = e.currentTarget.name;
-			return playlist;
-		});
+		currentTrack.name = e.currentTarget.name
+		Audio.mute();
+		Audio.playFromVFS( { 
+			vfsPath: `${$VFS_PATH_PREFIX}${currentTrack.name}`,
+			trigger: isPlaying ? 0 : 1
+		}
+		)
 	}
 
 </script>

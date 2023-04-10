@@ -13,7 +13,6 @@ interface SinglePost {
 type AudioEngineStatus = 'suspended' | 'loading' | 'playing' | 'paused' | 'closed ' | 'running';
 
 type PlaylistContainer = {
-	VFS_PREFIX: string;
 	currentTrack: { name: string; url: string; loaded: boolean };
 	playlist: Array<string>;
 };

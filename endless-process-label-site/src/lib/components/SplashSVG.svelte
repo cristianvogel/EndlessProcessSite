@@ -1,6 +1,6 @@
 <!-- 3D EndProc Logo designed by Ramón -->
-<svg class="hover:stroke-secondary-700 w-full" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
-	 viewBox="0 0 180.4 136.2"  xml:space="preserve">
+<svg class="w-2/3 mx-auto hover:stroke-secondary-700 " version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 180 136"  xml:space="preserve">
 <style type="text/css">
 	.st0{clip-path:url(#SVGID_2_);}
 	.st1{fill:#202020;}

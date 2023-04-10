@@ -7,7 +7,6 @@
 	import { CaretSortDown  } from '@steeze-ui/carbon-icons';
   import { singlePost } from '$lib/stores/stores';
   import { Utils } from '$lib/classes/Utils';
-  import TestAudioComponent from '$lib/components/TestAudioComponent.svelte';
   const defaultFeaturedImage = '/Default_Avatar.svg';
   export let data: any;
    

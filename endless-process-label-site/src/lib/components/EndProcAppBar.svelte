@@ -8,10 +8,9 @@ import { AppBar } from "@skeletonlabs/skeleton";
     import { Audio } from '$lib/stores/AudioEngine';
 
     const { audioStatus } = Audio.stores;
-    const { resumeContext, pauseAudioEngine, unmute } = Audio;
+    const { resumeContext, mute, unmute } = Audio;
 
     $: isPlaying = $audioStatus === 'playing';
-	$: spin = false;
 	$: showPlaylist = false;
 
     /**
@@ -20,10 +19,10 @@ import { AppBar } from "@skeletonlabs/skeleton";
 	*/
 	function handleAudioControls(e: any) {
 		// check if the click was on the playlist button
-        
-			if (e.currentTarget.id === 'playlist') {   
+			if (e.currentTarget.id !== 'playlist') {   
+				showPlaylist = false;
+			} else { 
 				showPlaylist = !showPlaylist;
-				return;
 			}
 			if (e.currentTarget.id === 'transport') {
 				playPauseLogic();
@@ -35,11 +34,11 @@ import { AppBar } from "@skeletonlabs/skeleton";
 	 * what happens when the user presses the Play/Pause button
 	*/
 	function playPauseLogic() {
-		if ($audioStatus === 'suspended') {
+		if ($audioStatus === 'suspended' || 'closed' || 'loading') {
 			resumeContext();
 		}
 		if (isPlaying) {
-			pauseAudioEngine();
+			mute();
 		} else {
 			unmute();
 		}

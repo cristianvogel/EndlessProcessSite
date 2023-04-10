@@ -30,6 +30,9 @@ export const Wait = {
 	}
 };
 
+export function channelExtensionFor  (channel: number)  {
+			return `.channel.${channel.toString()}`;
+		};
 
 export const Utils = {
 	generateRandomKey(): string {

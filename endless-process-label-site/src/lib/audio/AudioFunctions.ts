@@ -3,6 +3,7 @@
  */
 import { Audio } from '$lib/stores/AudioEngine';
 import { el } from '@elemaudio/core';
+import { channelExtensionFor } from '$lib/classes/Utils';
 import { detunedSaws, attenuate } from '$lib/audio/composites';
 import type { StereoSignal, SamplerOptions } from 'src/typeDeclarations';
 
@@ -11,19 +12,29 @@ import type { StereoSignal, SamplerOptions } from 'src/typeDeclarations';
  */
 
 export function samplesPlayer(props: SamplerOptions): StereoSignal {
-	let { vfsPath, trigger = 1, rate = 1 } = props;
+	let { vfsPath, trigger = 0, rate = 1 } = props;
 
-	const monoSample = el.sample(
+	const left = el.sample(
 		{
+			key: vfsPath + channelExtensionFor(0) || 'samplesPlayer',
 			channel: 0,
-
-			path: vfsPath
+			path: vfsPath + channelExtensionFor(1)
 		},
 		trigger,
 		rate
 	);
 
-	return { left: monoSample, right: monoSample };
+	const right = el.sample(
+		{
+			key: vfsPath + channelExtensionFor(1) || 'samplesPlayer',
+			channel: 0,
+			path: vfsPath + channelExtensionFor(1)
+		},
+		trigger,
+		rate
+	);
+	// todo: engineer linked stereo buffer playback
+	return { left: left, right: right };
 }
 
 /**
