@@ -25,6 +25,11 @@
 		}, 100);
 	}
 
+	function spinFX() {
+			// todo: more exagerrated spin effect
+			// sent into Cables page
+	}
+
 </script>
 
 <!-- todo: fallback styling in case of no Canvas... 
@@ -35,7 +40,7 @@
 	
 	<!--  Appbar in Skeleton header slot -->
 	<svelte:fragment slot="header">
-		<EndProcAppBar/>
+		<EndProcAppBar on:playlistChanged={spinFX}/>
 	</svelte:fragment>
 
 	<!-- Cables canvas in Skeleton header slot -->
@@ -43,11 +48,8 @@
 		<CanvasBody spin = {spin} />
 	</svelte:fragment>
 
-	<!-- Route content in Skeleton main slot -->
-	<svelte:fragment slot="pageFooter">
-		<SplashPage />
-		<slot />
-	</svelte:fragment>
+	<SplashPage />
+	<slot />
 
 	<!-- Page footer in Skeleton footer slot -->
 	<svelte:fragment slot="footer">

@@ -14,7 +14,7 @@
 			<ProgressRadial 
 			value={ undefined }
 			font= {12}
-			width='w-50' 
+			width='w-10' 
 			stroke={5} 
 			meter="stroke-secondary-500" 
 			track="stroke-secondary-300/30" />

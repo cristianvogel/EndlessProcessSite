@@ -12,40 +12,32 @@ import type { StereoSignal, SamplerOptions } from 'src/typeDeclarations';
  */
 
 export function samplesPlayer(props: SamplerOptions): StereoSignal {
-	let { vfsPath, trigger = 0, rate = 1 } = props;
-
+	let { vfsPath = Audio.currentVFSPath, trigger = 0, rate = 1 } = props;
+	let keyPath = vfsPath + channelExtensionFor(1);
 	const left = el.sample(
 		{
-			key: vfsPath + channelExtensionFor(0) || 'samplesPlayer',
-			channel: 0,
-			path: vfsPath + channelExtensionFor(1)
+			key: keyPath,
+			path: keyPath,
+			mode: 'gate'
 		},
 		trigger,
 		rate
 	);
 
+	keyPath = vfsPath + channelExtensionFor(2);
 	const right = el.sample(
 		{
-			key: vfsPath + channelExtensionFor(1) || 'samplesPlayer',
-			channel: 0,
-			path: vfsPath + channelExtensionFor(1)
+			key: keyPath,
+			path: keyPath,
+			mode: 'gate'
 		},
 		trigger,
 		rate
 	);
-	// todo: engineer linked stereo buffer playback
 	return { left: left, right: right };
 }
 
-/**
- * @description Smooth mute
- */
-export function smoothMute(): StereoSignal {
-	return {
-		left: el.sm(0),
-		right: el.sm(0)
-	};
-}
+
 
 /**
  * @description Stereo output

@@ -7,9 +7,9 @@ import type {
 	SamplerOptions
 } from 'src/typeDeclarations';
 
-import { samplesPlayer, smoothMute, stereoOut } from '$lib/audio/AudioFunctions';
+import { samplesPlayer, stereoOut } from '$lib/audio/AudioFunctions';
 import { channelExtensionFor } from '$lib/classes/Utils';
-import { CablesPatch, VFS_PATH_PREFIX, Playlist } from '$lib/stores/stores';
+import { CablesPatch, VFS_PATH_PREFIX, Playlist, Decoding } from '$lib/stores/stores';
 import WebRenderer from '@elemaudio/web-renderer';
 import type { NodeRepr_t } from '@elemaudio/core';
 
@@ -17,24 +17,48 @@ import type { NodeRepr_t } from '@elemaudio/core';
 
 class AudioEngine {
 	#core: WebRenderer | null;
-	_AudioEngineStatus: Writable<AudioEngineStatus>;
-	_contextIsRunning: Writable<boolean>;
-	_elemLoaded: Writable<boolean>;
-	_audioContext: Writable<AudioContext>;
-	_endNodes: Writable<any>;
-	_masterVolume: Writable<number | Signal>;
-	DEFAULT_VFS_PATH: string;
+	static #instance: AudioEngine | null;
+	private _AudioEngineStatus: Writable<AudioEngineStatus>;
+	private _contextIsRunning: Writable<boolean>;
+	private _elemLoaded: Writable<boolean>;
+	private _audioContext: Writable<AudioContext>;
+	private _endNodes: Writable<any>;
+	private _masterVolume: Writable<number | Signal>;
+	private _currentTrackName: string;
+	private _currentVFSPath: string;
 
-	constructor() {
+	static getInstance() {
+		if (!AudioEngine.#instance) {
+			AudioEngine.#instance = new AudioEngine();
+		}
+		return AudioEngine.#instance;
+	}
+
+	private constructor() {
+		if (!AudioEngine.#instance) {
+			AudioEngine.#instance = this;
+		}
+
 		this.#core = null;
 		this._masterVolume = writable(1); // default master volume
-		this.DEFAULT_VFS_PATH = get(VFS_PATH_PREFIX);
 		this._AudioEngineStatus = writable('loading');
 		this._contextIsRunning = writable(false);
 		this._elemLoaded = writable(false);
 		this._audioContext = writable();
 		this._endNodes = writable({ elem: null, cables: null });
-		this.DEFAULT_VFS_PATH = '/VFS/EndProc/Playlist/';
+		this._currentVFSPath = '';
+		this._currentTrackName = '';
+	}
+
+	subscribeToStores() {
+		Playlist.subscribe(($Playlist) => (Audio._currentTrackName = $Playlist.currentTrack.name));
+		Playlist.subscribe(
+			($Playlist) => (Audio._currentVFSPath = get(VFS_PATH_PREFIX) + $Playlist.currentTrack.name)
+		);
+	}
+
+	cleanup() {
+		Audio.suspend();
 	}
 
 	/**
@@ -43,6 +67,7 @@ class AudioEngine {
 	 * called Audio.elemEndNode
 	 */
 	async init(ctx?: AudioContext): Promise<void> {
+		Audio.subscribeToStores();
 		Audio.#core = new WebRenderer();
 
 		// Choose a context to use
@@ -51,6 +76,7 @@ class AudioEngine {
 			console.log('Passing existing AudioContext');
 		} else {
 			console.log('No context!');
+			Audio.cleanup();
 		}
 
 		// Elementary connecting promise
@@ -69,16 +95,18 @@ class AudioEngine {
 		/* ---- Callbacks ----------------- */
 
 		// BaseAudioContext state change callback
-		Audio.actx.addEventListener('statechange', Audio._stateChangeHandler);
+		Audio.actx.addEventListener('statechange', Audio.stateChangeHandler);
 
 		// Elementary load callback
 		Audio.#core.on('load', async () => {
 			console.log('Elementary loaded 🔊?', Audio.elemLoaded);
+			Audio.currentVFSPath += `${Audio._currentTrackName}`;
 		});
 
 		// Elementary error reporting
 		Audio.#core.on('error', function (e) {
-			console.error(e);
+			console.error('🔇 ', e);
+			Audio.cleanup();
 		});
 
 		// Elementary FFT callback
@@ -95,7 +123,7 @@ class AudioEngine {
 		});
 	}
 	/*---- Callback handlers ------------------------------*/
-	_stateChangeHandler = () => {
+	private stateChangeHandler = () => {
 		Audio._contextIsRunning.update(() => {
 			return Audio.actx.state === 'running';
 		});
@@ -104,7 +132,7 @@ class AudioEngine {
 		});
 	};
 
-	/*---- Implementated Methods  ------------------------------*/
+	/*---- Implementations  ------------------------------*/
 	/**
 	 * @description Connect a node to the BaseAudioContext destination
 	 */
@@ -126,16 +154,15 @@ class AudioEngine {
 	/**
 	 * @description Elementary Audio WebRenderer uses a virtual file system to reference audio files.
 	 * https://www.elementary.audio/docs/packages/web-renderer#virtual-file-system
+	 * Update the virtual file system using data loaded from the +page.ts load() function
+		todo: better typing for vfsDictionaryEntry
 	 */
 	async updateVFS(rawAudioBuffer: RawAudioBuffer) {
-		// Update the virtual file system using data loaded from the +page.ts load() function
-		// todo: better typing for vfsDictionaryEntry
-
 		let vfsDictionaryEntry: any;
 
 		this.decodeRawBuffer(rawAudioBuffer).then(([decoded, vfsPath]) => {
 			if (!decoded) {
-				console.warn('decoding audio buffer failed.');
+				console.warn('Decoding skipped.');
 				return;
 			}
 			// adds a channel extension to the path for each channel, the extension starts at 1 (not 0)
@@ -165,7 +192,7 @@ class AudioEngine {
 		try {
 			decoded = await Audio.actx.decodeAudioData(body as ArrayBuffer);
 		} catch (error) {
-			console.log(new Error('Raw data was not decoded'));
+			console.log(new Error('Decoding skipped. Dummy buffer created.'));
 			decoded = Audio.actx?.createBuffer(1, 1, 44100);
 		} finally {
 			const { vfsPath } = header;
@@ -178,8 +205,11 @@ class AudioEngine {
 				Date.now() - stopwatch,
 				'ms'
 			);
+			Decoding.update((d) => {
+				d.done = true;
+				return d;
+			});
 		}
-
 		return [decoded, header.vfsPath];
 	}
 
@@ -199,6 +229,7 @@ class AudioEngine {
 	playFromVFS(props: SamplerOptions) {
 		Audio.render(samplesPlayer(props));
 	}
+
 	/**
 	 * @description: Tries to resume the base AudioContext
 	 */
@@ -208,43 +239,39 @@ class AudioEngine {
 			console.log('AudioContext resume ⚙︎');
 		});
 	}
+
+	/**
+	 * Unmute aka 'Play'
+	 */
+	unmute(): void {
+		// try to resume the context if it's suspended
+		if (Audio.status === 'suspended' || 'closed') {
+			Audio.resumeContext();
+		}
+		// gate the current track
+		Audio.playFromVFS({
+			vfsPath: Audio.currentVFSPath,
+			trigger: 1
+		});
+	}
+
 	/**
 	 * @description
 	 * Mute Elementary's final gain node and but keep the audio context running
 	 * , send a Mute message to Cables patch
 	 */
 	mute(pauseCables: boolean = false): void {
-		let currentTrackname;
-		const unsubscribe = Playlist.subscribe((container) => {
-			currentTrackname = container.currentTrack.name;
+		// release gate on the current track
+		Audio.playFromVFS({
+			vfsPath: Audio.currentVFSPath,
+			trigger: 0
 		});
-		Audio.render(smoothMute());
 		Audio.status = 'paused';
 		if (pauseCables) Audio.pauseCables('pause');
-		unsubscribe();
 	}
+
 	// todo: pause or resume Cables patch
 	pauseCables(state: 'pause' | 'resume'): void {}
-
-	/**
-	 * Unmute aka 'Play'
-	 */
-	unmute(): void {
-		let currentTrackname;
-		const unsubscribe = Playlist.subscribe((container) => {
-			currentTrackname = container.currentTrack.name;
-		});
-		// try to resume the context if it's suspended
-		if (Audio.status === 'suspended' || 'closed') {
-			Audio.resumeContext();
-		}
-		// play the current track
-		Audio.playFromVFS({
-			vfsPath: `${get(VFS_PATH_PREFIX)}${currentTrackname}`,
-			trigger: 1
-		});
-		unsubscribe();
-	}
 
 	suspend(): void {
 		Audio.actx.suspend().then(() => {
@@ -254,13 +281,14 @@ class AudioEngine {
 
 	suspendAfterMs(ms: number = 100): void {
 		new Promise((res) => setTimeout(res, ms)).then(() => {
-			smoothMute();
 			Audio.suspend();
 		});
 	}
 
-	/*---- Getters and Setters --------------------------------*/
+	/*---- getters  --------------------------------*/
 	get stores() {
+		// todo: refactor these to Tan-Li Hau's subsciber pattern
+		// https://www.youtube.com/watch?v=oiWgqk8zG18
 		return {
 			audioStatus: Audio._AudioEngineStatus,
 			isRunning: Audio._contextIsRunning,
@@ -268,6 +296,17 @@ class AudioEngine {
 			endNodes: Audio._endNodes,
 			masterVolume: Audio._masterVolume
 		};
+	}
+
+	get currentVFSPath(): string {
+		return Audio._currentVFSPath;
+	}
+
+	get audioBuffersReady(): boolean {
+		return typeof Audio._currentTrackName === 'string';
+	}
+	get currentTrackName(): string {
+		return Audio._currentTrackName;
 	}
 
 	get masterVolume(): number | NodeRepr_t {
@@ -311,6 +350,21 @@ class AudioEngine {
 	get baseState(): AudioEngineStatus {
 		return Audio.actx.state as AudioEngineStatus;
 	}
+	/*---- setters --------------------------------*/
+
+	set currentVFSPath(path: string) {
+		Playlist.update(($plist) => {
+			$plist.currentTrack.path = path;
+			return $plist;
+		});
+	}
+
+	set currentTrackName(name: string) {
+		Playlist.update(($plist) => {
+			$plist.currentTrack.name = name;
+			return $plist;
+		});
+	}
 
 	set masterVolume(normLevel: number | NodeRepr_t) {
 		Audio._masterVolume.update(() => normLevel);
@@ -338,5 +392,5 @@ class AudioEngine {
 	}
 }
 
-export const Audio: AudioEngine = new AudioEngine();
+export const Audio: AudioEngine = AudioEngine.getInstance();
 

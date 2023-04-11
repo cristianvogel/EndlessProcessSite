@@ -5,7 +5,6 @@
 			CablesText,
 			CablesIsLoaded,
 			CablesAudioContext,
-			Playlist
 		} from '$lib/stores/stores';
 	import { Audio } from '$lib/stores/AudioEngine';
 	import { onMount } from 'svelte';
@@ -15,16 +14,14 @@
 	export let bg: boolean = false;
 	export let spin: boolean = false;
 
-	const { endNodes } = Audio.stores
 		
 	let pathPatch: string = `src/lib/cables/${patch}/patch.js`;	
-	$: loadedTrack =  $Playlist.currentTrack.name;
+
 	$: if (spin) { 
 		CablesText.set( [ Utils.rotateString($CablesText[0]), Utils.rotateString($CablesText[1]) ] )
 		spinText($CablesText) 
 	}
 
-	
 
 	const initializeCables = () => {
 		CablesPatch.set ( new CABLES.Patch({
@@ -57,9 +54,8 @@
 	function patchFinishedLoading() {
 		$CablesIsLoaded = true;
 		$CablesAudioContext = CABLES.WEBAUDIO.getAudioContext()
-		spinText(["Endless", "Process"]);
-		Audio.init($CablesAudioContext);
-		console.log('Initialising AudioEngine with CablesAudioContex', $CablesAudioContext.sampleRate,' Status: ', Audio.status);		
+		spinText();
+		Audio.init($CablesAudioContext);		
 	}
 
 	function spinText(  prompts:string[] = ["End","Proc"]  ) {

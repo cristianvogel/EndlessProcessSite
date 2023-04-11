@@ -13,7 +13,7 @@ interface SinglePost {
 type AudioEngineStatus = 'suspended' | 'loading' | 'playing' | 'paused' | 'closed ' | 'running';
 
 type PlaylistContainer = {
-	currentTrack: { name: string; url: string; loaded: boolean };
+	currentTrack: { name: string; path: string; loaded: boolean };
 	playlist: Array<string>;
 };
 
@@ -27,7 +27,7 @@ type RawFFT = { real: Float32Array; imag: Float32Array };
 type StereoSignal = { left: NodeRepr_t; right: NodeRepr_t };
 
 type SamplerOptions = {
-	vfsPath: string;
+	vfsPath?: string;
 	trigger?: Signal | number;
 	rate?: Signal | number;
 	loop?: boolean;

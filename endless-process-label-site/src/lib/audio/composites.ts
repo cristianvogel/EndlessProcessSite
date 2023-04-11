@@ -29,8 +29,8 @@ export function detunedSaws(
 //--- attenuate --------------------------------------------------------
 
 function _attenuate({ props, children }): Signal {
-	const key = props.key || 'attenuate_' + Utils.generateRandomKey();
-	return resolve(el.mul({ key: key }, props.level, children[0]));
+	const key = props.key || 'attenuate';
+	return resolve(el.mul({ key: key }, el.sm(props.level), children[0]));
 }
 
 export function attenuate(

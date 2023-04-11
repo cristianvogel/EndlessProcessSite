@@ -1,4 +1,4 @@
-// CAV: This file is used to define the stores used in the app
+// This file defines the stores used in the app
 
 import { writable, type Readable, type Writable, readable } from 'svelte/store';
 import type { SinglePost, RawFFT, PlaylistContainer, RawAudioBuffer } from 'src/typeDeclarations';
@@ -28,20 +28,28 @@ export const CablesText: Writable<Array<string>> = writable(['Endless', 'Process
 //---- Audio engine related -------------------
 
 /**
- * @Important  path prefix is used for loading audio files and updating the Virtual Files System reference
+ * @Important decoding audio parallel buffers takes time. This store is used to signal when the decoding is done.
  */
-export const VFS_PATH_PREFIX: Readable<string> = readable('/src/lib/audio/');
+export const Decoding: Writable<{ done: boolean; progress?: number }> = writable({
+	done: false,
+	progress: 0
+});
 
-export const EndNodes: Writable<any> = writable({ elem: null, cables: null });
+/**
+ * @Important  path prefix used to locate audio file source _and_ as key for the Virtual File System (VFS)
+ */
+export const VFS_PATH_PREFIX: Readable<string> = readable('/src/lib/audio/mp3/');
 
 /**
  * Playlist... work in progress
- * todo: implement currentTrack.url and loaded setters
  * todo: dynamic load of file names from a folder. Currently kludged at Writable initialization
- * todo: more descriptive names / metadata
+ * todo: description fields and non-filename titles. Something like a semantic metadata layer for each track?
  */
 export const Playlist: Writable<PlaylistContainer> = writable({
 	playlist: ['YohldteTvuezyz_AndersSkibsted.mp3', 'Sflogs_AndersSkibsted.mp3'],
-	currentTrack: { name: '', url: '', loaded: false }
+	currentTrack: { name: '', path: '', loaded: false }
 });
 
+//---------- deprecating -----------------------
+// probably not needed anymore, as sound output is all handled by the AudioEngine now
+export const EndNodes: Writable<any> = writable({ elem: null, cables: null });

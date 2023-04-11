@@ -1,7 +1,30 @@
+<script lang="ts">
+import { Audio } from '$lib/stores/AudioEngine';
+
+const { audioStatus } = Audio.stores
+
+$: isPlaying = $audioStatus === 'playing';
+
+const svgClass: Array<string> = [
+	'w-2/3 mx-auto hover:stroke-secondary-700',
+	"w-2/3 mx-auto hover:stroke-secondary-500 stroke-secondary-800"
+]; 
+
+
+
+</script>
+
 <!-- 3D EndProc Logo designed by Ramón -->
-<svg class="w-2/3 mx-auto hover:stroke-secondary-700 " version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+<svg class={svgClass[ isPlaying ? 1: 0]} version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
 	 viewBox="0 0 180 136"  xml:space="preserve">
-<style type="text/css">
+	
+	<filter id="hues">
+    <feColorMatrix in="SourceGraphic" type="luminanceToAlpha" />
+	</filter>
+	
+	 
+
+<style type="text/css" >
 	.st0{clip-path:url(#SVGID_2_);}
 	.st1{fill:#202020;}
 	.st2{clip-path:url(#SVGID_4_);}
@@ -74,7 +97,9 @@
 	.st69{fill:#140000;}
 	.st70{fill:#FF5E00;}
 </style>
-<g>
+
+<g filter = "url(#hues)" >
+
 	<g>
 		<g>
 			<defs>
@@ -83,7 +108,7 @@
 					C177.6,113,177.3,113.3,177,113.6z"/>
 			</defs>
 			<clipPath id="SVGID_2_">
-				<use xlink:href="#SVGID_1_"  style="overflow:visible;"/>
+				<use xlink:href="#SVGID_1_"  style="overflow:visible; "/>
 			</clipPath>
 			<g class="st0">
 				<g>
@@ -1026,13 +1051,13 @@
 		</g>
 	</g>
 </g>
-<g>
+<g filter="">
 	<path class="st67" d="M77.4,59.5l-26.3,3.7l-0.1,15.2l23.2-3.3v11.6l-23.3,3.3v11.9l26.3-3.7v11.6l-38.2,5.4l0.1-61.8l38.2-5.4
 		L77.4,59.5z M73,76.7L49.7,80l0.1-18.1l26.3-3.7v-8.6l-35.4,5l-0.1,58.9l35.5-5v-8.7l-26.3,3.7V88.7L73,85.4L73,76.7"/>
 	<polygon class="st68" points="76.1,49.5 76.1,58.2 49.8,61.9 49.7,80 73,76.7 72.9,85.4 49.7,88.7 49.8,103.4 76,99.8 76,108.4 
 		40.5,113.4 40.6,54.5 	"/>
 </g>
-<g>
+<g filter="">
 	<path class="st69" d="M133.1,58.5c-0.3-4.3,2.9-8.1,7.2-8.5l14.3-2v19l-14.3,2c-1.8,0.4-3.8-0.1-5.2-1.2c-1.3-1.1-2-2.9-2-5.3V58.5
 		z M136,53.6c-1.1,1.3-1.6,3-1.5,4.7v4c-0.2,1.6,0.4,3.2,1.5,4.3c1.2,1,2.8,1.3,4.3,1l13-1.8V49.7l-13,1.8
 		C138.7,51.7,137.2,52.4,136,53.6"/>

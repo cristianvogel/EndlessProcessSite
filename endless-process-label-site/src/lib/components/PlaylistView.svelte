@@ -1,13 +1,16 @@
 <script lang="ts">
-
+// todo: improve using approach on https://www.skeleton.dev/utilities/popups
 import { ListBox, ListBoxItem } from '@skeletonlabs/skeleton';
 import { Icon } from '@steeze-ui/svelte-icon';
-import  {Scan} from '@steeze-ui/carbon-icons';
+import  {CircleDash, CircleFilled} from '@steeze-ui/carbon-icons';
+import {Audio} from '$lib/stores/AudioEngine';
 
 export let tracklisting:Array<string>;
 
 let valueSingle: number;
 const dividerClass = 'my-12 h-0.5 border-t-0 bg-primary-300 opacity-100 dark:opacity-50'
+
+$: current = Audio.currentTrackName;
 </script>
 
  <ListBox> 	
@@ -21,8 +24,8 @@ const dividerClass = 'my-12 h-0.5 border-t-0 bg-primary-300 opacity-100 dark:opa
     name={title} 
     value={i}>
     <svelte:fragment slot='lead'>
-        <span class="stroke-surface-600">
-            <Icon src={Scan} class="h-8"/>
+        <span class="text-tertiary-400">
+            <Icon src={current === title ? CircleFilled : CircleDash} class="h-4 mt-1"/>
         </span>
     </svelte:fragment>
     {title} 

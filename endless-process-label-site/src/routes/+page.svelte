@@ -1,10 +1,8 @@
 <script lang='ts'>
 	// Landing page route
-	import type { PageData } from './$types';
+	import type { LayoutData } from './$types';
 	import { Audio } from '$lib/stores/AudioEngine';
-	import { Playlist } from '$lib/stores/stores';
-
-	export let data: PageData;
+	export let data: LayoutData;
 
 	// parallel array of promises refined with the help of ChatGPT3
 	// https://chat.openai.com/chat/8bb60bdf-3a51-49d6-bc42-c097c015982b
@@ -26,7 +24,9 @@ Promise.all(data.buffers).then(buffers => {
   Promise.all(parallel.map(func => func())).then(tracks => {
     console.log('All ',tracks.length,' audio tracks decoded 🤖 ');
     // set the current track to the first track loaded from the playlist
-    $Playlist.currentTrack.name = buffers[0].header.name;
+    if (!Audio.currentTrackName || Audio.currentTrackName === '') {
+       Audio.currentTrackName = buffers[0].header.name;
+    }
   });
 });
 
