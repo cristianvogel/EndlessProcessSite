@@ -10,9 +10,7 @@
 
 	const dispatch = createEventDispatcher();
 
-
 	const { audioStatus } = Audio.stores;
-	const { resumeContext, mute, unmute } = Audio;
 
 	$: isPlaying = $audioStatus === 'playing';
 	$: showPlaylist = false;
@@ -40,26 +38,34 @@
 	 * what happens when the user presses the Play/Pause button
 	 */
 	function playPauseLogic() {
-		if ($audioStatus === 'suspended' || 'closed' || 'loading') {
-			resumeContext();
+		if (!Audio.audioBuffersReady) {
+			return;
 		}
-		if (isPlaying) {
-			mute();
+		if ($audioStatus === 'suspended' || 'closed' || 'loading') {
+			Audio.resumeContext();
+		}
+		if ($audioStatus === 'playing') {
+			Audio.mute();
+			return;
 		} else {
-			unmute();
+			Audio.unmute();
 		}
 	}
 </script>
 
 <AppBar
-	background="bg-opacity-50 bg-surface-800"
+	background="bg-surface-800"
 	gridColumns="grid-cols-3"
 	slotDefault="place-self-center"
 	slotTrail="place-content-end"
+	slotLead="mb-0 h-10"
 >
 	<svelte:fragment slot="lead" >
-		<div class="gradient-text text-xl">
-			<a href="/">{$CablesText[0]}</a><a href="/"> {$CablesText[1]}</a>
+		<div class="flex flex-row gradient-text text-[1.618em] leading-none">
+		<div class='basis-1/5'>
+			<a href="/">{$CablesText[0]}</a>
+			<a href="/"> {$CablesText[1]}</a>
+		</div>	
 		</div>
 		
 		<!-- Persistent Audio controls  -->

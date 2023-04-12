@@ -12,6 +12,7 @@ import { channelExtensionFor } from '$lib/classes/Utils';
 import { CablesPatch, VFS_PATH_PREFIX, Playlist, Decoding } from '$lib/stores/stores';
 import WebRenderer from '@elemaudio/web-renderer';
 import type { NodeRepr_t } from '@elemaudio/core';
+import { el } from '@elemaudio/core';
 
 // OOPS/TS Singleton design pattern.
 
@@ -90,7 +91,8 @@ class AudioEngine {
 				Audio._elemLoaded.set(true);
 				return node;
 			});
-		Audio.routeToCables(Audio.elemEndNode);
+		Audio.routeToCables();
+		Audio.connectToDestination(Audio.elemEndNode); // connect the Elem end node to the destination
 
 		/* ---- Callbacks ----------------- */
 
@@ -143,12 +145,10 @@ class AudioEngine {
 	/**
 	 *  @description Routing the Elementary graph into the Cables.gl visualiser
 	 */
-	routeToCables(node: AudioNode) {
-		const merge = new ChannelMergerNode(Audio.actx, { numberOfInputs: 1 });
-		Audio.elemEndNode.connect(merge);
-		const gain = new GainNode(Audio.actx, { gain: 10 }); // boost the send into Cables visualiser
-		get(CablesPatch).getVar('CablesAnalyzerNodeInput').setValue(merge.connect(gain));
-		Audio.connectToDestination(merge);
+	routeToCables() {
+		const cablesSend = new GainNode(Audio.actx, { gain: 10 }); // boost the send into Cables visualiser, never heard
+		Audio.elemEndNode.connect(cablesSend);
+		get(CablesPatch).getVar('CablesAnalyzerNodeInput').setValue(cablesSend);
 	}
 
 	/**
@@ -172,7 +172,7 @@ class AudioEngine {
 					[`${vfsPath}${channelExtensionFor(i + 1)}`]: decoded.getChannelData(i)
 				};
 			}
-			console.info('VFS entry: ', vfsDictionaryEntry);
+			//console.info('VFS entry: ', vfsDictionaryEntry);
 			Audio.#core?.updateVirtualFileSystem(vfsDictionaryEntry);
 		});
 	}
@@ -227,6 +227,11 @@ class AudioEngine {
 	 * @description: Plays samples from a VFS path, with options
 	 */
 	playFromVFS(props: SamplerOptions) {
+		//
+		// mute caller props .... {
+		// 	vfsPath: Audio.currentVFSPath,
+		// 	trigger: 0
+		// }
 		Audio.render(samplesPlayer(props));
 	}
 
@@ -262,6 +267,7 @@ class AudioEngine {
 	 */
 	mute(pauseCables: boolean = false): void {
 		// release gate on the current track
+
 		Audio.playFromVFS({
 			vfsPath: Audio.currentVFSPath,
 			trigger: 0

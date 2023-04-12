@@ -12,27 +12,29 @@ import type { StereoSignal, SamplerOptions } from 'src/typeDeclarations';
  */
 
 export function samplesPlayer(props: SamplerOptions): StereoSignal {
-	let { vfsPath = Audio.currentVFSPath, trigger = 0, rate = 1 } = props;
-	let keyPath = vfsPath + channelExtensionFor(1);
+	let { trigger = 0, rate = 1 } = props;
+	const pauseHead = trigger ? 1 : 0;
+	const currentVFSPath = Audio.currentVFSPath; // defaults to currently playing VFS path for now
+	let path = currentVFSPath + channelExtensionFor(1);
 	const left = el.sample(
 		{
-			key: keyPath,
-			path: keyPath,
+			key: currentVFSPath + '_left',
+			path,
 			mode: 'gate'
 		},
 		trigger,
-		rate
+		pauseHead
 	);
 
-	keyPath = vfsPath + channelExtensionFor(2);
+	path = currentVFSPath + channelExtensionFor(2);
 	const right = el.sample(
 		{
-			key: keyPath,
-			path: keyPath,
+			key: currentVFSPath + '_right',
+			path,
 			mode: 'gate'
 		},
 		trigger,
-		rate
+		pauseHead
 	);
 	return { left: left, right: right };
 }

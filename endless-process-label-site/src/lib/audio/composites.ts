@@ -29,7 +29,7 @@ export function detunedSaws(
 //--- attenuate --------------------------------------------------------
 
 function _attenuate({ props, children }): Signal {
-	const key = props.key || 'attenuate';
+	const key = props.key ? props.key : 'attenuator';
 	return resolve(el.mul({ key: key }, el.sm(props.level), children[0]));
 }
 
