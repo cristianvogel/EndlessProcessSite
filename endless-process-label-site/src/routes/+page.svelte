@@ -2,10 +2,12 @@
 	// Landing page route
 	import type { LayoutData } from './$types';
 	import { Audio } from '$lib/stores/AudioEngine';
+
 	export let data: LayoutData;
 
 	// parallel array of promises refined with the help of ChatGPT3
 	// https://chat.openai.com/chat/8bb60bdf-3a51-49d6-bc42-c097c015982b
+
 
 let parallel: Array<any> = [];
 

@@ -1,7 +1,8 @@
 // This file defines the stores used in the app
 
 import { writable, type Readable, type Writable, readable } from 'svelte/store';
-import type { SinglePost, RawFFT, PlaylistContainer, RawAudioBuffer } from 'src/typeDeclarations';
+import type { SinglePost, RawFFT, PlaylistContainer } from 'src/typeDeclarations';
+import { getFiles } from '$lib/classes/Files';
 
 // Todo: Implement sanitiser for the content
 export const singlePost: Writable<SinglePost> = writable({
@@ -46,7 +47,7 @@ export const VFS_PATH_PREFIX: Readable<string> = readable('/src/lib/audio/mp3/')
  * todo: description fields and non-filename titles. Something like a semantic metadata layer for each track?
  */
 export const Playlist: Writable<PlaylistContainer> = writable({
-	playlist: ['YohldteTvuezyz_AndersSkibsted.mp3', 'Sflogs_AndersSkibsted.mp3'],
+	playlist: getFiles(),
 	currentTrack: { name: '', path: '', loaded: false }
 });
 

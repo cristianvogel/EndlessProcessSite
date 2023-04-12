@@ -1,7 +1,8 @@
 /**
  * Audio file ingestor
- * Will get fetch target URL from the Playlist store
- * todo: load all files from a folder.. maybe via a folder iterator that sets the playlist store property?
+ * Will  fetch target URL from the Playlist store
+ * I do this in +layout.ts because I want to make the assets available to the entire app
+ * trying to avoid reloading the same assets on page navigation
  */
 
 import { get } from 'svelte/store';
@@ -10,7 +11,7 @@ import type { PlaylistContainer, RawAudioBuffer } from 'src/typeDeclarations.js'
 import { error } from '@sveltejs/kit';
 
 const sourceURL_prefix = get(VFS_PATH_PREFIX);
-let playlist: Array<string> = [];
+let playlist: Array<string>; 
 
 const unsubscribe = Playlist.subscribe((container: PlaylistContainer) => {
 	playlist = container.playlist;

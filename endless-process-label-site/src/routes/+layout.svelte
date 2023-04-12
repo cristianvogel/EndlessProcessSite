@@ -10,6 +10,7 @@
 	import SplashPage from '$lib/components/SplashPage.svelte';
 	import PageFooter from '$lib/components/Footer.svelte';
 	import CanvasBody from '$lib/components/CanvasBody.svelte';
+	import FolderScan from '$lib/components/FolderScan.svelte';
 
 	$: spin = false;
 
@@ -47,7 +48,7 @@
 	<svelte:fragment slot="pageHeader">
 		<CanvasBody spin = {spin} />
 	</svelte:fragment>
-
+	<FolderScan />
 	<SplashPage />
 	<slot />
 
