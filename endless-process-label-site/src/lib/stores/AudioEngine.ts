@@ -15,6 +15,7 @@ import type { NodeRepr_t } from '@elemaudio/core';
 import { el } from '@elemaudio/core';
 
 // OOPS/TS Singleton design pattern.
+// todo: set a sample rate constant prop
 
 class AudioEngine {
 	#core: WebRenderer | null;
@@ -240,7 +241,7 @@ class AudioEngine {
 			decoded = await Audio.actx.decodeAudioData(body as ArrayBuffer);
 		} catch (error) {
 			console.log(new Error('Decoding skipped. Dummy buffer created.'));
-			//decoded = Audio.actx?.createBuffer(1, 1, 44100);
+			decoded = Audio.actx?.createBuffer(1, 1, 44100);
 		} finally {
 			const { vfsPath } = header;
 			const bytes = decoded?.getChannelData(0).length;
@@ -307,7 +308,8 @@ class AudioEngine {
 			bufferProgress({
 				key: Audio.currentVFSPath,
 				totalDurMs,
-				run
+				run,
+				rate: 10
 			})
 		);
 	}
