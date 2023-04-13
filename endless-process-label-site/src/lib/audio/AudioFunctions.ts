@@ -20,29 +20,43 @@ export function bufferProgress(props: ProgressOptions): Signal {
  */
 
 export function samplesPlayer(props: SamplerOptions): StereoSignal {
-	let { trigger = 0, rate = 1 } = props;
-	const pauseHead = trigger ? 1 : 0;
-	const currentVFSPath = Audio.currentVFSPath; // defaults to currently playing VFS path for now
+	let { trigger, rate = 1, startOffset = 0 } = props;
+	let g = Audio.scrubbing ? 0 : 1;
+
+	console.log('Props: ', props);
+	const currentVFSPath = Audio.currentVFSPath;
 	let path = currentVFSPath + channelExtensionFor(1);
+	let kl = currentVFSPath + '_left';
+	let kr = currentVFSPath + '_right';
 	const left = el.sample(
 		{
-			key: currentVFSPath + '_left',
+			key: kl,
 			path,
-			mode: 'gate'
+			mode: 'gate',
+			startOffset: startOffset * 44.1
 		},
-		trigger,
-		pauseHead
+		el.select(
+			g,
+			el.const({ key: kl + 't', value: trigger as number }),
+			el.train(el.mul(50, el.rand()))
+		),
+		rate
 	);
 
 	path = currentVFSPath + channelExtensionFor(2);
 	const right = el.sample(
 		{
-			key: currentVFSPath + '_right',
+			key: kr,
 			path,
-			mode: 'gate'
+			mode: 'gate',
+			startOffset: startOffset * 44.1
 		},
-		trigger,
-		pauseHead
+		el.select(
+			g,
+			el.const({ key: kl + 't', value: trigger as number }),
+			el.train(el.mul(50, el.rand()))
+		),
+		rate
 	);
 	return { left: left, right: right };
 }
