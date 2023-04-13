@@ -7,7 +7,7 @@ import type {
 	SamplerOptions
 } from 'src/typeDeclarations';
 
-import { samplesPlayer, stereoOut } from '$lib/audio/AudioFunctions';
+import { samplesPlayer, stereoOut, bufferProgress } from '$lib/audio/AudioFunctions';
 import { channelExtensionFor } from '$lib/classes/Utils';
 import { CablesPatch, VFS_PATH_PREFIX, Playlist, Decoding } from '$lib/stores/stores';
 import WebRenderer from '@elemaudio/web-renderer';
@@ -18,6 +18,7 @@ import { el } from '@elemaudio/core';
 
 class AudioEngine {
 	#core: WebRenderer | null;
+	#silentCore: WebRenderer | null;
 	static #instance: AudioEngine | null;
 	private _AudioEngineStatus: Writable<AudioEngineStatus>;
 	private _contextIsRunning: Writable<boolean>;
@@ -27,6 +28,7 @@ class AudioEngine {
 	private _masterVolume: Writable<number | Signal>;
 	private _currentTrackName: string;
 	private _currentVFSPath: string;
+	private _currentTrackDurationSeconds: number;
 
 	static getInstance() {
 		if (!AudioEngine.#instance) {
@@ -40,21 +42,35 @@ class AudioEngine {
 			AudioEngine.#instance = this;
 		}
 
-		this.#core = null;
+		this.#core = this.#silentCore = null;
 		this._masterVolume = writable(1); // default master volume
 		this._AudioEngineStatus = writable('loading');
 		this._contextIsRunning = writable(false);
 		this._elemLoaded = writable(false);
 		this._audioContext = writable();
-		this._endNodes = writable({ elem: null, cables: null });
+		this._endNodes = writable({ mainCore: null, silentCore: null });
+		// dynamically set from store subscriptions
 		this._currentVFSPath = '';
 		this._currentTrackName = '';
+		this._currentTrackDurationSeconds = 0;
 	}
 
 	subscribeToStores() {
+		/**
+		 * @description
+		 *  Subscribers to update AudioEngine with current track info
+		 */
 		Playlist.subscribe(($Playlist) => (Audio._currentTrackName = $Playlist.currentTrack.name));
+
 		Playlist.subscribe(
 			($Playlist) => (Audio._currentVFSPath = get(VFS_PATH_PREFIX) + $Playlist.currentTrack.name)
+		);
+
+		Playlist.subscribe(
+			($Playlist) =>
+				(Audio._currentTrackDurationSeconds = $Playlist.currentTrack.duration
+					? $Playlist.currentTrack.duration
+					: 0)
 		);
 	}
 
@@ -68,8 +84,18 @@ class AudioEngine {
 	 * called Audio.elemEndNode
 	 */
 	async init(ctx?: AudioContext): Promise<void> {
-		Audio.subscribeToStores();
+		/**
+		 * @description Came up with the idea of using a second WebRenderer instance
+		 * to handle  audio rate 'control' signals and emit side effects, without
+		 * hitting the hardware outputs. Monitoring for impact hit on performance, but
+		 * seems to be fine so far. Calling this 'Two-Webrenderers-and-a-microphone'
+		 * pattern '💿💿🎤'
+		 */
 		Audio.#core = new WebRenderer();
+		Audio.#silentCore = new WebRenderer();
+
+		// Subscribe to Svelte stores outside of component
+		Audio.subscribeToStores();
 
 		// Choose a context to use
 		if (ctx) {
@@ -80,7 +106,19 @@ class AudioEngine {
 			Audio.cleanup();
 		}
 
-		// Elementary connecting promise
+		// Elementary connecting promise : Silent Core
+		Audio.elemSilentNode = await Audio.#silentCore
+			.initialize(Audio.actx, {
+				numberOfInputs: 1,
+				numberOfOutputs: 1,
+				outputChannelCount: [2]
+			})
+			.then((node) => {
+				console.log('Silent Core loaded');
+				return node;
+			});
+
+		// Elementary connecting promise : Main Core
 		Audio.elemEndNode = await Audio.#core
 			.initialize(Audio.actx, {
 				numberOfInputs: 1,
@@ -91,6 +129,7 @@ class AudioEngine {
 				Audio._elemLoaded.set(true);
 				return node;
 			});
+
 		Audio.routeToCables();
 		Audio.connectToDestination(Audio.elemEndNode); // connect the Elem end node to the destination
 
@@ -119,11 +158,19 @@ class AudioEngine {
 
 		// Elementary meter callback
 		Audio.#core.on('meter', function (e) {
-			if (e.source === 'cables') {
-				console.log(e.max);
-			}
+			// do something with the meter data
+			console.count('meter');
+		});
+
+		// Elementary snapshot callback
+		Audio.#silentCore.on('snapshot', function (e) {
+			Playlist.update(($playlist) => {
+				$playlist.currentTrack.progress = e.data as number;
+				return $playlist;
+			});
 		});
 	}
+
 	/*---- Callback handlers ------------------------------*/
 	private stateChangeHandler = () => {
 		Audio._contextIsRunning.update(() => {
@@ -172,7 +219,7 @@ class AudioEngine {
 					[`${vfsPath}${channelExtensionFor(i + 1)}`]: decoded.getChannelData(i)
 				};
 			}
-			//console.info('VFS entry: ', vfsDictionaryEntry);
+			console.log('vfsDictionaryEntry', vfsDictionaryEntry);
 			Audio.#core?.updateVirtualFileSystem(vfsDictionaryEntry);
 		});
 	}
@@ -193,21 +240,32 @@ class AudioEngine {
 			decoded = await Audio.actx.decodeAudioData(body as ArrayBuffer);
 		} catch (error) {
 			console.log(new Error('Decoding skipped. Dummy buffer created.'));
-			decoded = Audio.actx?.createBuffer(1, 1, 44100);
+			//decoded = Audio.actx?.createBuffer(1, 1, 44100);
 		} finally {
 			const { vfsPath } = header;
+			const bytes = decoded?.getChannelData(0).length;
+			header.bytes = bytes || 0;
 			console.log(
 				'Decoded audio with length ',
-				decoded?.getChannelData(0).length,
+				bytes,
 				' to ',
 				vfsPath,
 				' in ',
 				Date.now() - stopwatch,
 				'ms'
 			);
-			Decoding.update((d) => {
-				d.done = true;
-				return d;
+			Decoding.update(($d) => {
+				$d.done = true;
+				return $d;
+			});
+		}
+		// update the DurationElement in the playlist container map
+		if (decoded && decoded.duration > 1) {
+			Playlist.update(($plist) => {
+				// guard against the 1 samp skipped buffer hack above
+				if (!decoded) return $plist;
+				$plist.durations.set(header.name, decoded.duration);
+				return $plist;
 			});
 		}
 		return [decoded, header.vfsPath];
@@ -224,15 +282,34 @@ class AudioEngine {
 	}
 
 	/**
+	 * @description silent render of a control signal, for handling a signal with a side effect like the progress counter composite, which emits an event _and_ an audiorate signal
+	 */
+	controlRender(controlSignal: Signal): void {
+		if (!Audio.#silentCore || !controlSignal) return;
+		Audio.#silentCore.render(el.mul(controlSignal, 0));
+	}
+
+	/**
 	 * @description: Plays samples from a VFS path, with options
 	 */
 	playFromVFS(props: SamplerOptions) {
-		//
-		// mute caller props .... {
-		// 	vfsPath: Audio.currentVFSPath,
-		// 	trigger: 0
-		// }
 		Audio.render(samplesPlayer(props));
+		Audio.progressCounter(props.trigger as number);
+	}
+
+	/**
+	 * @description: Render the progress counter composite and its callback sideeffect
+	 */
+	progressCounter(run: number) {
+		const totalDurMs = Audio.currentTrackDurationSeconds * 1000;
+		console.log('in s ', Audio.currentTrackDurationSeconds, ' totalDurMs ', totalDurMs);
+		Audio.controlRender(
+			bufferProgress({
+				key: Audio.currentVFSPath,
+				totalDurMs,
+				run
+			})
+		);
 	}
 
 	/**
@@ -272,6 +349,7 @@ class AudioEngine {
 			vfsPath: Audio.currentVFSPath,
 			trigger: 0
 		});
+
 		Audio.status = 'paused';
 		if (pauseCables) Audio.pauseCables('pause');
 	}
@@ -302,6 +380,10 @@ class AudioEngine {
 			endNodes: Audio._endNodes,
 			masterVolume: Audio._masterVolume
 		};
+	}
+
+	get currentTrackDurationSeconds(): number {
+		return Audio._currentTrackDurationSeconds;
 	}
 
 	get currentVFSPath(): string {
@@ -345,12 +427,12 @@ class AudioEngine {
 		return Audio.status !== ('playing' || 'running') || !Audio.isRunning;
 	}
 
-	get cablesEndNode() {
-		return get(Audio._endNodes).cables;
+	get elemSilentNode() {
+		return get(Audio._endNodes).silentCore;
 	}
 
 	get elemEndNode() {
-		return get(Audio._endNodes).elem;
+		return get(Audio._endNodes).mainCore;
 	}
 
 	get baseState(): AudioEngineStatus {
@@ -359,6 +441,7 @@ class AudioEngine {
 	/*---- setters --------------------------------*/
 
 	set currentVFSPath(path: string) {
+		console.log('set currentVFSPath', path);
 		Playlist.update(($plist) => {
 			$plist.currentTrack.path = path;
 			return $plist;
@@ -383,16 +466,16 @@ class AudioEngine {
 	set status(newStatus: AudioEngineStatus) {
 		Audio._AudioEngineStatus.update(() => newStatus);
 	}
-	set cablesEndNode(node: AudioNode) {
+	set elemSilentNode(node: AudioNode) {
 		Audio._endNodes.update((n) => {
-			n.cables = node;
+			n.silentCore = node;
 			return n;
 		});
 	}
 
 	set elemEndNode(node: AudioNode) {
 		Audio._endNodes.update((n) => {
-			n.elem = node;
+			n.mainCore = node;
 			return n;
 		});
 	}

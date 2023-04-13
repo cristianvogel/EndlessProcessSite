@@ -4,8 +4,16 @@
 import { Audio } from '$lib/stores/AudioEngine';
 import { el } from '@elemaudio/core';
 import { channelExtensionFor } from '$lib/classes/Utils';
-import { detunedSaws, attenuate } from '$lib/audio/composites';
-import type { StereoSignal, SamplerOptions } from 'src/typeDeclarations';
+import { detunedSaws, attenuate, progress } from '$lib/audio/composites';
+import type { StereoSignal, SamplerOptions, ProgressOptions, Signal } from 'src/typeDeclarations';
+
+/**
+ * @description Buffer progress
+ */
+
+export function bufferProgress(props: ProgressOptions): Signal {
+	return progress(props);
+}
 
 /**
  * @description Samples player
@@ -38,7 +46,6 @@ export function samplesPlayer(props: SamplerOptions): StereoSignal {
 	);
 	return { left: left, right: right };
 }
-
 
 
 /**

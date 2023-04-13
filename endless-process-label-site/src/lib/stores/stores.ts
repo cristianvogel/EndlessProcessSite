@@ -11,7 +11,8 @@ export const singlePost: Writable<SinglePost> = writable({
 	featuredImageURL: '',
 	id: '',
 	date: '',
-	cardIndex: ''
+	cardIndex: '',
+	isOpen: false
 });
 export const rawFFT: Writable<RawFFT> = writable({
 	real: new Float32Array(0),
@@ -43,12 +44,15 @@ export const VFS_PATH_PREFIX: Readable<string> = readable('/src/lib/audio/mp3/')
 
 /**
  * Playlist... work in progress
- * todo: dynamic load of file names from a folder. Currently kludged at Writable initialization
- * todo: description fields and non-filename titles. Something like a semantic metadata layer for each track?
+ * todo: description, duration, loaded flag,  non-filename titles.
+ * Something like a semantic metadata layer for each track?
  */
+
+export type DurationsMapElement = { key: string; value: number };
 export const Playlist: Writable<PlaylistContainer> = writable({
 	playlist: getFiles(),
-	currentTrack: { name: '', path: '', loaded: false }
+	durations: new Map<string, number>(),
+	currentTrack: { name: '', path: '', loaded: false, progress: 0 }
 });
 
 //---------- deprecating -----------------------

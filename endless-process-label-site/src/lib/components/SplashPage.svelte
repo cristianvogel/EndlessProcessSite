@@ -3,24 +3,30 @@
 	import SplashSVG from '$lib/components/SplashSVG.svelte';
 	import NowPlaying from './NowPlaying.svelte';
 	import {Audio} from '$lib/stores/AudioEngine';
-	import { fade } from 'svelte/transition';
+	
+	import { singlePost, Playlist } from '$lib/stores/stores';
 	const { audioStatus } = Audio.stores
 
-	$: isPlaying = $audioStatus === 'playing';
+	$: splash =  ( $audioStatus !== 'playing') ? !$singlePost.isOpen : false;
+	
+	const { name, path, duration } = $Playlist.currentTrack;
 
 </script>
 
 <div class="container mx-auto my-2 w-[30%] flex-none" on:mousedown>
 	<div class="space-y-10 text-center">
-		
-		   <h2 class={isPlaying ? "gradient-text opacity-40" : "gradient-text opacity-90"} transition:fade>
-			Welcome to <br>Endless Process
-		</h2>
-	
+		{#if splash}
+		   <h2 class="gradient-text opacity-90" >
+				Welcome to <br>Endless Process
+			</h2>
+			{:else}
+			 <h2 class="gradient-text opacity-0" >
+				Welcome to <br>Endless Process
+			</h2>
+		{/if}
 			<a href="/blog" data-sveltekit-noscroll>
 				<SplashSVG />
 			</a>
-	
 		<hr class="!border-t-8 !border-double" />
 		<NowPlaying />
 	</div>

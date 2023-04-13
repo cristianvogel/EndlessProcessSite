@@ -1,3 +1,4 @@
+import type { DurationsMapElement } from '$lib/stores/stores';
 import type { NodeRepr_t } from '@elemaudio/core';
 import type { Writable } from 'svelte/store';
 
@@ -8,13 +9,21 @@ interface SinglePost {
 	id: string;
 	date: string;
 	cardIndex: string;
+	isOpen?: boolean;
 }
 
 type AudioEngineStatus = 'suspended' | 'loading' | 'playing' | 'paused' | 'closed ' | 'running';
 
 type PlaylistContainer = {
-	currentTrack: { name: string; path: string; loaded: boolean };
+	currentTrack: {
+		progress: number;
+		name: string;
+		path: string;
+		loaded?: boolean;
+		duration?: number;
+	};
 	playlist: Array<string>;
+	durations: Map<string, number>;
 };
 
 type HtmlContent = { rawHTML: string; sanitisedHTML: string };
@@ -34,6 +43,14 @@ type SamplerOptions = {
 	loopStart?: number;
 	loopEnd?: number;
 };
+
+type ProgressOptions = {
+	key?: string;
+	totalDurMs?: number;
+	run: Signal | number;
+	rate?: number;
+};
+
 type Signal = NodeRepr_t;
 
 export type RawAudioBuffer = {

@@ -4,6 +4,7 @@
 	import { Icon } from '@steeze-ui/svelte-icon';
 	import { Events, ChartMarimekko, Cube, ProgressBarRound } from '@steeze-ui/carbon-icons';
 	import ElementaryPlayer from '$lib/components/ElementaryPlayer.svelte';
+	import Progress from '$lib/components/Progress.svelte';
 	import { CablesText, CablesIsLoaded } from '$lib/stores/stores';
 	import { Audio } from '$lib/stores/AudioEngine';
 	import { createEventDispatcher } from 'svelte';
@@ -12,7 +13,6 @@
 
 	const { audioStatus } = Audio.stores;
 
-	$: isPlaying = $audioStatus === 'playing';
 	$: showPlaylist = false;
 	$: audioBuffersReady = Audio.audioBuffersReady;
 
@@ -56,9 +56,9 @@
 <AppBar
 	background="bg-surface-800"
 	gridColumns="grid-cols-3"
-	slotDefault="place-self-center"
 	slotTrail="place-content-end"
 	slotLead="mb-0 h-10"
+	regionRowHeadline="grid grid-cols-3"
 >
 	<svelte:fragment slot="lead" >
 		<div class="flex flex-row gradient-text text-[1.618em] leading-none">
@@ -67,7 +67,7 @@
 			<a href="/"> {$CablesText[1]}</a>
 		</div>	
 		</div>
-		
+	
 		<!-- Persistent Audio controls  -->
 		{#if audioBuffersReady && $CablesIsLoaded}
 			<ElementaryPlayer on:click={handleAudioControls} {showPlaylist} />
@@ -75,10 +75,17 @@
 			<div class="absolute top-6" transition:fade>
 				<Icon src={Cube} class="h-8 animate-spin" data-sveltekit-noscroll />
 			</div>
+		{/if}	
+	</svelte:fragment>
+
+	<!-- Persistent progress bar -->
+	
+		{#if audioBuffersReady && $CablesIsLoaded}
+		<span transition:fade>
+			<Progress/>
+		</span>
 		{/if}
 		
-	</svelte:fragment>
-	
 	<!-- Persistent nav buttons -->
 	<svelte:fragment slot="trail">
 		<div class="flex justify-start">

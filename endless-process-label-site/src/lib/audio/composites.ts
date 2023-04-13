@@ -4,8 +4,8 @@
  */
 
 import { createNode, el, resolve } from '@elemaudio/core';
-import { Utils } from '$lib/classes/Utils';
-import type { StereoSignal, Signal } from 'src/typeDeclarations';
+
+import type { Signal } from 'src/typeDeclarations';
 
 //--- detunedSaws --------------------------------------------------------
 
@@ -43,6 +43,23 @@ export function attenuate(
 	return createNode(_attenuate, props, [signal]);
 }
 
+//--- progress --------------------------------------------------------
 
-//-----------
+function _progress({ props, children }): Signal {
+	const { run, totalDurMs, rate } = props;
+	const key = props.key ? props.key + '_ss' : 'progress';
+	let progress = el.counter({ key: key + '_count' }, run);
+	let normProgress = el.div({ key: key + '_div' }, progress, el.ms2samps(totalDurMs));
+	return resolve(
+		el.snapshot({ key, name: 'progress' }, el.train(rate ? rate * run : run), normProgress)
+	);
+}
 
+export function progress(props: {
+	key?: string;
+	totalDurMs?: number;
+	run: Signal | number;
+	rate?: number;
+}): Signal {
+	return createNode(_progress, props, []);
+}	
