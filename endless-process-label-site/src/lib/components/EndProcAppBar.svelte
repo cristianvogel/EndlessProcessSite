@@ -41,9 +41,6 @@
 		if (!Audio.audioBuffersReady) {
 			return;
 		}
-		if ($audioStatus === 'suspended' || 'closed' || 'loading') {
-			Audio.resumeContext();
-		}
 		if ($audioStatus === 'playing') {
 			Audio.mute();
 			return;
@@ -82,7 +79,7 @@
 	
 		{#if audioBuffersReady && $CablesIsLoaded}
 		<span transition:fade>
-			<Progress/>
+				<Progress/>
 		</span>
 		{/if}
 		

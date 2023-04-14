@@ -21,6 +21,7 @@ type PlaylistContainer = {
 		path: string;
 		loaded?: boolean;
 		duration?: number;
+		offset?: number;
 	};
 	playlist: Array<string>;
 	durations: Map<string, number>;
@@ -36,12 +37,13 @@ type RawFFT = { real: Float32Array; imag: Float32Array };
 type StereoSignal = { left: NodeRepr_t; right: NodeRepr_t };
 
 type SamplerOptions = {
-	vfsPath?: string;
+	vfsPath?: string; // defaults to current track
 	trigger?: Signal | number;
 	rate?: Signal | number;
 	loop?: boolean;
 	loopStart?: number;
 	loopEnd?: number;
+	startOffset?: number;
 };
 
 type ProgressOptions = {
@@ -49,6 +51,7 @@ type ProgressOptions = {
 	totalDurMs?: number;
 	run: Signal | number;
 	rate?: number;
+	startOffset?: number;
 };
 
 type Signal = NodeRepr_t;

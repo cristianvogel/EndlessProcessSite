@@ -29,7 +29,7 @@ function handleCardLeave({e, cardIndex}: {e: MouseEvent, cardIndex: string}): vo
 </script>
 
 <main>
-<div class="p-2 space-y-8">
+<div class="p-2 space-y-8 ">
 <!-- <h1 class='text-zinc'>Latest..</h1> -->
 <Icon src={CaretSortDown} class="h-8 animate-pulse"/>
 <ul class="md:container md:mx-auto columns-3 gap-10 space-y-8 text-2xl max-w-prose">
@@ -62,9 +62,9 @@ function handleCardLeave({e, cardIndex}: {e: MouseEvent, cardIndex: string}): vo
             </a>
          </section>
       
-      <section class='card-footer p-2 w-full ' >
+      <section class='card-footer p-2 w-full' >
         <!-- todo: sanitise HTML for production -->
-         {@html Utils.trimAndAddReadMoreLink( content ?? 'No content')}
+        {@html Utils.trimAndAddReadMoreLink( content ?? 'No content')}
       </section>
    </div>
        

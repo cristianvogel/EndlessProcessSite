@@ -46,10 +46,13 @@ export function attenuate(
 //--- progress --------------------------------------------------------
 
 function _progress({ props, children }): Signal {
-	const { run, totalDurMs, rate } = props;
+	// el.snapshot emits events received by Elementary SilentCore
+	const { run, totalDurMs, rate = 10, startOffset = 0 } = props;
 	const key = props.key ? props.key + '_ss' : 'progress';
-	let progress = el.counter({ key: key + '_count' }, run);
+	let progress = el.add(el.counter({ key: key + '_count' }, run), el.ms2samps(startOffset));
+
 	let normProgress = el.div({ key: key + '_div' }, progress, el.ms2samps(totalDurMs));
+
 	return resolve(
 		el.snapshot({ key, name: 'progress' }, el.train(rate ? rate * run : run), normProgress)
 	);
@@ -60,6 +63,7 @@ export function progress(props: {
 	totalDurMs?: number;
 	run: Signal | number;
 	rate?: number;
+	startOffset?: number;
 }): Signal {
 	return createNode(_progress, props, []);
 }	

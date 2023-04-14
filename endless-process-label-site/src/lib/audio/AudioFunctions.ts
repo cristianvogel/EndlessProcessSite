@@ -1,6 +1,15 @@
 /**
- * Elementary functional audio programming
+ * 🔗 The Elementary Functional Audio Programming part of the app. 🔗
+ * 
+ * When we see a function returning the result of a further function call,
+ * its because the functional implementation is wrapped in a 
+ * memoized composite function, defined in the composites.ts file.
+ * 
+ * From here, we pass back a StereoSignal object, 
+ * which is returned to the Elementary Core renderer in AudioEngine.ts
+ * 
  */
+
 import { Audio } from '$lib/stores/AudioEngine';
 import { el } from '@elemaudio/core';
 import { channelExtensionFor, clipTo0 } from '$lib/classes/Utils';

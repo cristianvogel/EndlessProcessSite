@@ -16,18 +16,19 @@
   });
   
 </script>
-<div class='absolute info ml-3 top-20'>
-<div class='flex items-center'>
- <div class='mr-1'>
- <Icon src={Layers} class="h-4 rotate-270"/>
- </div> 
- <div class='text-sm'>
-  <p>Virtual File System.</p>
-</div>  
-</div>
-<ul>
-  {#each fileNames as fileName}
-    <li class='ml-1'>{fileName}</li>
-  {/each}
-</ul>
+
+<div class='absolute info ml-3 top-20 -z-10'>
+  <div class='flex items-center'>
+  <div class='mr-1'>
+  <Icon src={Layers} class="h-4 rotate-270"/>
+  </div> 
+  <div class='text-sm'>
+    <p>Virtual File System.</p>
+  </div>  
+  </div>
+  <ul>
+    {#each fileNames as fileName}
+      <li class='ml-1'>{fileName}</li>
+    {/each}
+  </ul>
 </div>

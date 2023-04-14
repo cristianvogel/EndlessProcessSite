@@ -55,6 +55,8 @@ export const Playlist: Writable<PlaylistContainer> = writable({
 	currentTrack: { name: '', path: '', loaded: false, progress: 0 }
 });
 
+export const Scrubbing: Writable<boolean> = writable(false);
+
 //---------- deprecating -----------------------
 // probably not needed anymore, as sound output is all handled by the AudioEngine now
 export const EndNodes: Writable<any> = writable({ elem: null, cables: null });

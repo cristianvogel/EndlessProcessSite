@@ -9,7 +9,7 @@ import type {
 
 import { samplesPlayer, stereoOut, bufferProgress } from '$lib/audio/AudioFunctions';
 import { channelExtensionFor } from '$lib/classes/Utils';
-import { CablesPatch, VFS_PATH_PREFIX, Playlist, Decoding } from '$lib/stores/stores';
+import { CablesPatch, VFS_PATH_PREFIX, Playlist, Decoding, Scrubbing } from '$lib/stores/stores';
 import WebRenderer from '@elemaudio/web-renderer';
 import type { NodeRepr_t } from '@elemaudio/core';
 import { el } from '@elemaudio/core';
@@ -30,6 +30,7 @@ class AudioEngine {
 	private _currentTrackName: string;
 	private _currentVFSPath: string;
 	private _currentTrackDurationSeconds: number;
+	private _scrubbing: boolean;
 
 	static getInstance() {
 		if (!AudioEngine.#instance) {
@@ -54,6 +55,7 @@ class AudioEngine {
 		this._currentVFSPath = '';
 		this._currentTrackName = '';
 		this._currentTrackDurationSeconds = 0;
+		this._scrubbing = false;
 	}
 
 	subscribeToStores() {
@@ -73,6 +75,10 @@ class AudioEngine {
 					? $Playlist.currentTrack.duration
 					: 0)
 		);
+
+		Scrubbing.subscribe(($Scrubbing) => {
+			Audio._scrubbing = $Scrubbing;
+		});
 	}
 
 	cleanup() {
@@ -134,7 +140,7 @@ class AudioEngine {
 		Audio.routeToCables();
 		Audio.connectToDestination(Audio.elemEndNode); // connect the Elem end node to the destination
 
-		/* ---- Callbacks ----------------- */
+		/* ---- Event Driven Callbacks ----------------- */
 
 		// BaseAudioContext state change callback
 		Audio.actx.addEventListener('statechange', Audio.stateChangeHandler);
@@ -165,6 +171,7 @@ class AudioEngine {
 
 		// Elementary snapshot callback
 		Audio.#silentCore.on('snapshot', function (e) {
+			console.log('progress report -> ', e.data as number);
 			Playlist.update(($playlist) => {
 				$playlist.currentTrack.progress = e.data as number;
 				return $playlist;
@@ -295,21 +302,26 @@ class AudioEngine {
 	 */
 	playFromVFS(props: SamplerOptions) {
 		Audio.render(samplesPlayer(props));
-		Audio.progressCounter(props.trigger as number);
+		Audio.progressBar({
+			run: props.trigger as number,
+			startOffset: props.startOffset || 0
+		});
 	}
 
 	/**
 	 * @description: Render the progress counter composite and its callback sideeffect
 	 */
-	progressCounter(run: number) {
+	progressBar(props: { run: number; startOffset: number }) {
+		let { run = 1, startOffset: startOffsetMs = 0 } = props;
 		const totalDurMs = Audio.currentTrackDurationSeconds * 1000;
-		console.log('in s ', Audio.currentTrackDurationSeconds, ' totalDurMs ', totalDurMs);
+
 		Audio.controlRender(
 			bufferProgress({
-				key: Audio.currentVFSPath,
+				key: Audio.currentVFSPath + '_progBar',
 				totalDurMs,
 				run,
-				rate: 10
+				rate: 10,
+				startOffset: startOffsetMs
 			})
 		);
 	}
@@ -329,7 +341,7 @@ class AudioEngine {
 	 */
 	unmute(): void {
 		// try to resume the context if it's suspended
-		if (Audio.status === 'suspended' || 'closed') {
+		if (Audio.status === 'suspended') {
 			Audio.resumeContext();
 		}
 		// gate the current track
@@ -384,6 +396,10 @@ class AudioEngine {
 		};
 	}
 
+	get scrubbing(): boolean {
+		return Audio._scrubbing;
+	}
+
 	get currentTrackDurationSeconds(): number {
 		return Audio._currentTrackDurationSeconds;
 	}
@@ -414,6 +430,7 @@ class AudioEngine {
 	}
 
 	get status() {
+		console.log('get status', get(Audio._AudioEngineStatus));
 		return get(Audio._AudioEngineStatus);
 	}
 

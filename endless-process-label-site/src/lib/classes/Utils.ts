@@ -2,6 +2,26 @@
  * some useful routines, mostly written by Copilot
  */
 
+
+export const clipToRange = (value: number, min: number, max: number): number => {
+	return Math.min(Math.max(value, min), max);
+};
+
+export const mapToRange = (
+	value: number,
+	min: number,
+	max: number,
+	newMin: number,
+	newMax: number
+): number => {
+	return ((value - min) * (newMax - newMin)) / (max - min) + newMin;
+};
+
+export const clipTo0 = (value: number): number => {
+	return Math.max(value, 0);
+};
+
+
 export const Wait = {
 	forNull: async function (variable: any, interval = 100): Promise<void> {
 		console.log('waiting for null...');
