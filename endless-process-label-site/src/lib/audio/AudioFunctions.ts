@@ -3,7 +3,7 @@
  */
 import { Audio } from '$lib/stores/AudioEngine';
 import { el } from '@elemaudio/core';
-import { channelExtensionFor } from '$lib/classes/Utils';
+import { channelExtensionFor, clipTo0 } from '$lib/classes/Utils';
 import { detunedSaws, attenuate, progress } from '$lib/audio/composites';
 import type { StereoSignal, SamplerOptions, ProgressOptions, Signal } from 'src/typeDeclarations';
 
@@ -16,14 +16,14 @@ export function bufferProgress(props: ProgressOptions): Signal {
 }
 
 /**
- * @description Samples player
+ * @description Endless Process track player
  */
 
 export function samplesPlayer(props: SamplerOptions): StereoSignal {
-	let { trigger, rate = 1, startOffset = 0 } = props;
-	let g = Audio.scrubbing ? 0 : 1;
-
-	console.log('Props: ', props);
+	let { trigger = 1, rate = 1, startOffset = 0 } = props;
+	let selectTriggerSignal = Audio.scrubbing ? 0 : 1;
+	startOffset = clipTo0(startOffset);
+	const scrub: Signal = el.train(el.mul(50, el.rand()));
 	const currentVFSPath = Audio.currentVFSPath;
 	let path = currentVFSPath + channelExtensionFor(1);
 	let kl = currentVFSPath + '_left';
@@ -35,11 +35,7 @@ export function samplesPlayer(props: SamplerOptions): StereoSignal {
 			mode: 'gate',
 			startOffset: startOffset * 44.1
 		},
-		el.select(
-			g,
-			el.const({ key: kl + 't', value: trigger as number }),
-			el.train(el.mul(50, el.rand()))
-		),
+		el.select(selectTriggerSignal, el.const({ key: kl + 't', value: trigger as number }), scrub),
 		rate
 	);
 
@@ -51,11 +47,7 @@ export function samplesPlayer(props: SamplerOptions): StereoSignal {
 			mode: 'gate',
 			startOffset: startOffset * 44.1
 		},
-		el.select(
-			g,
-			el.const({ key: kl + 't', value: trigger as number }),
-			el.train(el.mul(50, el.rand()))
-		),
+		el.select(selectTriggerSignal, el.const({ key: kl + 't', value: trigger as number }), scrub),
 		rate
 	);
 	return { left: left, right: right };
