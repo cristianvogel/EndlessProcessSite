@@ -3,13 +3,10 @@
 	import SplashSVG from '$lib/components/SplashSVG.svelte';
 	import NowPlaying from './NowPlaying.svelte';
 	import {Audio} from '$lib/stores/AudioEngine';
-	
-	import { singlePost, Playlist } from '$lib/stores/stores';
+	import { singlePost } from '$lib/stores/stores';
 	const { audioStatus } = Audio.stores
 
 	$: splash =  ( $audioStatus !== 'playing') ? !$singlePost.isOpen : false;
-	
-	const { name, path, duration } = $Playlist.currentTrack;
 
 </script>
 

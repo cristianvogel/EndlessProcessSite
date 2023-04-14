@@ -7,7 +7,7 @@ import type {
 	SamplerOptions
 } from 'src/typeDeclarations';
 
-import { samplesPlayer, stereoOut, bufferProgress } from '$lib/audio/AudioFunctions';
+import { scrubbingSamplesPlayer, stereoOut, bufferProgress } from '$lib/audio/AudioFunctions';
 import { channelExtensionFor } from '$lib/classes/Utils';
 import { CablesPatch, VFS_PATH_PREFIX, Playlist, Decoding, Scrubbing } from '$lib/stores/stores';
 import WebRenderer from '@elemaudio/web-renderer';
@@ -171,7 +171,6 @@ class AudioEngine {
 
 		// Elementary snapshot callback
 		Audio.#silentCore.on('snapshot', function (e) {
-			console.log('progress report -> ', e.data as number);
 			Playlist.update(($playlist) => {
 				$playlist.currentTrack.progress = e.data as number;
 				return $playlist;
@@ -301,7 +300,7 @@ class AudioEngine {
 	 * @description: Plays samples from a VFS path, with options
 	 */
 	playFromVFS(props: SamplerOptions) {
-		Audio.render(samplesPlayer(props));
+		Audio.render(scrubbingSamplesPlayer(props));
 		Audio.progressBar({
 			run: props.trigger as number,
 			startOffset: props.startOffset || 0
@@ -313,14 +312,17 @@ class AudioEngine {
 	 */
 	progressBar(props: { run: number; startOffset: number }) {
 		let { run = 1, startOffset: startOffsetMs = 0 } = props;
+		let rate = 10;
+		if (Audio.scrubbing) {
+			run = 0;
+		}
 		const totalDurMs = Audio.currentTrackDurationSeconds * 1000;
-
 		Audio.controlRender(
 			bufferProgress({
 				key: Audio.currentVFSPath + '_progBar',
 				totalDurMs,
 				run,
-				rate: 10,
+				rate,
 				startOffset: startOffsetMs
 			})
 		);

@@ -4,6 +4,7 @@ import { ListBox, ListBoxItem } from '@skeletonlabs/skeleton';
 import { Icon } from '@steeze-ui/svelte-icon';
 import  {CircleDash, CircleFilled} from '@steeze-ui/carbon-icons';
 import {Audio} from '$lib/stores/AudioEngine';
+import { Playlist, VFS_PATH_PREFIX } from "$lib/stores/stores";
 
 export let tracklisting:Array<string>;
 
@@ -11,6 +12,30 @@ let valueSingle: number;
 const dividerClass = 'my-12 h-0.5 border-t-0 bg-primary-300 opacity-100 dark:opacity-50'
 
 $: current = Audio.currentTrackName;
+
+function HandlePlaylistChoice(e?:any, name?:string) {
+		// can simulate event with a passed `name` value for programmatic track selection
+		if (!e && name) { 
+			e={currentTarget:{name:name}}; 
+		};
+		$Playlist.show = false;
+		Audio.playFromVFS( { trigger: 0, startOffset: 0 });
+		Playlist.update( (plist) => {
+			const { currentTrack } = plist;
+			plist.currentTrack = {
+				...currentTrack, 
+				duration: plist.durations.get(e.currentTarget.name), 
+				name: e.currentTarget.name,
+				path: $VFS_PATH_PREFIX+e.currentTarget.name,
+				progress: 0,
+				offset: 0
+			};
+				//console.log('Current track from store: ',plist.currentTrack);
+			return plist;
+		});
+		Audio.playFromVFS( { trigger: 1, startOffset: 0 });
+	}
+
 </script>
 
  <ListBox> 	
@@ -18,7 +43,7 @@ $: current = Audio.currentTrackName;
     <hr class={dividerClass} />	
  {#each tracklisting  as title,i}
 	<ListBoxItem 
-    on:click
+    on:click={HandlePlaylistChoice}
     on:change
     bind:group={valueSingle} 
     name={title} 
@@ -28,7 +53,7 @@ $: current = Audio.currentTrackName;
             <Icon src={current === title ? CircleFilled : CircleDash} class="h-4 mt-1"/>
         </span>
     </svelte:fragment>
-    {title} 
+    {title.replace('.mp3', '')} 
 </ListBoxItem>
 <hr class={dividerClass} />
 

@@ -7,6 +7,16 @@ export const clipToRange = (value: number, min: number, max: number): number => 
 	return Math.min(Math.max(value, min), max);
 };
 
+export const randomStream = (props: { periodMs: number; range: number }): Promise<number> => {
+	const { periodMs: n, range: r } = props;
+	return new Promise((resolve) => {
+		setInterval(() => {
+			const randomNumber = Math.random() * r;
+			resolve(randomNumber);
+		}, n);
+	});
+};
+
 export const mapToRange = (
 	value: number,
 	min: number,

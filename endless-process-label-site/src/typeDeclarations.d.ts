@@ -24,6 +24,7 @@ type PlaylistContainer = {
 		offset?: number;
 	};
 	playlist: Array<string>;
+	show: boolean;
 	durations: Map<string, number>;
 };
 

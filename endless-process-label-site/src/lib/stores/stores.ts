@@ -49,9 +49,11 @@ export const VFS_PATH_PREFIX: Readable<string> = readable('/src/lib/audio/mp3/')
  */
 
 export type DurationsMapElement = { key: string; value: number };
+export const PlaysCount: Writable<number> = writable(0);
 export const Playlist: Writable<PlaylistContainer> = writable({
 	playlist: getFiles(),
 	durations: new Map<string, number>(),
+	show: false,
 	currentTrack: { name: '', path: '', loaded: false, progress: 0 }
 });
 

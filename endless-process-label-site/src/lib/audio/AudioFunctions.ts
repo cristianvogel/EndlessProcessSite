@@ -28,11 +28,14 @@ export function bufferProgress(props: ProgressOptions): Signal {
  * @description Endless Process track player
  */
 
-export function samplesPlayer(props: SamplerOptions): StereoSignal {
+export function scrubbingSamplesPlayer(props: SamplerOptions): StereoSignal {
 	let { trigger = 1, rate = 1, startOffset = 0 } = props;
 	let selectTriggerSignal = Audio.scrubbing ? 0 : 1;
 	startOffset = clipTo0(startOffset);
-	const scrub: Signal = el.train(el.mul(50, el.rand()));
+
+	const scrubRate = el.sm(el.latch(el.train(50), el.rand()));
+	const scrub: Signal = el.train(el.mul(50, scrubRate)) as Signal;
+
 	const currentVFSPath = Audio.currentVFSPath;
 	let path = currentVFSPath + channelExtensionFor(1);
 	let kl = currentVFSPath + '_left';

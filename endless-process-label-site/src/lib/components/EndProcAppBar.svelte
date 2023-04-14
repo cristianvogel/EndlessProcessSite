@@ -5,7 +5,7 @@
 	import { Events, ChartMarimekko, Cube, ProgressBarRound } from '@steeze-ui/carbon-icons';
 	import ElementaryPlayer from '$lib/components/ElementaryPlayer.svelte';
 	import Progress from '$lib/components/Progress.svelte';
-	import { CablesText, CablesIsLoaded } from '$lib/stores/stores';
+	import { CablesText, CablesIsLoaded, PlaysCount, Playlist } from '$lib/stores/stores';
 	import { Audio } from '$lib/stores/AudioEngine';
 	import { createEventDispatcher } from 'svelte';
 
@@ -13,21 +13,20 @@
 
 	const { audioStatus } = Audio.stores;
 
-	$: showPlaylist = false;
 	$: audioBuffersReady = Audio.audioBuffersReady;
 
 	/**
 	 * @description ----------------------------------------------
-	 * interactivity handler for the Audio controls
+	 * interactivity handler for the player controls
 	 */
 	function handleAudioControls(e: any) {
 		// check if the click was on the playlist button
-		if (e.currentTarget.id !== 'playlist') {
-			showPlaylist = false;
-		} else {
-			showPlaylist = !showPlaylist;
-			dispatch('playlistChanged', showPlaylist);
+
+		if (e.currentTarget.id === 'playlist'){
+			$Playlist.show = !$Playlist.show;
+			dispatch('playlistChanged', $Playlist.show);
 		}
+		
 		if (e.currentTarget.id === 'transport') {
 			playPauseLogic();
 		}
@@ -41,6 +40,18 @@
 		if (!Audio.audioBuffersReady) {
 			return;
 		}
+		// initialise first track data if this is the first play
+		if ($PlaysCount === 0) { 
+			$Playlist.currentTrack = {
+										name: $Playlist.playlist[0], 
+										path: $Playlist.playlist[0], 
+										duration: $Playlist.durations.get($Playlist.playlist[0]), 
+										progress: 0,
+										offset: 0
+									}
+								$PlaysCount += 1; // todo: A modal prompting to buy the music after a number of plays ?
+								}
+
 		if ($audioStatus === 'playing') {
 			Audio.mute();
 			return;
@@ -67,7 +78,7 @@
 	
 		<!-- Persistent Audio controls  -->
 		{#if audioBuffersReady && $CablesIsLoaded}
-			<ElementaryPlayer on:click={handleAudioControls} {showPlaylist} />
+			<ElementaryPlayer on:click={handleAudioControls} />
 		{:else}
 			<div class="absolute top-6" transition:fade>
 				<Icon src={Cube} class="h-8 animate-spin" data-sveltekit-noscroll />
