@@ -2,7 +2,7 @@
 	// Splash opening
 	import SplashSVG from '$lib/components/SplashSVG.svelte';
 	import NowPlaying from './NowPlaying.svelte';
-	import {Audio} from '$lib/stores/AudioEngine';
+	import {Audio} from '$lib/classes/Audio';
 	import { singlePost } from '$lib/stores/stores';
 	import FolderScan from '$lib/components/FolderScan.svelte';
 	import TextToSpeech from '$lib/components/TextToSpeech.svelte';

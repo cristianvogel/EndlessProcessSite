@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Playlist } from "$lib/stores/stores";
-	import { Audio } from "$lib/stores/AudioEngine";
+	import { Audio } from "$lib/classes/Audio";
 	import { ProgressBar } from "@skeletonlabs/skeleton";
   import { Scrubbing } from "$lib/stores/stores";
 

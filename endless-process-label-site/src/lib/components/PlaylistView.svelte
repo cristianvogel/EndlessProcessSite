@@ -3,7 +3,7 @@
 import { ListBox, ListBoxItem } from '@skeletonlabs/skeleton';
 import { Icon } from '@steeze-ui/svelte-icon';
 import  {CircleDash, CircleFilled} from '@steeze-ui/carbon-icons';
-import {Audio} from '$lib/stores/AudioEngine';
+import {Audio} from '$lib/classes/Audio';
 import { Playlist, VFS_PATH_PREFIX } from "$lib/stores/stores";
 
 export let tracklisting:Array<string>;

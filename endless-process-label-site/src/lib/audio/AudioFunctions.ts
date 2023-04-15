@@ -6,11 +6,11 @@
  * memoized composite function, defined in the composites.ts file.
  * 
  * From here, we pass back a StereoSignal object, 
- * which is returned to the Elementary Core renderer in AudioEngine.ts
+ * which is returned to the Elementary Core renderer in Audio.ts
  * 
  */
 
-import { Audio } from '$lib/stores/AudioEngine';
+import { Audio } from '$lib/classes/Audio';
 import { el } from '@elemaudio/core';
 import { channelExtensionFor, clipTo0 } from '$lib/classes/Utils';
 import { detunedSaws, attenuate, progress } from '$lib/audio/composites';

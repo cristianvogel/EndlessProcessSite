@@ -6,7 +6,7 @@
 	import ElementaryPlayer from '$lib/components/ElementaryPlayer.svelte';
 	import Progress from '$lib/components/Progress.svelte';
 	import { CablesText, CablesIsLoaded, PlaysCount, Playlist } from '$lib/stores/stores';
-	import { Audio } from '$lib/stores/AudioEngine';
+	import { Audio } from '$lib/classes/Audio';
 	import { createEventDispatcher } from 'svelte';
 
 	const dispatch = createEventDispatcher();
@@ -53,7 +53,7 @@
 								}
 
 		if ($audioStatus === 'playing') {
-			Audio.mute();
+			Audio.pause();
 			return;
 		} else {
 			Audio.unmute();

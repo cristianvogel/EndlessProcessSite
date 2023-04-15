@@ -1,7 +1,7 @@
 import { get, derived, writable, type Writable } from 'svelte/store';
 import type {
 	StereoSignal,
-	AudioEngineStatus,
+	AudioCoreStatus,
 	Signal,
 	RawAudioBuffer,
 	SamplerOptions
@@ -17,11 +17,11 @@ import { el } from '@elemaudio/core';
 // OOPS/TS Singleton design pattern.
 // todo: set a sample rate constant prop
 
-class AudioEngine {
+class AudioCore {
 	#core: WebRenderer | null;
 	#silentCore: WebRenderer | null;
-	static #instance: AudioEngine | null;
-	private _AudioEngineStatus: Writable<AudioEngineStatus>;
+	static #instance: AudioCore | null;
+	private _AudioCoreStatus: Writable<AudioCoreStatus>;
 	private _contextIsRunning: Writable<boolean>;
 	private _elemLoaded: Writable<boolean>;
 	private _audioContext: Writable<AudioContext>;
@@ -33,20 +33,20 @@ class AudioEngine {
 	private _scrubbing: boolean;
 
 	static getInstance() {
-		if (!AudioEngine.#instance) {
-			AudioEngine.#instance = new AudioEngine();
+		if (!AudioCore.#instance) {
+			AudioCore.#instance = new AudioCore();
 		}
-		return AudioEngine.#instance;
+		return AudioCore.#instance;
 	}
 
 	private constructor() {
-		if (!AudioEngine.#instance) {
-			AudioEngine.#instance = this;
+		if (!AudioCore.#instance) {
+			AudioCore.#instance = this;
 		}
 
 		this.#core = this.#silentCore = null;
 		this._masterVolume = writable(1); // default master volume
-		this._AudioEngineStatus = writable('loading');
+		this._AudioCoreStatus = writable('loading');
 		this._contextIsRunning = writable(false);
 		this._elemLoaded = writable(false);
 		this._audioContext = writable();
@@ -61,7 +61,7 @@ class AudioEngine {
 	subscribeToStores() {
 		/**
 		 * @description
-		 *  Subscribers to update AudioEngine with current track info
+		 *  Subscribers to update AudioCore with current track info
 		 */
 		Playlist.subscribe(($Playlist) => (Audio._currentTrackName = $Playlist.currentTrack.name));
 
@@ -184,7 +184,7 @@ class AudioEngine {
 		Audio._contextIsRunning.update(() => {
 			return Audio.actx.state === 'running';
 		});
-		Audio._AudioEngineStatus.update(() => {
+		Audio._AudioCoreStatus.update(() => {
 			return Audio.baseState;
 		});
 	};
@@ -353,10 +353,10 @@ class AudioEngine {
 
 	/**
 	 * @description
-	 * Mute Elementary's final gain node and but keep the audio context running
+	 * Stop sounding but keep the audio context running
 	 * , send a Mute message to Cables patch
 	 */
-	mute(pauseCables: boolean = false): void {
+	pause(pauseCables: boolean = false): void {
 		// release gate on the current track
 
 		Audio.playWithScrubFromVFS({
@@ -388,7 +388,7 @@ class AudioEngine {
 		// todo: refactor these to Tan-Li Hau's subsciber pattern
 		// https://www.youtube.com/watch?v=oiWgqk8zG18
 		return {
-			audioStatus: Audio._AudioEngineStatus,
+			audioStatus: Audio._AudioCoreStatus,
 			isRunning: Audio._contextIsRunning,
 			actx: Audio._audioContext,
 			endNodes: Audio._endNodes,
@@ -420,7 +420,7 @@ class AudioEngine {
 	}
 
 	get contextAndStatus() {
-		return derived([Audio._audioContext, Audio._AudioEngineStatus], ([$audioContext, $status]) => {
+		return derived([Audio._audioContext, Audio._AudioCoreStatus], ([$audioContext, $status]) => {
 			return { context: $audioContext, status: $status };
 		});
 	}
@@ -430,8 +430,8 @@ class AudioEngine {
 	}
 
 	get status() {
-		console.log('get status', get(Audio._AudioEngineStatus));
-		return get(Audio._AudioEngineStatus);
+		console.log('get status', get(Audio._AudioCoreStatus));
+		return get(Audio._AudioCoreStatus);
 	}
 
 	get elemLoaded() {
@@ -454,8 +454,8 @@ class AudioEngine {
 		return get(Audio._endNodes).mainCore;
 	}
 
-	get baseState(): AudioEngineStatus {
-		return Audio.actx.state as AudioEngineStatus;
+	get baseState(): AudioCoreStatus {
+		return Audio.actx.state as AudioCoreStatus;
 	}
 	/*---- setters --------------------------------*/
 
@@ -482,8 +482,8 @@ class AudioEngine {
 		Audio._audioContext.update(() => newCtx);
 	}
 
-	set status(newStatus: AudioEngineStatus) {
-		Audio._AudioEngineStatus.update(() => newStatus);
+	set status(newStatus: AudioCoreStatus) {
+		Audio._AudioCoreStatus.update(() => newStatus);
 	}
 	set elemSilentNode(node: AudioNode) {
 		Audio._endNodes.update((n) => {
@@ -500,5 +500,5 @@ class AudioEngine {
 	}
 }
 
-export const Audio: AudioEngine = AudioEngine.getInstance();
+export const Audio: AudioCore = AudioCore.getInstance();
 

@@ -10,8 +10,6 @@
 	import SplashPage from '$lib/components/SplashPage.svelte';
 	import PageFooter from '$lib/components/Footer.svelte';
 	import CanvasBody from '$lib/components/CanvasBody.svelte';
-	import FolderScan from '$lib/components/FolderScan.svelte';
-	import TextToSpeech from '$lib/components/TextToSpeech.svelte';
 
 	$: spin = false;
 

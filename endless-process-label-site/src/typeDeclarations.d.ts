@@ -12,7 +12,7 @@ interface SinglePost {
 	isOpen?: boolean;
 }
 
-type AudioEngineStatus = 'suspended' | 'loading' | 'playing' | 'paused' | 'closed ' | 'running';
+type AudioCoreStatus = 'suspended' | 'loading' | 'playing' | 'paused' | 'closed ' | 'running';
 
 type PlaylistContainer = {
 	currentTrack: {

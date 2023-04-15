@@ -1,6 +1,6 @@
 <script lang='ts'>
 	import type { LayoutData } from './$types';
-	import { Audio } from '$lib/stores/AudioEngine';
+	import { Audio } from '$lib/classes/Audio';
 
 	export let data: LayoutData;
 

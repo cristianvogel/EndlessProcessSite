@@ -77,5 +77,5 @@ export const Voice: Writable<VoiceContainer> = writable({
 
 
 //---------- deprecating -----------------------
-// probably not needed anymore, as sound output is all handled by the AudioEngine now
+// probably not needed anymore, as sound output is all handled by the AudioCore now
 export const EndNodes: Writable<any> = writable({ elem: null, cables: null });
