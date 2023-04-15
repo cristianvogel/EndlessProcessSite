@@ -85,7 +85,8 @@ export class AudioCore {
 	}
 
 	cleanup() {
-		Audio.suspend();
+		// not sure about this, sometimes causes context to stay suspended forever
+		//Audio.suspend();
 	}
 
 	/**
@@ -112,19 +113,8 @@ export class AudioCore {
 			console.log('Passing existing AudioContext');
 		} else {
 			console.log('No context!');
-			Audio.cleanup();
+			//Audio.cleanup();
 		}
-
-		// Elementary connecting promise : Silent Core
-		Audio.elemSilentNode = await Audio.#silentCore
-			.initialize(Audio.actx, {
-				numberOfInputs: 1,
-				numberOfOutputs: 1,
-				outputChannelCount: [2]
-			})
-			.then((node) => {
-				return node;
-			});
 
 		// Elementary connecting promise : Main Core
 		Audio.elemEndNode = await Audio.#core
@@ -135,6 +125,17 @@ export class AudioCore {
 			})
 			.then((node) => {
 				Audio._elemLoaded.set(true);
+				return node;
+			});
+
+		// Elementary connecting promise : Silent Core
+		Audio.elemSilentNode = await Audio.#silentCore
+			.initialize(Audio.actx, {
+				numberOfInputs: 1,
+				numberOfOutputs: 1,
+				outputChannelCount: [2]
+			})
+			.then((node) => {
 				return node;
 			});
 
@@ -150,7 +151,6 @@ export class AudioCore {
 		Audio.#core.on('load', () => {
 			console.log('Main core loaded 🔊?', Audio.elemLoaded);
 			Audio.currentVFSPath += `${Audio._currentTrackName}`;
-			Audio.resumeContext();
 		});
 
 		Audio.#silentCore.on('load', () => {

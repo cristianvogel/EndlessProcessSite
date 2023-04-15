@@ -19,11 +19,11 @@
             current.path = $VFS_PATH_PREFIX + current.id;
             return plist;
         })
+        VoiceOver.playFromVFS();
     }
 
     onMount(() => {     
         VoiceOver.init();
-
         })
 
 
