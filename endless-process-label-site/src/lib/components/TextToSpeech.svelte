@@ -1,23 +1,30 @@
 <script lang="ts">
     import { Icon } from '@steeze-ui/svelte-icon';
     import { VoiceActivate } from'@steeze-ui/carbon-icons';
+    import {VoiceOver} from '$lib/classes/Voice';
     import ElevenLabsLogo from '$lib/images/ElevenLabsLogo.svelte';
 	import { SlideToggle } from '@skeletonlabs/skeleton';
-    import { VFS_PATH_PREFIX, Voice } from '$lib/stores/stores';
-	import type { VoiceContainer } from 'src/typeDeclarations';
+    import { VFS_PATH_PREFIX, PlaylistVoice } from '$lib/stores/stores';
+	import { onMount } from 'svelte';
 
     let activated: boolean = false;
 
     function voiceActivated(e: any) {
-
-        Voice.update( (voice:VoiceContainer) => {
+        PlaylistVoice.update( (plist) => {
             const data = e.target
-            voice.status.active = data.checked;
-            voice.currentChapterID = data.name;
-            voice.VFSPath = $VFS_PATH_PREFIX + voice.currentChapterID;
-            return voice;
+            const current = plist.currentChapter;
+            VoiceOver.status = data.checked ? 'playing' : 'paused';
+            current.id = data.id;
+            current.name = data.name;
+            current.path = $VFS_PATH_PREFIX + current.id;
+            return plist;
         })
     }
+
+    onMount(() => {     
+        VoiceOver.init();
+
+        })
 
 
 </script>

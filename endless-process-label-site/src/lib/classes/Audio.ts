@@ -14,35 +14,35 @@ import WebRenderer from '@elemaudio/web-renderer';
 import type { NodeRepr_t } from '@elemaudio/core';
 import { el } from '@elemaudio/core';
 
+
 // OOPS/TS Singleton design pattern.
 // todo: set a sample rate constant prop
 
-class AudioCore {
+export class AudioCore {
 	#core: WebRenderer | null;
 	#silentCore: WebRenderer | null;
-	static #instance: AudioCore | null;
-	private _AudioCoreStatus: Writable<AudioCoreStatus>;
-	private _contextIsRunning: Writable<boolean>;
-	private _elemLoaded: Writable<boolean>;
-	private _audioContext: Writable<AudioContext>;
-	private _endNodes: Writable<any>;
-	private _masterVolume: Writable<number | Signal>;
-	private _currentTrackName: string;
-	private _currentVFSPath: string;
-	private _currentTrackDurationSeconds: number;
-	private _scrubbing: boolean;
+	protected _AudioCoreStatus: Writable<AudioCoreStatus>;
+	protected _contextIsRunning: Writable<boolean>;
+	protected _elemLoaded: Writable<boolean>;
+	protected _audioContext: Writable<AudioContext>;
+	protected _endNodes: Writable<any>;
+	protected _masterVolume: Writable<number | Signal>;
+	protected _currentTrackName: string;
+	protected _currentVFSPath: string;
+	protected _currentTrackDurationSeconds: number;
+	protected _scrubbing: boolean;
 
-	static getInstance() {
-		if (!AudioCore.#instance) {
-			AudioCore.#instance = new AudioCore();
-		}
-		return AudioCore.#instance;
-	}
+	// static getInstance() {
+	// 	if (!AudioCore.#instance) {
+	// 		AudioCore.#instance = new AudioCore();
+	// 	}
+	// 	return AudioCore.#instance;
+	// }
 
-	private constructor() {
-		if (!AudioCore.#instance) {
-			AudioCore.#instance = this;
-		}
+	constructor() {
+		// if (!AudioCore.#instance) {
+		// 	AudioCore.#instance = this;
+		// }
 
 		this.#core = this.#silentCore = null;
 		this._masterVolume = writable(1); // default master volume
@@ -50,7 +50,10 @@ class AudioCore {
 		this._contextIsRunning = writable(false);
 		this._elemLoaded = writable(false);
 		this._audioContext = writable();
-		this._endNodes = writable({ mainCore: null, silentCore: null });
+		this._endNodes = writable({
+			mainCore: null,
+			silentCore: null
+		});
 		// these below are dynamically set from store subscriptions
 		this._currentVFSPath = '';
 		this._currentTrackName = '';
@@ -87,8 +90,7 @@ class AudioCore {
 
 	/**
 	 * @description Initialise the Elementary audio engine asynchronously
-	 * and store it in the Audio singleton as a static property
-	 * called Audio.elemEndNode
+	 * and store it in the Audio class as Audio.elemEndNode
 	 */
 	async init(ctx?: AudioContext): Promise<void> {
 		/**
@@ -121,7 +123,6 @@ class AudioCore {
 				outputChannelCount: [2]
 			})
 			.then((node) => {
-				console.log('Silent Core loaded');
 				return node;
 			});
 
@@ -146,16 +147,25 @@ class AudioCore {
 		Audio.actx.addEventListener('statechange', Audio.stateChangeHandler);
 
 		// Elementary load callback
-		Audio.#core.on('load', async () => {
-			console.log('Elementary loaded 🔊?', Audio.elemLoaded);
+		Audio.#core.on('load', () => {
+			console.log('Main core loaded 🔊?', Audio.elemLoaded);
 			Audio.currentVFSPath += `${Audio._currentTrackName}`;
 			Audio.resumeContext();
+		});
+
+		Audio.#silentCore.on('load', () => {
+			console.log('Silent core loaded');
 		});
 
 		// Elementary error reporting
 		Audio.#core.on('error', function (e) {
 			console.error('🔇 ', e);
-			Audio.cleanup();
+			//Audio.cleanup();
+		});
+
+		Audio.#silentCore.on('error', function (e) {
+			console.error('🔇 ', e);
+			//Audio.cleanup();
 		});
 
 		// Elementary FFT callback
@@ -227,7 +237,7 @@ class AudioCore {
 					[`${vfsPath}${channelExtensionFor(i + 1)}`]: decoded.getChannelData(i)
 				};
 			}
-			console.log('vfsDictionaryEntry', vfsDictionaryEntry);
+			//console.log('vfsDictionaryEntry', vfsDictionaryEntry);
 			Audio.#core?.updateVirtualFileSystem(vfsDictionaryEntry);
 		});
 	}
@@ -460,7 +470,7 @@ class AudioCore {
 	/*---- setters --------------------------------*/
 
 	set currentVFSPath(path: string) {
-		console.log('set currentVFSPath', path);
+		//	console.log('set currentVFSPath', path);
 		Playlist.update(($plist) => {
 			$plist.currentTrack.path = path;
 			return $plist;
@@ -500,5 +510,5 @@ class AudioCore {
 	}
 }
 
-export const Audio: AudioCore = AudioCore.getInstance();
+export const Audio = new AudioCore();
 
