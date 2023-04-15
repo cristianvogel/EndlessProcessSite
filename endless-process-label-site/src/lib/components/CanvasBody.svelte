@@ -13,8 +13,8 @@
 		<div class="absolute inset-0 flex justify-center items-center">
 			<ProgressRadial 
 			value={ undefined }
-			font= {12}
-			width='w-10' 
+			font= {8}
+			width='w-4' 
 			stroke={5} 
 			meter="stroke-secondary-500" 
 			track="stroke-secondary-300/30" />

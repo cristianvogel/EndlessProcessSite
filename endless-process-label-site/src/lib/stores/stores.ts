@@ -1,7 +1,7 @@
 // This file defines the stores used in the app
 
 import { writable, type Readable, type Writable, readable } from 'svelte/store';
-import type { SinglePost, RawFFT, PlaylistContainer } from 'src/typeDeclarations';
+import type { SinglePost, RawFFT, PlaylistContainer, VoiceContainer } from 'src/typeDeclarations';
 import { getFiles } from '$lib/classes/Files';
 
 // Todo: Implement sanitiser for the content
@@ -43,7 +43,7 @@ export const Decoding: Writable<{ done: boolean; progress?: number }> = writable
 export const VFS_PATH_PREFIX: Readable<string> = readable('/src/lib/audio/mp3/');
 
 /**
- * Playlist... work in progress
+ * Playlist.
  * todo: description, duration, loaded flag,  non-filename titles.
  * Something like a semantic metadata layer for each track?
  */
@@ -58,6 +58,23 @@ export const Playlist: Writable<PlaylistContainer> = writable({
 });
 
 export const Scrubbing: Writable<boolean> = writable(false);
+
+/**
+ * Speech.
+ * Work in Progress
+ */
+
+export const Voice: Writable<VoiceContainer> = writable({
+	VFSPath: '',
+	currentChapterID: '',
+	startOffset: 0,
+	position: 0,
+	gate: 0,
+	status: { active: false, paused: false, speaking: false, loading: false },
+	node: null
+});
+
+
 
 //---------- deprecating -----------------------
 // probably not needed anymore, as sound output is all handled by the AudioEngine now

@@ -103,7 +103,7 @@
 			</a>
 			<a class="logo-item p-2 flex-none" href="/">
 				<Icon src={ProgressBarRound} class="h-7" data-sveltekit-noscroll />
-				<span class='text-m'>Releases</span>
+				<span class='text-m'>Catalogue</span>
 			</a>
 			<a class="logo-item p-2 flex-none" href="/">
 				<Icon src={Events} class="h-7" data-sveltekit-noscroll />

@@ -8,7 +8,7 @@ import type {
 } from 'src/typeDeclarations';
 
 import { scrubbingSamplesPlayer, stereoOut, bufferProgress } from '$lib/audio/AudioFunctions';
-import { channelExtensionFor } from '$lib/classes/Utils';
+import { channelExtensionFor, clipToRange } from '$lib/classes/Utils';
 import { CablesPatch, VFS_PATH_PREFIX, Playlist, Decoding, Scrubbing } from '$lib/stores/stores';
 import WebRenderer from '@elemaudio/web-renderer';
 import type { NodeRepr_t } from '@elemaudio/core';
@@ -51,7 +51,7 @@ class AudioEngine {
 		this._elemLoaded = writable(false);
 		this._audioContext = writable();
 		this._endNodes = writable({ mainCore: null, silentCore: null });
-		// dynamically set from store subscriptions
+		// these below are dynamically set from store subscriptions
 		this._currentVFSPath = '';
 		this._currentTrackName = '';
 		this._currentTrackDurationSeconds = 0;
@@ -149,6 +149,7 @@ class AudioEngine {
 		Audio.#core.on('load', async () => {
 			console.log('Elementary loaded 🔊?', Audio.elemLoaded);
 			Audio.currentVFSPath += `${Audio._currentTrackName}`;
+			Audio.resumeContext();
 		});
 
 		// Elementary error reporting
@@ -171,9 +172,9 @@ class AudioEngine {
 
 		// Elementary snapshot callback
 		Audio.#silentCore.on('snapshot', function (e) {
-			Playlist.update(($playlist) => {
-				$playlist.currentTrack.progress = e.data as number;
-				return $playlist;
+			Playlist.update(($pl) => {
+				$pl.currentTrack.progress = clipToRange(e.data as number, 0, 1);
+				return $pl;
 			});
 		});
 	}
@@ -297,9 +298,9 @@ class AudioEngine {
 	}
 
 	/**
-	 * @description: Plays samples from a VFS path, with options
+	 * @description: Plays samples from a VFS path, with scrubbing
 	 */
-	playFromVFS(props: SamplerOptions) {
+	playWithScrubFromVFS(props: SamplerOptions) {
 		Audio.render(scrubbingSamplesPlayer(props));
 		Audio.progressBar({
 			run: props.trigger as number,
@@ -313,13 +314,10 @@ class AudioEngine {
 	progressBar(props: { run: number; startOffset: number }) {
 		let { run = 1, startOffset: startOffsetMs = 0 } = props;
 		let rate = 10;
-		if (Audio.scrubbing) {
-			run = 0;
-		}
 		const totalDurMs = Audio.currentTrackDurationSeconds * 1000;
 		Audio.controlRender(
 			bufferProgress({
-				key: Audio.currentVFSPath + '_progBar',
+				key: Audio.currentTrackDurationSeconds + '_progBar',
 				totalDurMs,
 				run,
 				rate,
@@ -347,7 +345,7 @@ class AudioEngine {
 			Audio.resumeContext();
 		}
 		// gate the current track
-		Audio.playFromVFS({
+		Audio.playWithScrubFromVFS({
 			vfsPath: Audio.currentVFSPath,
 			trigger: 1
 		});
@@ -361,7 +359,7 @@ class AudioEngine {
 	mute(pauseCables: boolean = false): void {
 		// release gate on the current track
 
-		Audio.playFromVFS({
+		Audio.playWithScrubFromVFS({
 			vfsPath: Audio.currentVFSPath,
 			trigger: 0
 		});

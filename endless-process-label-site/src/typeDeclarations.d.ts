@@ -73,3 +73,20 @@ interface stereoOut {
 	props: {};
 	stereoSignal: StereoSignal;
 }
+
+//════════╡ Voice ╞═══════
+
+interface VoiceContainer  {
+	VFSPath: string;
+	currentChapterID: string;
+	startOffset?: number;
+	position?: number;
+	gate: Signal | number;
+	status: {
+		active: boolean;
+		paused: boolean;
+		speaking: boolean;
+		loading?: boolean;
+	};
+	node: Signal | null;
+};
