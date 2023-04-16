@@ -12,9 +12,18 @@ interface SinglePost {
 	isOpen?: boolean;
 }
 
-type AudioEngineStatus = 'suspended' | 'loading' | 'playing' | 'paused' | 'closed ' | 'running';
+type AudioCoreStatus =
+	| 'suspended'
+	| 'loading'
+	| 'playing'
+	| 'paused'
+	| 'closed '
+	| 'running'
+	| 'ready'
+	| 'scrubbing'
+	| 'error';
 
-type PlaylistContainer = {
+interface PlaylistContainer {
 	currentTrack: {
 		progress: number;
 		name: string;
@@ -26,7 +35,7 @@ type PlaylistContainer = {
 	playlist: Array<string>;
 	show: boolean;
 	durations: Map<string, number>;
-};
+}
 
 type HtmlContent = { rawHTML: string; sanitisedHTML: string };
 
@@ -57,7 +66,7 @@ type ProgressOptions = {
 
 type Signal = NodeRepr_t;
 
-export type RawAudioBuffer = {
+type RawAudioBuffer = {
 	header: { name: string; bytes: number; vfsPath: string };
 	body: ArrayBuffer | Promise<ArrayBuffer>;
 };
@@ -72,4 +81,15 @@ interface detunedSaws {
 interface stereoOut {
 	props: {};
 	stereoSignal: StereoSignal;
+}
+
+//════════╡ Voice ╞═══════
+type ChapterID = `chapter-${string}`;
+interface VoiceContainer extends Omit<PlaylistContainer, 'currentTrack' | 'show'> {
+	currentChapter: {
+		progress: number;
+		name: string;
+		id: ChapterID;
+		path: string;
+	};
 }

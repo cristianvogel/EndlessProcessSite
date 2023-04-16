@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { Playlist } from "$lib/stores/stores";
-	import { Audio } from "$lib/stores/AudioEngine";
+	import { Audio } from "$lib/classes/Audio";
 	import { ProgressBar } from "@skeletonlabs/skeleton";
-    import { Scrubbing } from "$lib/stores/stores";
+  import { Scrubbing } from "$lib/stores/stores";
 
 
     $: progress = $Playlist.currentTrack.progress ;
@@ -17,17 +17,16 @@
         const { left, width } = target.getBoundingClientRect();
         const x = clientX - left;
         const percent = x / width;
-        start = (percent * duration) ; // in seconds
-
-        Audio.playFromVFS({
+        start = Math.round((percent * duration) * 1000) ; // to ms
+        Audio.playWithScrubFromVFS({
             trigger: 0, 
-            startOffset:  Math.round(start * 1000) 
+            startOffset: start
         });   
     }
 
     function replay () {
         $Scrubbing = false;
-        Audio.playFromVFS( { startOffset:  Math.round(start * 1000) });
+        Audio.playWithScrubFromVFS( {trigger: 1, startOffset: start });
     }
 
 </script>
@@ -42,10 +41,10 @@
     max={duration}  />
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <div id="invisible-div" 
-    on:mousedown={()=>$Scrubbing=true} 
+    on:mousedown={(e)=>{$Scrubbing=true; handleScrub(e)}} 
     on:mousemove={handleScrub} 
     on:mouseup={replay}
-    on:mouseleave={()=>$Scrubbing=false}>
+    on:mouseleave={()=>{$Scrubbing=false}}>
 </div>
 </div>
 

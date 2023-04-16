@@ -1,6 +1,6 @@
 <script>
 	import {Playlist} from '$lib/stores/stores';
-	import {Audio} from '$lib/stores/AudioEngine';
+	import {Audio} from '$lib/classes/Audio';
 	import DescriptionList from './DescriptionList.svelte';
 	const { audioStatus } = Audio.stores
 

@@ -3,7 +3,7 @@
 import { ListBox, ListBoxItem } from '@skeletonlabs/skeleton';
 import { Icon } from '@steeze-ui/svelte-icon';
 import  {CircleDash, CircleFilled} from '@steeze-ui/carbon-icons';
-import {Audio} from '$lib/stores/AudioEngine';
+import {Audio} from '$lib/classes/Audio';
 import { Playlist, VFS_PATH_PREFIX } from "$lib/stores/stores";
 
 export let tracklisting:Array<string>;
@@ -19,7 +19,7 @@ function HandlePlaylistChoice(e?:any, name?:string) {
 			e={currentTarget:{name:name}}; 
 		};
 		$Playlist.show = false;
-		Audio.playFromVFS( { trigger: 0, startOffset: 0 });
+		Audio.playWithScrubFromVFS( { trigger: 0, startOffset: 0 });
 		Playlist.update( (plist) => {
 			const { currentTrack } = plist;
 			plist.currentTrack = {
@@ -33,18 +33,17 @@ function HandlePlaylistChoice(e?:any, name?:string) {
 				//console.log('Current track from store: ',plist.currentTrack);
 			return plist;
 		});
-		Audio.playFromVFS( { trigger: 1, startOffset: 0 });
+		Audio.playWithScrubFromVFS( { trigger: 1, startOffset: 0 });
 	}
 
 </script>
 
  <ListBox> 	
-    <h2 class="text-2xl text-tertiary-600 font-bold">Featured Playlist</h2>
+    <h2 class="text-2xl text-tertiary-600 font-bold">Featured Music</h2>
     <hr class={dividerClass} />	
  {#each tracklisting  as title,i}
 	<ListBoxItem 
     on:click={HandlePlaylistChoice}
-    on:change
     bind:group={valueSingle} 
     name={title} 
     value={i}>

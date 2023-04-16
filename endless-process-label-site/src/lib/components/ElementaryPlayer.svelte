@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Audio } from '$lib/stores/AudioEngine';
+	import { Audio } from '$lib/classes/Audio';
 	import { Icon } from '@steeze-ui/svelte-icon';
 	import {PauseOutline, PlayOutline, QueryQueue } from '@steeze-ui/carbon-icons';
 	import { Decoding, Playlist } from '$lib/stores/stores';

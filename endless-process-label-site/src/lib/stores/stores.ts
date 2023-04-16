@@ -1,7 +1,7 @@
 // This file defines the stores used in the app
 
 import { writable, type Readable, type Writable, readable } from 'svelte/store';
-import type { SinglePost, RawFFT, PlaylistContainer } from 'src/typeDeclarations';
+import type { SinglePost, RawFFT, PlaylistContainer, VoiceContainer } from 'src/typeDeclarations';
 import { getFiles } from '$lib/classes/Files';
 
 // Todo: Implement sanitiser for the content
@@ -13,10 +13,6 @@ export const singlePost: Writable<SinglePost> = writable({
 	date: '',
 	cardIndex: '',
 	isOpen: false
-});
-export const rawFFT: Writable<RawFFT> = writable({
-	real: new Float32Array(0),
-	imag: new Float32Array(0)
 });
 
 /**
@@ -43,7 +39,7 @@ export const Decoding: Writable<{ done: boolean; progress?: number }> = writable
 export const VFS_PATH_PREFIX: Readable<string> = readable('/src/lib/audio/mp3/');
 
 /**
- * Playlist... work in progress
+ * Playlist.
  * todo: description, duration, loaded flag,  non-filename titles.
  * Something like a semantic metadata layer for each track?
  */
@@ -59,6 +55,18 @@ export const Playlist: Writable<PlaylistContainer> = writable({
 
 export const Scrubbing: Writable<boolean> = writable(false);
 
+//---------- Voice -----------------------
+
+export const PlaylistVoice: Writable<VoiceContainer> = writable({
+	playlist: [],
+	durations: new Map<string, number>(),
+	currentChapter: { name: '', id: 'chapter-1', path: '', progress: 0 }
+});
+
 //---------- deprecating -----------------------
-// probably not needed anymore, as sound output is all handled by the AudioEngine now
+// probably not needed anymore, as sound output is all handled by the AudioCore now
 export const EndNodes: Writable<any> = writable({ elem: null, cables: null });
+export const rawFFT: Writable<RawFFT> = writable({
+	real: new Float32Array(0),
+	imag: new Float32Array(0)
+});

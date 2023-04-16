@@ -6,7 +6,7 @@
 	import ElementaryPlayer from '$lib/components/ElementaryPlayer.svelte';
 	import Progress from '$lib/components/Progress.svelte';
 	import { CablesText, CablesIsLoaded, PlaysCount, Playlist } from '$lib/stores/stores';
-	import { Audio } from '$lib/stores/AudioEngine';
+	import { Audio } from '$lib/classes/Audio';
 	import { createEventDispatcher } from 'svelte';
 
 	const dispatch = createEventDispatcher();
@@ -53,7 +53,7 @@
 								}
 
 		if ($audioStatus === 'playing') {
-			Audio.mute();
+			Audio.pause();
 			return;
 		} else {
 			Audio.unmute();
@@ -103,7 +103,7 @@
 			</a>
 			<a class="logo-item p-2 flex-none" href="/">
 				<Icon src={ProgressBarRound} class="h-7" data-sveltekit-noscroll />
-				<span class='text-m'>Releases</span>
+				<span class='text-m'>Catalogue</span>
 			</a>
 			<a class="logo-item p-2 flex-none" href="/">
 				<Icon src={Events} class="h-7" data-sveltekit-noscroll />

@@ -6,7 +6,7 @@
 			CablesIsLoaded,
 			CablesAudioContext,
 		} from '$lib/stores/stores';
-	import { Audio } from '$lib/stores/AudioEngine';
+	import { Audio } from '$lib/classes/Audio';
 	import { onMount } from 'svelte';
 	import { Utils } from '$lib/classes/Utils';
 

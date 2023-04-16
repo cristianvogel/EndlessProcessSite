@@ -1,57 +1,60 @@
 import { get, derived, writable, type Writable } from 'svelte/store';
 import type {
 	StereoSignal,
-	AudioEngineStatus,
+	AudioCoreStatus,
 	Signal,
 	RawAudioBuffer,
 	SamplerOptions
 } from 'src/typeDeclarations';
 
 import { scrubbingSamplesPlayer, stereoOut, bufferProgress } from '$lib/audio/AudioFunctions';
-import { channelExtensionFor } from '$lib/classes/Utils';
+import { channelExtensionFor, clipToRange } from '$lib/classes/Utils';
 import { CablesPatch, VFS_PATH_PREFIX, Playlist, Decoding, Scrubbing } from '$lib/stores/stores';
 import WebRenderer from '@elemaudio/web-renderer';
 import type { NodeRepr_t } from '@elemaudio/core';
 import { el } from '@elemaudio/core';
 
+
 // OOPS/TS Singleton design pattern.
 // todo: set a sample rate constant prop
 
-class AudioEngine {
+export class AudioCore {
 	#core: WebRenderer | null;
 	#silentCore: WebRenderer | null;
-	static #instance: AudioEngine | null;
-	private _AudioEngineStatus: Writable<AudioEngineStatus>;
-	private _contextIsRunning: Writable<boolean>;
-	private _elemLoaded: Writable<boolean>;
-	private _audioContext: Writable<AudioContext>;
-	private _endNodes: Writable<any>;
-	private _masterVolume: Writable<number | Signal>;
-	private _currentTrackName: string;
-	private _currentVFSPath: string;
-	private _currentTrackDurationSeconds: number;
-	private _scrubbing: boolean;
+	protected _AudioCoreStatus: Writable<AudioCoreStatus>;
+	protected _contextIsRunning: Writable<boolean>;
+	protected _elemLoaded: Writable<boolean>;
+	protected _audioContext: Writable<AudioContext>;
+	protected _endNodes: Writable<any>;
+	protected _masterVolume: Writable<number | Signal>;
+	protected _currentTrackName: string;
+	protected _currentVFSPath: string;
+	protected _currentTrackDurationSeconds: number;
+	protected _scrubbing: boolean;
 
-	static getInstance() {
-		if (!AudioEngine.#instance) {
-			AudioEngine.#instance = new AudioEngine();
-		}
-		return AudioEngine.#instance;
-	}
+	// static getInstance() {
+	// 	if (!AudioCore.#instance) {
+	// 		AudioCore.#instance = new AudioCore();
+	// 	}
+	// 	return AudioCore.#instance;
+	// }
 
-	private constructor() {
-		if (!AudioEngine.#instance) {
-			AudioEngine.#instance = this;
-		}
+	constructor() {
+		// if (!AudioCore.#instance) {
+		// 	AudioCore.#instance = this;
+		// }
 
 		this.#core = this.#silentCore = null;
 		this._masterVolume = writable(1); // default master volume
-		this._AudioEngineStatus = writable('loading');
+		this._AudioCoreStatus = writable('loading');
 		this._contextIsRunning = writable(false);
 		this._elemLoaded = writable(false);
 		this._audioContext = writable();
-		this._endNodes = writable({ mainCore: null, silentCore: null });
-		// dynamically set from store subscriptions
+		this._endNodes = writable({
+			mainCore: null,
+			silentCore: null
+		});
+		// these below are dynamically set from store subscriptions
 		this._currentVFSPath = '';
 		this._currentTrackName = '';
 		this._currentTrackDurationSeconds = 0;
@@ -61,7 +64,7 @@ class AudioEngine {
 	subscribeToStores() {
 		/**
 		 * @description
-		 *  Subscribers to update AudioEngine with current track info
+		 *  Subscribers to update AudioCore with current track info
 		 */
 		Playlist.subscribe(($Playlist) => (Audio._currentTrackName = $Playlist.currentTrack.name));
 
@@ -82,13 +85,13 @@ class AudioEngine {
 	}
 
 	cleanup() {
-		Audio.suspend();
+		// not sure about this, sometimes causes context to stay suspended forever
+		//Audio.suspend();
 	}
 
 	/**
 	 * @description Initialise the Elementary audio engine asynchronously
-	 * and store it in the Audio singleton as a static property
-	 * called Audio.elemEndNode
+	 * and store it in the Audio class as Audio.elemEndNode
 	 */
 	async init(ctx?: AudioContext): Promise<void> {
 		/**
@@ -110,20 +113,8 @@ class AudioEngine {
 			console.log('Passing existing AudioContext');
 		} else {
 			console.log('No context!');
-			Audio.cleanup();
+			//Audio.cleanup();
 		}
-
-		// Elementary connecting promise : Silent Core
-		Audio.elemSilentNode = await Audio.#silentCore
-			.initialize(Audio.actx, {
-				numberOfInputs: 1,
-				numberOfOutputs: 1,
-				outputChannelCount: [2]
-			})
-			.then((node) => {
-				console.log('Silent Core loaded');
-				return node;
-			});
 
 		// Elementary connecting promise : Main Core
 		Audio.elemEndNode = await Audio.#core
@@ -137,6 +128,17 @@ class AudioEngine {
 				return node;
 			});
 
+		// Elementary connecting promise : Silent Core
+		Audio.elemSilentNode = await Audio.#silentCore
+			.initialize(Audio.actx, {
+				numberOfInputs: 1,
+				numberOfOutputs: 1,
+				outputChannelCount: [2]
+			})
+			.then((node) => {
+				return node;
+			});
+
 		Audio.routeToCables();
 		Audio.connectToDestination(Audio.elemEndNode); // connect the Elem end node to the destination
 
@@ -146,15 +148,24 @@ class AudioEngine {
 		Audio.actx.addEventListener('statechange', Audio.stateChangeHandler);
 
 		// Elementary load callback
-		Audio.#core.on('load', async () => {
-			console.log('Elementary loaded 🔊?', Audio.elemLoaded);
+		Audio.#core.on('load', () => {
+			console.log('Main core loaded 🔊?', Audio.elemLoaded);
 			Audio.currentVFSPath += `${Audio._currentTrackName}`;
+		});
+
+		Audio.#silentCore.on('load', () => {
+			console.log('Silent core loaded');
 		});
 
 		// Elementary error reporting
 		Audio.#core.on('error', function (e) {
 			console.error('🔇 ', e);
-			Audio.cleanup();
+			//Audio.cleanup();
+		});
+
+		Audio.#silentCore.on('error', function (e) {
+			console.error('🔇 ', e);
+			//Audio.cleanup();
 		});
 
 		// Elementary FFT callback
@@ -171,9 +182,9 @@ class AudioEngine {
 
 		// Elementary snapshot callback
 		Audio.#silentCore.on('snapshot', function (e) {
-			Playlist.update(($playlist) => {
-				$playlist.currentTrack.progress = e.data as number;
-				return $playlist;
+			Playlist.update(($pl) => {
+				$pl.currentTrack.progress = clipToRange(e.data as number, 0, 1);
+				return $pl;
 			});
 		});
 	}
@@ -183,7 +194,7 @@ class AudioEngine {
 		Audio._contextIsRunning.update(() => {
 			return Audio.actx.state === 'running';
 		});
-		Audio._AudioEngineStatus.update(() => {
+		Audio._AudioCoreStatus.update(() => {
 			return Audio.baseState;
 		});
 	};
@@ -226,7 +237,7 @@ class AudioEngine {
 					[`${vfsPath}${channelExtensionFor(i + 1)}`]: decoded.getChannelData(i)
 				};
 			}
-			console.log('vfsDictionaryEntry', vfsDictionaryEntry);
+			//console.log('vfsDictionaryEntry', vfsDictionaryEntry);
 			Audio.#core?.updateVirtualFileSystem(vfsDictionaryEntry);
 		});
 	}
@@ -297,9 +308,9 @@ class AudioEngine {
 	}
 
 	/**
-	 * @description: Plays samples from a VFS path, with options
+	 * @description: Plays samples from a VFS path, with scrubbing
 	 */
-	playFromVFS(props: SamplerOptions) {
+	playWithScrubFromVFS(props: SamplerOptions) {
 		Audio.render(scrubbingSamplesPlayer(props));
 		Audio.progressBar({
 			run: props.trigger as number,
@@ -313,13 +324,10 @@ class AudioEngine {
 	progressBar(props: { run: number; startOffset: number }) {
 		let { run = 1, startOffset: startOffsetMs = 0 } = props;
 		let rate = 10;
-		if (Audio.scrubbing) {
-			run = 0;
-		}
 		const totalDurMs = Audio.currentTrackDurationSeconds * 1000;
 		Audio.controlRender(
 			bufferProgress({
-				key: Audio.currentVFSPath + '_progBar',
+				key: Audio.currentTrackDurationSeconds + '_progBar',
 				totalDurMs,
 				run,
 				rate,
@@ -347,7 +355,7 @@ class AudioEngine {
 			Audio.resumeContext();
 		}
 		// gate the current track
-		Audio.playFromVFS({
+		Audio.playWithScrubFromVFS({
 			vfsPath: Audio.currentVFSPath,
 			trigger: 1
 		});
@@ -355,13 +363,13 @@ class AudioEngine {
 
 	/**
 	 * @description
-	 * Mute Elementary's final gain node and but keep the audio context running
+	 * Stop sounding but keep the audio context running
 	 * , send a Mute message to Cables patch
 	 */
-	mute(pauseCables: boolean = false): void {
+	pause(pauseCables: boolean = false): void {
 		// release gate on the current track
 
-		Audio.playFromVFS({
+		Audio.playWithScrubFromVFS({
 			vfsPath: Audio.currentVFSPath,
 			trigger: 0
 		});
@@ -390,7 +398,7 @@ class AudioEngine {
 		// todo: refactor these to Tan-Li Hau's subsciber pattern
 		// https://www.youtube.com/watch?v=oiWgqk8zG18
 		return {
-			audioStatus: Audio._AudioEngineStatus,
+			audioStatus: Audio._AudioCoreStatus,
 			isRunning: Audio._contextIsRunning,
 			actx: Audio._audioContext,
 			endNodes: Audio._endNodes,
@@ -422,7 +430,7 @@ class AudioEngine {
 	}
 
 	get contextAndStatus() {
-		return derived([Audio._audioContext, Audio._AudioEngineStatus], ([$audioContext, $status]) => {
+		return derived([Audio._audioContext, Audio._AudioCoreStatus], ([$audioContext, $status]) => {
 			return { context: $audioContext, status: $status };
 		});
 	}
@@ -432,8 +440,8 @@ class AudioEngine {
 	}
 
 	get status() {
-		console.log('get status', get(Audio._AudioEngineStatus));
-		return get(Audio._AudioEngineStatus);
+		console.log('get status', get(Audio._AudioCoreStatus));
+		return get(Audio._AudioCoreStatus);
 	}
 
 	get elemLoaded() {
@@ -456,13 +464,13 @@ class AudioEngine {
 		return get(Audio._endNodes).mainCore;
 	}
 
-	get baseState(): AudioEngineStatus {
-		return Audio.actx.state as AudioEngineStatus;
+	get baseState(): AudioCoreStatus {
+		return Audio.actx.state as AudioCoreStatus;
 	}
 	/*---- setters --------------------------------*/
 
 	set currentVFSPath(path: string) {
-		console.log('set currentVFSPath', path);
+		//	console.log('set currentVFSPath', path);
 		Playlist.update(($plist) => {
 			$plist.currentTrack.path = path;
 			return $plist;
@@ -484,8 +492,8 @@ class AudioEngine {
 		Audio._audioContext.update(() => newCtx);
 	}
 
-	set status(newStatus: AudioEngineStatus) {
-		Audio._AudioEngineStatus.update(() => newStatus);
+	set status(newStatus: AudioCoreStatus) {
+		Audio._AudioCoreStatus.update(() => newStatus);
 	}
 	set elemSilentNode(node: AudioNode) {
 		Audio._endNodes.update((n) => {
@@ -502,5 +510,5 @@ class AudioEngine {
 	}
 }
 
-export const Audio: AudioEngine = AudioEngine.getInstance();
+export const Audio = new AudioCore();
 

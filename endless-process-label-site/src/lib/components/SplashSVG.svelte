@@ -1,5 +1,5 @@
 <script lang="ts">
-import { Audio } from '$lib/stores/AudioEngine';
+import { Audio } from '$lib/classes/Audio';
 
 const { audioStatus } = Audio.stores
 
