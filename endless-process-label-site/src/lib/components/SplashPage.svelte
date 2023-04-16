@@ -9,6 +9,7 @@
 	const { audioStatus } = Audio.stores
 
 	$: splash =  ( $audioStatus !== 'playing') ? !$singlePost.isOpen : false;
+	$: postView = $singlePost.isOpen;
 
 </script>
 	<div class='absolute info top-20 left-3 -z-10'><FolderScan /></div>
@@ -16,20 +17,21 @@
 
 <div class="container mx-auto my-2 w-[30%] flex-none" on:mousedown>
 	<div class="space-y-10 text-center">
+		
+		{#if !postView}							
+			<a href="/blog" data-sveltekit-noscroll>
+				<SplashSVG />
+			</a>		   
+		{/if}
+		<hr class="!border-t-4 !border-double" />
 		{#if splash}
 		   <h2 class="gradient-text opacity-90" >
 				Welcome to <br>Endless Process
 			</h2>
 			{:else}
-			 <h2 class="gradient-text opacity-0" >
-				Welcome to <br>Endless Process
-			</h2>
+	<NowPlaying />
 		{/if}
-			<a href="/blog" data-sveltekit-noscroll>
-				<SplashSVG />
-			</a>
-		<hr class="!border-t-8 !border-double" />
-		<NowPlaying />
+		
 	</div>
 </div>
 

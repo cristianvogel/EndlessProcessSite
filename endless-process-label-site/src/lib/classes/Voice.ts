@@ -1,9 +1,4 @@
-import type {
-	AudioCoreStatus,
-	RawAudioBuffer,
-	SamplerOptions,
-	StereoSignal
-} from 'src/typeDeclarations';
+import type { AudioCoreStatus, RawAudioBuffer, StereoSignal } from 'src/typeDeclarations';
 import { get } from 'svelte/store';
 import WebRenderer from '@elemaudio/web-renderer';
 import { writable, type Writable } from 'svelte/store';
@@ -11,7 +6,7 @@ import { AudioCore } from '$lib/classes/Audio';
 import { load } from '$lib/classes/IngestorSpeechFiles';
 import { channelExtensionFor } from './Utils';
 import { Decoding, PlaylistVoice } from '$lib/stores/stores';
-import { scrubbingSamplesPlayer, stereoOut } from '$lib/audio/AudioFunctions';
+import { stereoOut } from '$lib/audio/AudioFunctions';
 import { el } from '@elemaudio/core';
 
 // ════════╡ Voice ╞═══════
