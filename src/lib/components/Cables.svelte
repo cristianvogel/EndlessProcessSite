@@ -15,7 +15,7 @@
 	export let spin: boolean = false;
 
 		
-	let pathPatch: string = `src/lib/cables/${patch}/patch.js`;	
+	let pathPatch: string = `/cables/${patch}/patch.js`;	
 
 	$: if (spin) { 
 		CablesText.set( [ Utils.rotateString($CablesText[0]), Utils.rotateString($CablesText[1]) ] )

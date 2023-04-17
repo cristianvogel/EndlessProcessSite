@@ -26,7 +26,7 @@ const BlogPosts = create_ssr_component(($$result, $$props, $$bindings, slots) =>
     {},
     {}
   )}
-<ul class="md:container md:mx-auto columns-3 gap-10 space-y-8 text-2xl max-w-prose">${data ? `${each(data.posts, ({ id, title, featuredImage, content, date }, index) => {
+<ul class="md:container md:mx-auto columns-2 gap-20 space-y-8 text-xl max-w-prose">${data ? `${each(data.posts, ({ id, title, featuredImage, content, date }, index) => {
     let cardIndex = Utils.repeatChar("═", index) + "・" + Utils.formatDate(date), routeSlug = Utils.camelCaseNoWhiteSpace(title ?? id), featuredImageUrl = featuredImage ? featuredImage.node.sourceUrl : defaultFeaturedImage, beforeStyle = `background-image: url(${featuredImageUrl}); 
           background-repeat: no-repeat; 
           background-position-y: 23%; 

@@ -36,7 +36,7 @@ export const Decoding: Writable<{ done: boolean; progress?: number }> = writable
 /**
  * @Important  path prefix used to locate audio file source _and_ as key for the Virtual File System (VFS)
  */
-export const VFS_PATH_PREFIX: Readable<string> = readable('/src/lib/audio/mp3/');
+export const VFS_PATH_PREFIX: Readable<string> = readable('/audio/mp3/');
 
 /**
  * Playlist.

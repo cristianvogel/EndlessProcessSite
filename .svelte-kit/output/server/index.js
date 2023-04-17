@@ -77,10 +77,12 @@ function method_not_allowed(mod, method) {
   });
 }
 function allowed_methods(mod) {
-  const allowed = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"].filter(
-    (method) => method in mod
-  );
-  if ("GET" in mod || "HEAD" in mod)
+  const allowed = [];
+  for (const method in ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]) {
+    if (method in mod)
+      allowed.push(method);
+  }
+  if (mod.GET || mod.HEAD)
     allowed.push("HEAD");
   return allowed;
 }
@@ -2395,7 +2397,7 @@ async function respond(request, options2, manifest, state) {
     fetch: null,
     getClientAddress: state.getClientAddress || (() => {
       throw new Error(
-        `${"@sveltejs/adapter-vercel"} does not specify getClientAddress. Please raise an issue`
+        `${"@sveltejs/adapter-auto"} does not specify getClientAddress. Please raise an issue`
       );
     }),
     locals: {},
@@ -2640,19 +2642,13 @@ class Server {
     const pub = Object.fromEntries(entries.filter(([k]) => k.startsWith(prefix)));
     set_public_env(pub);
     if (!this.#options.hooks) {
-      try {
-        const module = await get_hooks();
-        this.#options.hooks = {
-          handle: module.handle || (({ event, resolve }) => resolve(event)),
-          // @ts-expect-error
-          handleError: module.handleError || (({ error: error2 }) => console.error(error2?.stack)),
-          handleFetch: module.handleFetch || (({ request, fetch: fetch2 }) => fetch2(request))
-        };
-      } catch (error2) {
-        {
-          throw error2;
-        }
-      }
+      const module = await get_hooks();
+      this.#options.hooks = {
+        handle: module.handle || (({ event, resolve }) => resolve(event)),
+        // @ts-expect-error
+        handleError: module.handleError || (({ error: error2 }) => console.error(error2?.stack)),
+        handleFetch: module.handleFetch || (({ request, fetch: fetch2 }) => fetch2(request))
+      };
     }
   }
   /**

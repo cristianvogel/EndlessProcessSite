@@ -1,7 +1,6 @@
-import { o as get_store_value } from "../../chunks/index3.js";
-import { P as Playlist, V as VFS_PATH_PREFIX } from "../../chunks/stores.js";
+import { P as Playlist } from "../../chunks/stores.js";
 import { e as error } from "../../chunks/index.js";
-const sourceURL_prefix = get_store_value(VFS_PATH_PREFIX);
+const sourceURL_prefix = "/audio/mp3/";
 let playlist;
 const unsubscribe = Playlist.subscribe((container) => {
   playlist = container.playlist;

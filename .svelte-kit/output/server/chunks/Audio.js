@@ -93,12 +93,6 @@ class AudioCore {
   _currentVFSPath;
   _currentTrackDurationSeconds;
   _scrubbing;
-  // static getInstance() {
-  // 	if (!AudioCore.#instance) {
-  // 		AudioCore.#instance = new AudioCore();
-  // 	}
-  // 	return AudioCore.#instance;
-  // }
   constructor() {
     this.#core = this.#silentCore = null;
     this._masterVolume = writable(1);
@@ -148,6 +142,7 @@ class AudioCore {
       numberOfOutputs: 1,
       outputChannelCount: [2]
     }).then((node) => {
+      Audio.resumeContext();
       Audio._elemLoaded.set(true);
       return node;
     });

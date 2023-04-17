@@ -12,7 +12,7 @@ import { c as channelExtensionFor, U as Utils } from "../../chunks/Utils.js";
 const theme = "";
 const all = "";
 const app = "";
-const cBase$4 = "flex flex-col";
+const cBase$4 = "flex flex-col space-y-4";
 const cRowMain = "grid items-center";
 const cRowHeadline = "";
 const cSlotLead = "flex-none flex justify-between items-center";
@@ -154,7 +154,7 @@ const AppShell = create_ssr_component(($$result, $$props, $$bindings, slots) => 
 	
 	${$$slots.footer ? `<footer id="shell-footer" class="${"flex-none " + escape(classesFooter, true)}">${slots.footer ? slots.footer({}) : ``}</footer>` : ``}</div>`;
 });
-const cBase$3 = "";
+const cBase$3 = "cursor-pointer -outline-offset-[3px]";
 const ListBox = create_ssr_component(($$result, $$props, $$bindings, slots) => {
   let classesBase;
   let { multiple = false } = $$props;
@@ -186,7 +186,7 @@ const ListBox = create_ssr_component(($$result, $$props, $$bindings, slots) => {
   classesBase = `${cBase$3} ${spacing} ${rounded} ${$$props.class ?? ""}`;
   return `<div class="${"listbox " + escape(classesBase, true)}" role="listbox"${add_attribute("aria-labelledby", labelledby, 0)} data-testid="listbox">${slots.default ? slots.default({}) : ``}</div>`;
 });
-const cBase$2 = "cursor-pointer -outline-offset-[3px]";
+const cBase$2 = "px-4 py-2 cursor-pointer";
 const cLabel$1 = "flex space-x-4";
 const ListBoxItem = create_ssr_component(($$result, $$props, $$bindings, slots) => {
   let selected;
@@ -249,16 +249,16 @@ const ListBoxItem = create_ssr_component(($$result, $$props, $$bindings, slots) 
   classesActive = selected ? active : hover;
   classesBase = `${cBase$2} ${rounded} ${padding} ${classesActive} ${$$props.class ?? ""}`;
   classesLabel = `${cLabel$1}`;
-  return `<label>
-	<div class="${"listbox-item " + escape(classesBase, true)}" data-testid="listbox-item" role="option"${add_attribute("aria-selected", selected, 0)} tabindex="0">
-		<div class="h-0 w-0 overflow-hidden">${multiple ? `<input type="checkbox"${add_attribute("name", name, 0)}${add_attribute("value", value, 0)} tabindex="-1"${add_attribute("this", elemInput, 0)}${add_attribute("checked", checked, 1)}>` : `<input type="radio"${add_attribute("name", name, 0)}${add_attribute("value", value, 0)} tabindex="-1"${add_attribute("this", elemInput, 0)}${value === group ? add_attribute("checked", true, 1) : ""}>`}</div>
+  return `
+<label class="${"listbox-item " + escape(classesBase, true)}" role="option"${add_attribute("aria-selected", selected, 0)} tabindex="0" data-testid="listbox-item">
+	<div class="h-0 w-0 overflow-hidden">${multiple ? `<input type="checkbox"${add_attribute("name", name, 0)}${add_attribute("value", value, 0)} tabindex="-1"${add_attribute("this", elemInput, 0)}${add_attribute("checked", checked, 1)}>` : `<input type="radio"${add_attribute("name", name, 0)}${add_attribute("value", value, 0)} tabindex="-1"${add_attribute("this", elemInput, 0)}${value === group ? add_attribute("checked", true, 1) : ""}>`}</div>
+	
+	<div class="${"listbox-label " + escape(classesLabel, true)}">
+		${$$slots.lead ? `<div class="listbox-label-lead">${slots.lead ? slots.lead({}) : ``}</div>` : ``}
 		
-		<div class="${"listbox-label " + escape(classesLabel, true)}">
-			${$$slots.lead ? `<div class="listbox-label-lead">${slots.lead ? slots.lead({}) : ``}</div>` : ``}
-			
-			<div class="listbox-label-content flex-1">${slots.default ? slots.default({}) : ``}</div>
-			
-			${$$slots.trail ? `<div class="listbox-label-trail">${slots.trail ? slots.trail({}) : ``}</div>` : ``}</div></div></label>`;
+		<div class="listbox-label-content flex-1">${slots.default ? slots.default({}) : ``}</div>
+		
+		${$$slots.trail ? `<div class="listbox-label-trail">${slots.trail ? slots.trail({}) : ``}</div>` : ``}</div></label>`;
 });
 const css$1 = {
   code: ".animIndeterminate.svelte-meqa4r{transform-origin:0% 50%;animation:svelte-meqa4r-animIndeterminate 2s infinite linear}@keyframes svelte-meqa4r-animIndeterminate{0%{transform:translateX(0) scaleX(0)}40%{transform:translateX(0) scaleX(0.4)}100%{transform:translateX(100%) scaleX(0.5)}}",
@@ -1237,7 +1237,7 @@ const Cables = create_ssr_component(($$result, $$props, $$bindings, slots) => {
   let { patch } = $$props;
   let { bg = false } = $$props;
   let { spin = false } = $$props;
-  let pathPatch = `src/lib/cables/${patch}/patch.js`;
+  let pathPatch = `/cables/${patch}/patch.js`;
   function spinText(prompts = ["End", "Proc"]) {
     if ($CablesIsLoaded) {
       $CablesPatch.config.spinAndPrompt("", prompts[0], prompts[1]);

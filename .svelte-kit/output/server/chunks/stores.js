@@ -2,7 +2,7 @@ import { w as writable, r as readable } from "./index2.js";
 function getFiles() {
   let fileNames = [];
   try {
-    const files = /* @__PURE__ */ Object.assign({ "../audio/mp3/01_Cutterhead-HeavenOrHell.mp3": () => import("./01_Cutterhead-HeavenOrHell.js"), "../audio/mp3/CitiesVersion_CristianVogel.mp3": () => import("./CitiesVersion_CristianVogel.js"), "../audio/mp3/sound.mp3": () => import("./sound.js") });
+    const files = /* @__PURE__ */ Object.assign({});
     const filePaths = Object.keys(files);
     fileNames = filePaths.map((filePath) => filePath.replace(`../audio/mp3/`, ""));
   } catch (error) {
@@ -27,7 +27,7 @@ const Decoding = writable({
   done: false,
   progress: 0
 });
-const VFS_PATH_PREFIX = readable("/src/lib/audio/mp3/");
+const VFS_PATH_PREFIX = readable("/audio/mp3/");
 const PlaysCount = writable(0);
 const Playlist = writable({
   playlist: getFiles(),
