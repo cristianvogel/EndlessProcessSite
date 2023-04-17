@@ -6,6 +6,7 @@
   import { Playlist } from '$lib/stores/stores';
   import { getFiles } from '$lib/classes/Files';
 
+  let folderName: string = 'lib/audio/mp3';
   let fileNames: Array<string> = [];
 
   onMount(() => {

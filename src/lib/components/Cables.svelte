@@ -26,7 +26,7 @@
 	const initializeCables = () => {
 		CablesPatch.set ( new CABLES.Patch({
 			patch: CABLES.exportedPatch,
-			prefixAssetPath: `src/lib/cables/${patch}/`,
+			prefixAssetPath: `/cables/${patch}/`,
 			assetPath: '',
 			jsPath: '',
 			glCanvasId: `cables_${patch}`,
