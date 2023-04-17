@@ -18,9 +18,10 @@ query GetPosts {
     }
   }
  `;
+const apiURL = 'https://endless-process.net/graphql';
 
 export async function load({ fetch }) {
-	const response = await fetch(import.meta.env.VITE_PUBLIC_WORDPRESS_API_URL, {
+	const response = await fetch(apiURL, {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json'

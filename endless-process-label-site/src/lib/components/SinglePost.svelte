@@ -75,7 +75,7 @@
 				class="prose dark:prose-invert 
               prose-img:rounded-xl
               break-inside-avoid-column
-              prose-xl
+              prose-2xl
               leading-normal
               col-span-2 "
 			>
