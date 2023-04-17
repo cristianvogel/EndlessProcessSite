@@ -80,3 +80,5 @@ endless-process-label-site/.vercel/output/static/fonts/Inter-Regular.ttf
 endless-process-label-site/.vercel/output/static/fonts/Inter-VariableFont_slnt,wght.ttf
 endless-process-label-site/.vercel/output/static/fonts/OFL.txt
 endless-process-label-site/.vercel/output/static/fonts/README.txt
+node_modules
+node_modules
