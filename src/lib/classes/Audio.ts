@@ -110,7 +110,6 @@ export class AudioCore {
 				outputChannelCount: [2]
 			})
 			.then((node) => {
-				Audio.resumeContext();
 				Audio._elemLoaded.set(true);
 				return node;
 			});
