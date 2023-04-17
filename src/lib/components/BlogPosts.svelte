@@ -33,7 +33,7 @@ function handleCardLeave({e, cardIndex}: {e: MouseEvent, cardIndex: string}): vo
 <Apollo />
 <div class="p-2 space-y-8 ">
 <Icon src={CaretSortDown} class="h-8 animate-pulse"/>
-<ul class="md:container md:mx-auto columns-2 gap-20 space-y-8 text-2xl max-w-prose">
+<ul class="md:container md:mx-auto columns-2 gap-20 space-y-8 text-xl max-w-prose">
 {#if data }
    {#each data.posts as {id, title, featuredImage, content, date},index}
    {@const cardIndex = Utils.repeatChar('═',index)+'・' + Utils.formatDate(date)}

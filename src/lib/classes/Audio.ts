@@ -100,7 +100,6 @@ export class AudioCore {
 			console.log('Passing existing AudioContext');
 		} else {
 			console.log('No context!');
-			//Audio.cleanup();
 		}
 
 		// Elementary connecting promise : Main Core
