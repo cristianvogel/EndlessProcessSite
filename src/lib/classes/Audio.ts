@@ -326,7 +326,6 @@ export class AudioCore {
 	 * @description: Tries to resume the base AudioContext
 	 */
 	resumeContext(): void {
-		if (!Audio.actx) return;
 		Audio.actx.resume().then(() => {
 			console.log('AudioContext resume ⚙︎');
 		});
