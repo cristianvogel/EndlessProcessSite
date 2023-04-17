@@ -14,8 +14,6 @@ import WebRenderer from '@elemaudio/web-renderer';
 import type { NodeRepr_t } from '@elemaudio/core';
 import { el } from '@elemaudio/core';
 
-
-// OOPS/TS Singleton design pattern.
 // todo: set a sample rate constant prop
 
 export class AudioCore {
@@ -32,18 +30,7 @@ export class AudioCore {
 	protected _currentTrackDurationSeconds: number;
 	protected _scrubbing: boolean;
 
-	// static getInstance() {
-	// 	if (!AudioCore.#instance) {
-	// 		AudioCore.#instance = new AudioCore();
-	// 	}
-	// 	return AudioCore.#instance;
-	// }
-
 	constructor() {
-		// if (!AudioCore.#instance) {
-		// 	AudioCore.#instance = this;
-		// }
-
 		this.#core = this.#silentCore = null;
 		this._masterVolume = writable(1); // default master volume
 		this._AudioCoreStatus = writable('loading');
@@ -124,6 +111,7 @@ export class AudioCore {
 				outputChannelCount: [2]
 			})
 			.then((node) => {
+				Audio.resumeContext();
 				Audio._elemLoaded.set(true);
 				return node;
 			});

@@ -2,7 +2,7 @@
 	"compilerOptions": {
 		"paths": {
 			"$stores": [
-				"../../../../../../../src/stores/stores.js"
+				"../../../../../../src/stores/stores.js"
 			],
 			"$lib": [
 				"../src/lib"
