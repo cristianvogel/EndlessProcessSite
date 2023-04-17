@@ -1,0 +1,72 @@
+/*place global styles here */
+						
+@font-face {
+	font-family: 'Inter';
+	src: url('/fonts/Inter-Regular.ttf');
+	font-display: swap;
+}
+
+html,
+body {
+	@apply h-full overflow-hidden  bg-transparent;
+
+}
+
+.meterSegment {
+	 background-image: url('/meterSegment.svg')
+}
+.gradient-text {
+	@apply font-bold bg-gradient-to-br from-red-500 to-yellow-500 bg-clip-text text-transparent box-decoration-clone
+}
+
+.fading-bg {
+	@apply bg-gradient-to-b from-transparent to-surface-800;
+}
+
+.info {
+	@apply text-xs text-warning-300;
+}
+
+a {
+	@apply !no-underline hover:!text-tertiary-400;
+}
+
+article,
+.has-small-font-size {
+	@apply text-sm md:text-base p-4 text-secondary-400;
+}
+
+.has-text-align-center {
+	@apply text-center;
+}
+
+figure {
+	@apply flex relative flex-col;
+}
+figure svg,
+.img-bg {
+	@apply w-64 h-64 md:w-40 md:h-60;
+}
+.img-bg {
+	@apply absolute z-[-1] rounded-full blur-[50px] transition-all;
+	animation: pulse 5s cubic-bezier(0, 0, 0, 0.5) infinite, glow 5s linear infinite;
+}
+@keyframes glow {
+	0% {
+		@apply bg-primary-400/50;
+	}
+	33% {
+		@apply bg-secondary-400/50;
+	}
+	66% {
+		@apply bg-tertiary-400/50;
+	}
+	100% {
+		@apply bg-primary-400/50;
+	}
+}
+@keyframes pulse {
+	50% {
+		transform: scale(1.5);
+	}
+}
