@@ -324,11 +324,17 @@ export class AudioCore {
 
 	/**
 	 * @description: Tries to resume the base AudioContext
+	 * this should only be called once, after a user interaction
 	 */
 	resumeContext(): void {
-		Audio.actx.resume().then(() => {
-			console.log('AudioContext resume ⚙︎');
-		});
+		if (Audio.status === 'resuming') return;
+		if (Audio.actx.state === 'suspended') {
+			Audio.status = 'resuming';
+			Audio.actx.resume().then(() => {
+				console.log('AudioContext resumed ⚙︎');
+				Audio.status = 'running';
+			});
+		}
 	}
 
 	/**

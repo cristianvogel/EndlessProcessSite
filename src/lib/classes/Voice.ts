@@ -79,7 +79,6 @@ export class VoiceCore extends AudioCore {
 			})
 			.then((node) => {
 				console.log('Silent Voice Core loaded  🎤');
-				VoiceOver.resumeContext();
 				return node;
 			});
 
@@ -93,9 +92,6 @@ export class VoiceCore extends AudioCore {
 		VoiceOver.#voiceCore.on('load', () => {
 			console.log('Voice Core loaded  🎤');
 			VoiceOver.status = 'ready';
-			VoiceOver.resumeContext();
-			// seems like there can only be one call to resumeContext() per context
-			// so do it here instead of in the AudioCore constructor?
 		});
 
 		super.connectToDestination(VoiceOver.voiceEndNode);
