@@ -15,6 +15,7 @@ interface SinglePost {
 type AudioCoreStatus =
 	| 'suspended'
 	| 'loading'
+	| 'resuming'
 	| 'playing'
 	| 'paused'
 	| 'closed '

@@ -10,6 +10,9 @@
     let activated: boolean = false;
 
     function voiceActivated(e: any) {
+        if (VoiceOver.status === 'suspended') {
+			VoiceOver.resumeContext();
+		}
         PlaylistVoice.update( (plist) => {
             const data = e.target
             const current = plist.currentChapter;
