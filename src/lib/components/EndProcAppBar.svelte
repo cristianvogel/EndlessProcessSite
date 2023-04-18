@@ -66,47 +66,53 @@
 	gridColumns="grid-cols-3"
 	slotTrail="place-content-end"
 	slotLead="mb-0 h-10"
-	regionRowHeadline="grid grid-cols-3"
+	regionRowHeadline="indent-10"
 >
 	<svelte:fragment slot="lead" >
-		<div class="flex flex-row gradient-text text-[1.618em] leading-none">
-		<div class='basis-1/5'>
-			<a href="/">{$CablesText[0]}</a>
-			<a href="/"> {$CablesText[1]}</a>
-		</div>	
-		</div>
+
 	
 		<!-- Persistent Audio controls  -->
 		{#if audioBuffersReady && $CablesIsLoaded}
 			<ElementaryPlayer on:click={handleAudioControls} />
 		{:else}
 			<div class="absolute top-6" transition:fade>
-				<Icon src={Cube} class="h-8 animate-spin" data-sveltekit-noscroll />
+				<Icon src={Cube} class="h-10 animate-spin" data-sveltekit-noscroll />
 			</div>
 		{/if}	
-	</svelte:fragment>
+		
 
+	</svelte:fragment>
+		<!-- legend -->
+		<div class="flex flex-wrap gradient-text place-content-center">
+			<div class='basis-1/2 text-2xl leading-6 '>
+				<a href="/">{$CablesText[0]}{$CablesText[1]}</a>
+			</div>	
+		</div>
 	<!-- Persistent progress bar -->
-	
+	<svelte:fragment slot="headline">
 		{#if audioBuffersReady && $CablesIsLoaded}
 		<span transition:fade>
 				<Progress/>
 		</span>
 		{/if}
-		
+		</svelte:fragment>
+
 	<!-- Persistent nav buttons -->
 	<svelte:fragment slot="trail">
-		<div class="flex justify-start">
-			<a class="logo-item p-2 flex-none" href="/blog" data-sveltekit-noscroll>
-				<Icon src={ChartMarimekko} class="h-7" />
-				<span class='text-m'>Latest</span>
+		<div class="flex justify-end flex-wrap">
+			<a class="logo-item p-2" href="/blog" data-sveltekit-noscroll>
+				<!-- <Icon src={ChartMarimekko} class="h-4" /> -->
+				<hr class="h-1 w-2 divider-vertical bg-surface-400" />
+				<span class='text-m'>Posts</span>
 			</a>
-			<a class="logo-item p-2 flex-none" href="/">
-				<Icon src={ProgressBarRound} class="h-7" data-sveltekit-noscroll />
-				<span class='text-m'>Catalogue</span>
+			<a class="logo-item p-2 " href="/">
+				<!-- <Icon src={ProgressBarRound} class="h-5" data-sveltekit-noscroll /> -->
+				<hr class="h-1 w-2 divider-vertical bg-surface-400 " />
+				<span class='text-m'>Music</span>
 			</a>
-			<a class="logo-item p-2 flex-none" href="/">
-				<Icon src={Events} class="h-7" data-sveltekit-noscroll />
+			<a class="logo-item p-0 " href="/">
+				<!-- <Icon src={Events} class="h-5" data-sveltekit-noscroll /> -->
+				<hr class="h-1 w-2 divider-vertical bg-surface-400" />
 				<span class='text-m'>Artists</span>
 			</a>
 		</div>

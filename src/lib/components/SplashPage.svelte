@@ -12,11 +12,11 @@
 	$: postView = $singlePost.isOpen;
 
 </script>
-	<div class='absolute info top-20 left-3 -z-10'><FolderScan /></div>
-	<div class='absolute info top-20 right-1 -mt-2'><TextToSpeech/></div>
+	<div class='absolute info top-30 left-3 -z-10'><FolderScan /></div>
+	<div class='absolute info top-30 right-1 -mt-2'><TextToSpeech/></div>
 
-<div class="container mx-auto my-2 w-[30%] flex-none" on:mousedown>
-	<div class="space-y-10 text-center">
+<div class="container mx-auto my- w-[30%] flex-none" on:mousedown>
+	<div class="space-y-2 text-center">
 		
 		{#if !postView}							
 			<a href="/blog" data-sveltekit-noscroll>
@@ -26,10 +26,10 @@
 		<hr class="!border-t-4 !border-double" />
 		{#if splash}
 		   <h2 class="gradient-text opacity-90" >
-				Welcome to <br>Endless Process
+				Welcome!
 			</h2>
 			{:else}
-	<NowPlaying />
+	    <NowPlaying />
 		{/if}
 		
 	</div>
