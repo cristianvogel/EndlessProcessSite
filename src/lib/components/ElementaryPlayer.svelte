@@ -4,14 +4,36 @@
 	import {PauseOutline, PlayOutline, QueryQueue } from '@steeze-ui/carbon-icons';
 	import { Decoding, Playlist } from '$lib/stores/stores';
 	import PlaylistView from './PlaylistView.svelte';
+	import { onMount } from 'svelte';
 
 	const { audioStatus } = Audio.stores
 	
+	  let clickListenerRegistered = false;
 	let tracklisting:Array<string>;
 
 	$: tracklisting = $Playlist.playlist;
 	$: isPlaying = $audioStatus === 'playing';
 
+	function forceAudioContextResume() {
+      // add a click event listener that removes itself if another click event is fired
+    const clickListener = () => {
+      if (clickListenerRegistered) {
+        console.log('Removing click listener');
+        window.removeEventListener('click', clickListener);
+      } else {
+        console.log('Adding click listener');
+        window.addEventListener('click', Audio.resumeContext);
+        clickListenerRegistered = true;
+      }
+    };
+
+    window.addEventListener('click', clickListener);
+  };
+	
+	onMount(() => {
+		forceAudioContextResume()
+
+	})
 </script>
 
 {#if ($audioStatus !==  'loading' || 'closed ') && ($Decoding.done) }
