@@ -110,7 +110,6 @@ export class AudioCore {
 				outputChannelCount: [2]
 			})
 			.then((node) => {
-				Audio.resumeContext();
 				Audio._elemLoaded.set(true);
 				return node;
 			});
@@ -327,7 +326,6 @@ export class AudioCore {
 	 * @description: Tries to resume the base AudioContext
 	 */
 	resumeContext(): void {
-		if (!Audio.actx) return;
 		Audio.actx.resume().then(() => {
 			console.log('AudioContext resume ⚙︎');
 		});

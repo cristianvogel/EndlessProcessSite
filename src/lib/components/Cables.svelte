@@ -15,7 +15,7 @@
 	export let spin: boolean = false;
 
 		
-	let pathPatch: string = `src/lib/cables/${patch}/patch.js`;	
+	let pathPatch: string = `/cables/${patch}/patch.js`;	
 
 	$: if (spin) { 
 		CablesText.set( [ Utils.rotateString($CablesText[0]), Utils.rotateString($CablesText[1]) ] )
@@ -26,7 +26,7 @@
 	const initializeCables = () => {
 		CablesPatch.set ( new CABLES.Patch({
 			patch: CABLES.exportedPatch,
-			prefixAssetPath: `src/lib/cables/${patch}/`,
+			prefixAssetPath: `/cables/${patch}/`,
 			assetPath: '',
 			jsPath: '',
 			glCanvasId: `cables_${patch}`,

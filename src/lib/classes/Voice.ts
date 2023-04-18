@@ -79,6 +79,7 @@ export class VoiceCore extends AudioCore {
 			})
 			.then((node) => {
 				console.log('Silent Voice Core loaded  🎤');
+				VoiceOver.resumeContext();
 				return node;
 			});
 
