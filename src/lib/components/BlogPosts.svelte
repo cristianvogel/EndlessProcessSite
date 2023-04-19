@@ -4,7 +4,7 @@
 	 */
 	import { Icon } from '@steeze-ui/svelte-icon';
 	import { CaretSortDown } from '@steeze-ui/carbon-icons';
-	import { singlePost } from '$lib/stores/stores';
+	import { singlePost, loadingSomething } from '$lib/stores/stores';
 	import { Utils } from '$lib/classes/Utils';
 	import { onMount } from 'svelte';
 
@@ -69,9 +69,10 @@
 	<div class="p-2 space-y-8 ">
 		<Icon src={CaretSortDown} class="h-8 animate-pulse" />
 		<ul
-			class={`md:container md:mx-auto ${isPhone ? 'columns-1' : 'columns-3'} gap-10 space-y-6 text-xl max-w-prose`}
+			class= "md:container md:mx-auto md:px-0
+				sm:columns-1 md:columns-3
+			gap-3 space-y-10 text-xl max-w-prose"
 		>
-			{#if data}
 				{#each data.posts as { id, title, featuredImage, content, date }, index}
 					{@const cardIndex = Utils.repeatChar('═', index) + '・' + Utils.formatDate(date)}
 					{@const routeSlug = Utils.camelCaseNoWhiteSpace(title ?? id)}
@@ -83,8 +84,11 @@
           background-position-y: 23%; 
           background-size: cover;
           opacity: 0.3`}
+          {#if $loadingSomething.state}
+             <div class="placeholder" >{$loadingSomething.count}</div>
+          {:else}
 					<div
-						class="card break-inside-avoid-column p-0"
+						class="card break-inside-avoid-column px-0 w-full variant-soft-surface"
 						id={cardIndex}
 						on:mouseenter={(e) =>
 							handleCardEnter({ e, cardIndex, title, content, featuredImageUrl, id, date })}
@@ -94,19 +98,19 @@
 							<span class="text-[0.5rem] pl-2 text-secondary-300">{cardIndex}</span>
 						</header>
 						<a href="/latest/{routeSlug}">
-							<section class="p-4 bg-black hover:bg-zinc-800 hover:text-black relative">
+							<section class="p-4 hover:bg-zinc-800 relative">
 								<!--  -->
 								<h1 class="text-secondary-400">
 									{title ?? 'New Post'}
 								</h1>
 
-								<div
+								<!-- <div
 									class="absolute inset-0 z-0 
-      before:content 
-      before:absolute 
-      before:inset-0"
+                          before:content 
+                          before:absolute 
+                          before:inset-0"
 									style={beforeStyle}
-								/>
+								/> -->
 							</section>
 						</a>
 						<section class="card-footer p-2 w-full text-tertiary-600">
@@ -114,10 +118,8 @@
 							{@html Utils.trimAndAddReadMoreLink(content ?? 'No content')}
 						</section>
 					</div>
+           {/if}
 				{/each}
-			{:else}
-				<p>Error loading data. Please try again.</p>
-			{/if}
 		</ul>
 	</div>
 </main>

@@ -77,7 +77,8 @@
 		top: 0;
 		left: 0;
 		width: 100%;
-		height: 1em;
+		height: 1.25em;
 		opacity: 0;
+    cursor: grab;
 	}
 </style>

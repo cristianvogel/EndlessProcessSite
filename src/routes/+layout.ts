@@ -53,8 +53,7 @@ export async function load({ fetch }) {
 			};
 			rawAudioBuffers.push(wrap());
 		} else {
-			console.log('ArrayBuffer fetch failed 😿');
-			throw error(404);
+			throw error(404, 'ArrayBuffer fetch failed 😿');
 		}
 	}
 	unsubscribe();

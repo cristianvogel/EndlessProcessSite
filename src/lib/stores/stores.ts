@@ -4,6 +4,11 @@ import { writable, type Readable, type Writable, readable } from 'svelte/store';
 import type { SinglePost, RawFFT, PlaylistContainer, VoiceContainer } from 'src/typeDeclarations';
 import { getFiles } from '$lib/classes/Files';
 
+
+//---- UI related -------------------
+export const loadingSomething: Writable<{ state: boolean, count: number } > = writable({state: false, count: 0});
+
+//---- Blog related -------------------
 // Todo: Implement sanitiser for the content
 export const singlePost: Writable<SinglePost> = writable({
 	title: '',
@@ -15,15 +20,13 @@ export const singlePost: Writable<SinglePost> = writable({
 	isOpen: false
 });
 
-/**
- * Cables patch related
- */
+//---- Cables related -------------------
 export const CablesPatch: Writable<any> = writable('...loading...');
 export const CablesAudioContext: Writable<AudioContext> = writable();
 export const CablesIsLoaded: Writable<boolean> = writable(false);
 export const CablesText: Writable<Array<string>> = writable(['Endless', 'Process']);
 
-//---- Audio engine related -------------------
+//---- Audio related -------------------
 
 /**
  * @Important decoding audio parallel buffers takes time. This store is used to signal when the decoding is done.

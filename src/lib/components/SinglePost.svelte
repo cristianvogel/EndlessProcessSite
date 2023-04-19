@@ -44,22 +44,30 @@
 
 </script>
 
-<div class="flex justify-end -mb-20 mr-1">
-	<span class="chip variant-soft hover:variant-ghost-secondary mr-3 p-0 z-50">
-		<a href='/blog'><Icon src={PageFirst} class="fill-tertiary-400 h-8 w-8 p-0 m-0" /></a>
+<div class="flex justify-end md:-mb-20 md:mr-14">
+	<span class="chip variant-soft hover:variant-filled-secondary ml-3 p-0 z-50">
+		<a href='/blog'><Icon src={PageFirst} class="fill-tertiary-400 h-8 w-10 p-0 m-0" /></a>
 	</span>
-	<span class="chip variant-soft hover:variant-ghost-secondary mr-3 p-0 z-50" on:click on:keydown>
+	<span class="chip variant-soft hover:variant-filled-secondary mr-6 p-0 z-50" on:click on:keydown>
 		<span><Icon src={Close} class="fill-tertiary-400 h-10 w-10 p-0 m-0" /></span>
 	</span>
 </div>
-<div class="m-0 p-6 bg-gradient-to-br from-surface-500 to-surface-800 opacity-95 m-3">
+<!-- <div class="m-0 p-6 bg-gradient-to-br from-transparent to-surface-800 m-3"> -->
+	<div class="card variant-soft-warning md:m-20 sm:m-1">
 	<div class="bg-transparent p-3 text-tertiary-400 opacity-80">
 		<h6 class="subheading">{cardIndex}</h6>
 		<h1 class="">{title}</h1>
 	</div>
 	<section class="grid grid-cols-3 p-1 divide-x-2 divide-tertiary-800 ">
 		{#if prunedHTML}
-			<div class="col-span-1 p-3 rounded-lg text-tertiary-400 text-left text-sm opacity-80">
+			<div class="
+			col-span-1 
+			p-3 rounded-lg 
+			text-tertiary-400 
+			text-left 
+			text-sm 
+			opacity-80
+			">
 				<ul>
 					<!-- <span class="flex justify-end"><AudioPlayer /></span> -->
 					{#if featuredImageUrl}
@@ -75,9 +83,10 @@
 				class="prose dark:prose-invert 
               prose-img:rounded-xl
               break-inside-avoid-column
-              prose-2xl
-              leading-normal
-              col-span-2 "
+             md: !prose-2xl
+			 sm: !prose-sm
+			 sm: !leading-tight
+             col-span-2 "
 			>
 				{@html prunedHTML.body.innerHTML}
 			</article>
