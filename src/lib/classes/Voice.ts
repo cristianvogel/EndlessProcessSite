@@ -5,7 +5,7 @@ import { writable, type Writable } from 'svelte/store';
 import { AudioCore } from '$lib/classes/Audio';
 import { load } from '$lib/classes/IngestorSpeechFiles';
 import { channelExtensionFor } from './Utils';
-import { Decoding, PlaylistVoice } from '$lib/stores/stores';
+import { Decoding, PlaylistSpeech } from '$lib/stores/stores';
 import { stereoOut } from '$lib/audio/AudioFunctions';
 import { el } from '@elemaudio/core';
 
@@ -40,17 +40,9 @@ export class VoiceCore extends AudioCore {
 		this._scrubbing = false;
 	}
 
-	subscribeToStores() {
-		/**
-		 * @description
-		 *  Subscribers to update VoiceCore with current info.
-		 */
-	}
-
 	async init(): Promise<void> {
 		VoiceOver.#voiceCore = new WebRenderer();
 		VoiceOver.#silentVoiceCore = new WebRenderer();
-		VoiceOver.subscribeToStores();
 
 		load({ fetch }).then((buffersContainer: any) => {
 			console.log('speech buffers', buffersContainer);
@@ -151,7 +143,7 @@ export class VoiceCore extends AudioCore {
 		}
 		// update the DurationElement in the playlist container map
 		if (decoded && decoded.duration > 1) {
-			PlaylistVoice.update(($plist) => {
+			PlaylistSpeech.update(($plist) => {
 				// guard against the 1 samp skipped buffer hack above
 				if (!decoded) return $plist;
 				$plist.durations.set(header.name, decoded.duration);

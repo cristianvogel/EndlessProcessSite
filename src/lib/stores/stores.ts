@@ -1,12 +1,14 @@
 // This file defines the stores used in the app
 
-import { writable, type Readable, type Writable, readable } from 'svelte/store';
+import { writable, type Readable, type Writable, readable, get } from 'svelte/store';
 import type { SinglePost, RawFFT, PlaylistContainer, VoiceContainer } from 'src/typeDeclarations';
-import { getFiles } from '$lib/classes/Files';
-
+import { getMusicFiles, getSpeechFiles } from '$lib/classes/Files';
 
 //---- UI related -------------------
-export const loadingSomething: Writable<{ state: boolean, count: number } > = writable({state: false, count: 0});
+export const loadingSomething: Writable<{ state: boolean; count: number }> = writable({
+	state: false,
+	count: 0
+});
 
 //---- Blog related -------------------
 // Todo: Implement sanitiser for the content
@@ -37,9 +39,10 @@ export const Decoding: Writable<{ done: boolean; progress?: number }> = writable
 });
 
 /**
- * @Important  path prefix used to locate audio file source _and_ as key for the Virtual File System (VFS)
+ * @Important  path prefix used as key for the Virtual File System (VFS)
  */
-export const VFS_PATH_PREFIX: Readable<string> = readable('/audio/mp3/');
+export const VFS_PATH_PREFIX: Readable<string> = readable('vfs::');
+export const AUDIO_ASSETS_PREFIX: Readable<string> = readable('/audio/mp3');
 
 /**
  * Playlist.
@@ -50,7 +53,7 @@ export const VFS_PATH_PREFIX: Readable<string> = readable('/audio/mp3/');
 export type DurationsMapElement = { key: string; value: number };
 export const PlaysCount: Writable<number> = writable(0);
 export const Playlist: Writable<PlaylistContainer> = writable({
-	playlist: getFiles(),
+	playlist: getMusicFiles(),
 	durations: new Map<string, number>(),
 	show: false,
 	currentTrack: { name: '', path: '', loaded: false, progress: 0 }
@@ -58,10 +61,10 @@ export const Playlist: Writable<PlaylistContainer> = writable({
 
 export const Scrubbing: Writable<boolean> = writable(false);
 
-//---------- Voice -----------------------
+//---------- Speech -----------------------
 
-export const PlaylistVoice: Writable<VoiceContainer> = writable({
-	playlist: [],
+export const PlaylistSpeech: Writable<VoiceContainer> = writable({
+	playlist: getSpeechFiles(),
 	durations: new Map<string, number>(),
 	currentChapter: { name: '', id: 'chapter-1', path: '', progress: 0 }
 });

@@ -4,7 +4,7 @@
     import {VoiceOver} from '$lib/classes/Voice';
     import ElevenLabsLogo from '$lib/images/ElevenLabsLogo.svelte';
 	import { SlideToggle } from '@skeletonlabs/skeleton';
-    import { VFS_PATH_PREFIX, PlaylistVoice } from '$lib/stores/stores';
+    import { VFS_PATH_PREFIX, PlaylistSpeech } from '$lib/stores/stores';
 	import { onMount } from 'svelte';
 
     let activated: boolean = false;
@@ -13,7 +13,7 @@
         if (VoiceOver.status === 'suspended') {
 			VoiceOver.resumeContext();
 		}
-        PlaylistVoice.update( (plist) => {
+        PlaylistSpeech.update( (plist) => {
             const data = e.target
             const current = plist.currentChapter;
             VoiceOver.status = data.checked ? 'playing' : 'paused';

@@ -4,14 +4,14 @@
   import { Icon } from '@steeze-ui/svelte-icon';
   import { Layers } from '@steeze-ui/carbon-icons';
   import { Playlist } from '$lib/stores/stores';
-  import { getFiles } from '$lib/classes/Files';
+  import { getMusicFiles } from '$lib/classes/Files';
 
   let folderName: string = 'lib/audio/mp3';
   let fileNames: Array<string> = [];
 
   onMount(() => {
   Playlist.update( (plist) => {
-    fileNames = plist.playlist  = getFiles(); 
+    fileNames = plist.playlist  = getMusicFiles(); 
     return plist});
   });
   

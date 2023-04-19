@@ -1,23 +1,45 @@
 /**
    * Get all files in the folder.
     @About 
-    The import.meta.glob function originates from ECMAScript 2020 (ES2020) 
-    and is supported in modern browsers and Node.js versions 14.17.0 and later.
-    but we cannot  use a template literal in the glob with Vite right now. 
-    Therefore the folderName variable should only be used as a reference here. 
-    Don't try and splice it in 🤷🏽
-   */
+    The import.meta.glob cannot accept anything but a literal. 
+    Therefore the folderName variable is  only used as a reference here, and I will repeat the function for the Speech files path.
+	>>>>>>>>>>>>>>>>
+    Don't try and splice the glob path in 🤷🏽
+	Don't have a D.R.Y attack.
 
-/** GLOB_FOLDER_NAME 'lib/audio/mp3'  */
+	 DEFAULT_GLOB_PATH = '../../../static/audio/mp3/*'  
+ */
 
-export function getFiles(): Array<string> {
+export function getMusicFiles(): Array<string> {
 	let fileNames: string[] = [];
-	try {
-		const files = import.meta.glob(`../../lib/audio/mp3/*`) as Record<string, () => Promise<any>>;
-		const filePaths = Object.keys(files);
-		fileNames = filePaths.map((filePath) => filePath.replace(`../audio/mp3/`, ''));
-	} catch (error) {
-		console.error(error);
-	}
-	return fileNames;
+
+	const files = import.meta.glob('../../../static/audio/mp3/*', {
+		eager: true,
+		import: 'default'
+	});
+	console.log('files: ', files);
+	// remove  /static/ from the file path
+	const filePaths: Array<string> = Object.values(files).map((file) => {
+		let trimmed = file.replace('/static/', '');
+		return trimmed;
+	});
+
+	return filePaths as Array<string>;
+}
+
+export function getSpeechFiles(): Array<string> {
+	let fileNames: string[] = [];
+
+	const files = import.meta.glob('../../../static/audio/mp3/speech/*', {
+		eager: true,
+		import: 'default'
+	});
+	console.log('files: ', files);
+	// remove  /static/ from the file path
+	const filePaths: Array<string> = Object.values(files).map((file) => {
+		let trimmed = file.replace('/static/', '');
+		return trimmed;
+	});
+
+	return filePaths as Array<string>;
 }

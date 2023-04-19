@@ -6,19 +6,18 @@
  */
 
 import { get } from 'svelte/store';
-import { PlaylistVoice, VFS_PATH_PREFIX } from '$lib/stores/stores';
+import { AUDIO_ASSETS_PREFIX, PlaylistSpeech, VFS_PATH_PREFIX } from '$lib/stores/stores';
 import type { VoiceContainer, RawAudioBuffer } from 'src/typeDeclarations.js';
 import { error } from '@sveltejs/kit';
 
-const sourceURL_prefix = get(VFS_PATH_PREFIX) + 'speech/';
+const sourceURL_prefix = get(AUDIO_ASSETS_PREFIX) + '/speech/';
 let playlist: Array<string>;
 
-const unsubscribe = PlaylistVoice.subscribe((container: VoiceContainer) => {
-	//	playlist = container.playlist;
-	playlist = ['test.mp3'];
+const unsubscribe = PlaylistSpeech.subscribe((container: VoiceContainer) => {
+	playlist = container.playlist;
 });
 
-const target = (entry: string, i: number): string => `${sourceURL_prefix}${entry}`;
+const target = (entry: string, i: number): string => `${entry}`;
 
 export async function load({ fetch }) {
 	let responses: Array<any> = [];
@@ -41,11 +40,12 @@ export async function load({ fetch }) {
 		};
 
 		if (response.ok) {
+			const name = playlist[i].replace(get(AUDIO_ASSETS_PREFIX), '::voice::');
 			const structuredAudioBuffer: RawAudioBuffer = {
 				header: {
-					name: playlist[i],
+					name,
 					bytes: 0,
-					vfsPath: sourceURL_prefix + playlist[i]
+					vfsPath: get(VFS_PATH_PREFIX) + name
 				},
 				body: rawArrayBuffer()
 			};

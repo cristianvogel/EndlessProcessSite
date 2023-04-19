@@ -6,8 +6,8 @@ const { audioStatus } = Audio.stores
 $: isPlaying = $audioStatus === 'playing';
 
 const svgClass: Array<string> = [
-	"mx-auto -ml-4 hover:stroke-secondary-700",
-	"mx-auto -ml-4 hover:stroke-secondary-500 stroke-secondary-800"
+	"mx-auto -ml-5 hover:stroke-secondary-700",
+	"mx-auto -ml-5 hover:stroke-secondary-500 stroke-secondary-800"
 ]; 
 
 
