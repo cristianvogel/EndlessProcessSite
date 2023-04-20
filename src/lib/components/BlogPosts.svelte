@@ -4,7 +4,7 @@
 	 */
 	import { Icon } from '@steeze-ui/svelte-icon';
 	import { CaretSortDown } from '@steeze-ui/carbon-icons';
-	import { singlePost, loadingSomething } from '$lib/stores/stores';
+	import { singlePost, LoadingSomething } from '$lib/stores/stores';
 	import { Utils } from '$lib/classes/Utils';
 	import { onMount } from 'svelte';
 
@@ -84,8 +84,8 @@
           background-position-y: 23%; 
           background-size: cover;
           opacity: 0.3`}
-          {#if $loadingSomething.state}
-             <div class="placeholder" >{$loadingSomething.count}</div>
+          {#if $LoadingSomething.state}
+             <div class="placeholder" >{$LoadingSomething.count}</div>
           {:else}
 					<div
 						class="card break-inside-avoid-column px-0 w-full variant-soft-surface"

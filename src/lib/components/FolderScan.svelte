@@ -1,20 +1,12 @@
 <!-- files.svelte -->
 <script lang="ts">
-  import { onMount } from 'svelte';
   import { Icon } from '@steeze-ui/svelte-icon';
   import { Layers } from '@steeze-ui/carbon-icons';
-  import { Playlist } from '$lib/stores/stores';
-  import { getMusicFiles } from '$lib/classes/Files';
+  import { PlaylistMusic } from '$lib/stores/stores';
 
-  let folderName: string = 'lib/audio/mp3';
-  let fileNames: Array<string> = [];
+ 	let trackTitles:Array<string>;
+	$: trackTitles = $PlaylistMusic.names;
 
-  onMount(() => {
-  Playlist.update( (plist) => {
-    fileNames = plist.playlist  = getMusicFiles(); 
-    return plist});
-  });
-  
 </script>
   <div class='flex items-center'>
   <div class='mr-1'>
@@ -25,7 +17,7 @@
   </div>  
   </div>
   <ul>
-    {#each fileNames as fileName}
+    {#each trackTitles as fileName}
       <li class='ml-1'>{fileName}</li>
     {/each}
   </ul>

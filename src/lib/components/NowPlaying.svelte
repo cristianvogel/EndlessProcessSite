@@ -1,11 +1,11 @@
 <script>
-	import {Playlist} from '$lib/stores/stores';
+	import {PlaylistMusic} from '$lib/stores/stores';
 	import {Audio} from '$lib/classes/Audio';
 	import DescriptionList from './DescriptionList.svelte';
 	const { audioStatus } = Audio.stores
 
 	$: isPlaying = $audioStatus === 'playing';
-	$: currentTrack = $Playlist.currentTrack.name;
+	$: currentTrack = $PlaylistMusic.currentTrack.title.replace('.mp3', '')	
 
 </script>
 

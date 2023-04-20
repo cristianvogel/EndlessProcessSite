@@ -10,35 +10,30 @@
 	 DEFAULT_GLOB_PATH = '../../../static/audio/mp3/*'  
  */
 
-export function getMusicFiles(): Array<string> {
-	let fileNames: string[] = [];
+export function getMusicFiles(): string[] {
+	let filePaths: string[] = [];
 
-	const files = import.meta.glob('../../../static/audio/mp3/*', {
+	const files = import.meta.glob('../../../src/audiofiles/music/*', {
 		eager: true,
 		import: 'default'
 	});
-	console.log('files: ', files);
-	// remove  /static/ from the file path
-	const filePaths: Array<string> = Object.values(files).map((file) => {
-		let trimmed = file.replace('/static/', '');
-		return trimmed;
-	});
 
+	filePaths = Object.values(files).map((file) => {
+		return file as string;
+	});
 	return filePaths as Array<string>;
 }
 
-export function getSpeechFiles(): Array<string> {
-	let fileNames: string[] = [];
+export function getSpeechFiles(): string[] {
+	let filePaths: string[] = [];
 
-	const files = import.meta.glob('../../../static/audio/mp3/speech/*', {
+	const files = import.meta.glob('../../../src/audiofiles/speech/*', {
 		eager: true,
 		import: 'default'
 	});
-	console.log('files: ', files);
-	// remove  /static/ from the file path
-	const filePaths: Array<string> = Object.values(files).map((file) => {
-		let trimmed = file.replace('/static/', '');
-		return trimmed;
+
+	filePaths = Object.values(files).map((file) => {
+		return file as string;
 	});
 
 	return filePaths as Array<string>;

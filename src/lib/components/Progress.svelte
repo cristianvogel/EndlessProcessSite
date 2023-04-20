@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { Playlist } from '$lib/stores/stores';
+	import { PlaylistMusic } from '$lib/stores/stores';
 	import { Audio } from '$lib/classes/Audio';
 	import { ProgressBar } from '@skeletonlabs/skeleton';
 	import { Scrubbing } from '$lib/stores/stores';
 	import { onMount } from 'svelte';
 
-	$: progress = $Playlist.currentTrack.progress;
-	$: duration = $Playlist.currentTrack.duration || 0; // in seconds
+	$: progress = $PlaylistMusic.currentTrack.progress;
+	$: duration = $PlaylistMusic.currentTrack.duration || 0; // in seconds
 
 	let start: number = 0;
 	let isPhone = false;

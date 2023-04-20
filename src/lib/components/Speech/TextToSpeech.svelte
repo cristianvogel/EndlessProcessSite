@@ -1,11 +1,12 @@
 <script lang="ts">
     import { Icon } from '@steeze-ui/svelte-icon';
     import { VoiceActivate } from'@steeze-ui/carbon-icons';
-    import {VoiceOver} from '$lib/classes/Voice';
+    import {VoiceOver} from '$lib/classes/Speech';
     import ElevenLabsLogo from '$lib/images/ElevenLabsLogo.svelte';
 	import { SlideToggle } from '@skeletonlabs/skeleton';
     import { VFS_PATH_PREFIX, PlaylistSpeech } from '$lib/stores/stores';
 	import { onMount } from 'svelte';
+	import { get } from 'svelte/store';
 
     let activated: boolean = false;
 
@@ -13,15 +14,20 @@
         if (VoiceOver.status === 'suspended') {
 			VoiceOver.resumeContext();
 		}
-        PlaylistSpeech.update( (plist) => {
-            const data = e.target
-            const current = plist.currentChapter;
-            VoiceOver.status = data.checked ? 'playing' : 'paused';
-            current.id = data.id;
-            current.name = data.name;
-            current.path = $VFS_PATH_PREFIX + current.id;
-            return plist;
-        })
+
+        const currentChapter = {
+            title: e.currentTarget.name,
+            vfsPath: get(VFS_PATH_PREFIX) + e.currentTarget.name,
+            progress: 0,
+            duration: $PlaylistSpeech.durations.get(e.currentTarget.name),
+            offset: 0
+        }
+
+     	PlaylistSpeech.update((p) => {
+			p.currentChapter = currentChapter;
+			return p;
+		});
+
         VoiceOver.playFromVFS();
     }
 
@@ -42,7 +48,7 @@
     </div>
     <div class="-mt-5"> 
         <SlideToggle 
-        name="speech.1" 
+        name="voice::demo.mp3.channel.1" 
         bind:checked={activated} 
         size='sm' 
         active='bg-secondary-600'

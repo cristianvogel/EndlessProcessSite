@@ -24,19 +24,34 @@ type AudioCoreStatus =
 	| 'scrubbing'
 	| 'error';
 
-interface PlaylistContainer {
+//-════════╡ Music ╞═══════
+interface MusicContainer {
 	currentTrack: {
-		progress: number;
-		name: string;
-		path: string;
+		title: string;
+		vfsPath: string;
 		loaded?: boolean;
 		duration?: number;
 		offset?: number;
+		progress: number;
 	};
-	playlist: Array<string>;
+	audioAssetPaths: Array<string>;
+	titles: Array<string>;
 	show: boolean;
 	durations: Map<string, number>;
 }
+
+//════════╡ Voice ╞═══════
+type ChapterID = `chapter-${string}`;
+interface SpeechContainer extends Omit<MusicContainer, 'currentTrack' | 'show'> {
+	currentChapter: {
+		progress: number;
+		title: string;
+		vfsPath: string;
+		duration?: number;
+		offset?: number;
+	};
+}
+
 
 type HtmlContent = { rawHTML: string; sanitisedHTML: string };
 
@@ -68,9 +83,16 @@ type ProgressOptions = {
 type Signal = NodeRepr_t;
 
 type RawAudioBuffer = {
-	header: { name: string; bytes: number; vfsPath: string };
+	header: {
+		globPath: string;
+		title?: string;
+		bytes?: number;
+		vfsPath?: string;
+	};
 	body: ArrayBuffer | Promise<ArrayBuffer>;
 };
+
+type DecodedTrackContainer = { title: string; vfsPath: string; decodedBuffer: AudioBuffer | null };
 
 //════════╡ AudioEngine :: Interfaces ╞═══════
 
@@ -84,13 +106,3 @@ interface stereoOut {
 	stereoSignal: StereoSignal;
 }
 
-//════════╡ Voice ╞═══════
-type ChapterID = `chapter-${string}`;
-interface VoiceContainer extends Omit<PlaylistContainer, 'currentTrack' | 'show'> {
-	currentChapter: {
-		progress: number;
-		name: string;
-		id: ChapterID;
-		path: string;
-	};
-}

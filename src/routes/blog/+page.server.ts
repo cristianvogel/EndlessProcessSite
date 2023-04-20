@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { loadingSomething } from '$lib/stores/stores';
+import { LoadingSomething } from '$lib/stores/stores';
 const query = `
 query GetPosts {
     posts {
@@ -22,7 +22,7 @@ const apiURL = 'https://endless-process.net/graphql';
 
 export async function load({ fetch }) {
 	const interval = setInterval(() => {
-		loadingSomething.update((load) => {
+		LoadingSomething.update((load) => {
 			load.state = true;
 			load.count++;
 			return load;
@@ -39,7 +39,7 @@ export async function load({ fetch }) {
 	if (response.ok) {
 		const responseObj = await response.json();
 		const posts = responseObj.data.posts.nodes;
-		loadingSomething.update((load) => {
+		LoadingSomething.update((load) => {
 			load = { state: false, count: 0 };
 			return load;
 		});

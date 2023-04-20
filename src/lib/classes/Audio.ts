@@ -4,12 +4,19 @@ import type {
 	AudioCoreStatus,
 	Signal,
 	RawAudioBuffer,
-	SamplerOptions
+	SamplerOptions,
+	DecodedTrackContainer,
+	MusicContainer, SpeechContainer
 } from 'src/typeDeclarations';
 
 import { scrubbingSamplesPlayer, stereoOut, bufferProgress } from '$lib/audio/AudioFunctions';
-import { channelExtensionFor, clipToRange } from '$lib/classes/Utils';
-import { CablesPatch, VFS_PATH_PREFIX, Playlist, Decoding, Scrubbing } from '$lib/stores/stores';
+import { Wait, channelExtensionFor, clipToRange } from '$lib/classes/Utils';
+import {
+	CablesPatch,
+	PlaylistMusic,
+	Decoding,
+	Scrubbing
+} from '$lib/stores/stores';
 import WebRenderer from '@elemaudio/web-renderer';
 import type { NodeRepr_t } from '@elemaudio/core';
 import { el } from '@elemaudio/core';
@@ -17,8 +24,8 @@ import { el } from '@elemaudio/core';
 // todo: set a sample rate constant prop
 
 export class AudioCore {
-	#core: WebRenderer | null;
-	#silentCore: WebRenderer | null;
+	_core: WebRenderer | null;
+	_silentCore: WebRenderer | null;
 	protected _AudioCoreStatus: Writable<AudioCoreStatus>;
 	protected _contextIsRunning: Writable<boolean>;
 	protected _elemLoaded: Writable<boolean>;
@@ -31,7 +38,7 @@ export class AudioCore {
 	protected _scrubbing: boolean;
 
 	constructor() {
-		this.#core = this.#silentCore = null;
+		this._core = this._silentCore = null;
 		this._masterVolume = writable(1); // default master volume
 		this._AudioCoreStatus = writable('loading');
 		this._contextIsRunning = writable(false);
@@ -53,16 +60,16 @@ export class AudioCore {
 		 * @description
 		 *  Subscribers to update AudioCore with current track info
 		 */
-		Playlist.subscribe(($Playlist) => (Audio._currentTrackName = $Playlist.currentTrack.name));
+		PlaylistMusic.subscribe(($p) => (Audio._currentTrackName = $p.currentTrack.title));
 
-		Playlist.subscribe(
-			($Playlist) => (Audio._currentVFSPath = get(VFS_PATH_PREFIX) + $Playlist.currentTrack.name)
+		PlaylistMusic.subscribe(
+			($p) => (Audio._currentVFSPath = $p.currentTrack.vfsPath)
 		);
 
-		Playlist.subscribe(
-			($Playlist) =>
-				(Audio._currentTrackDurationSeconds = $Playlist.currentTrack.duration
-					? $Playlist.currentTrack.duration
+		PlaylistMusic.subscribe(
+			($p) =>
+				(Audio._currentTrackDurationSeconds = $p.currentTrack.duration
+					? $p.currentTrack.duration
 					: 0)
 		);
 
@@ -73,7 +80,7 @@ export class AudioCore {
 
 	cleanup() {
 		// not sure about this, sometimes causes context to stay suspended forever
-		//Audio.suspend();
+		// Audio.suspend();
 	}
 
 	/**
@@ -88,8 +95,8 @@ export class AudioCore {
 		 * seems to be fine so far. Calling this 'Two-Webrenderers-and-a-microphone'
 		 * pattern '💿💿🎤'
 		 */
-		Audio.#core = new WebRenderer();
-		Audio.#silentCore = new WebRenderer();
+		Audio._core = new WebRenderer();
+		Audio._silentCore = new WebRenderer();
 
 		// Subscribe to Svelte stores outside of component
 		Audio.subscribeToStores();
@@ -103,7 +110,7 @@ export class AudioCore {
 		}
 
 		// Elementary connecting promise : Main Core
-		Audio.elemEndNode = await Audio.#core
+		Audio.elemEndNode = await Audio._core
 			.initialize(Audio.actx, {
 				numberOfInputs: 1,
 				numberOfOutputs: 1,
@@ -115,7 +122,7 @@ export class AudioCore {
 			});
 
 		// Elementary connecting promise : Silent Core
-		Audio.elemSilentNode = await Audio.#silentCore
+		Audio.elemSilentNode = await Audio._silentCore
 			.initialize(Audio.actx, {
 				numberOfInputs: 1,
 				numberOfOutputs: 1,
@@ -134,41 +141,40 @@ export class AudioCore {
 		Audio.actx.addEventListener('statechange', Audio.stateChangeHandler);
 
 		// Elementary load callback
-		Audio.#core.on('load', () => {
+		Audio._core.on('load', () => {
 			console.log('Main core loaded 🔊?', Audio.elemLoaded);
-			Audio.currentVFSPath += `${Audio._currentTrackName}`;
 		});
 
-		Audio.#silentCore.on('load', () => {
+		Audio._silentCore.on('load', () => {
 			console.log('Silent core loaded');
 		});
 
 		// Elementary error reporting
-		Audio.#core.on('error', function (e) {
+		Audio._core.on('error', function (e) {
 			console.error('🔇 ', e);
 			//Audio.cleanup();
 		});
 
-		Audio.#silentCore.on('error', function (e) {
+		Audio._silentCore.on('error', function (e) {
 			console.error('🔇 ', e);
 			//Audio.cleanup();
 		});
 
 		// Elementary FFT callback
-		Audio.#core.on('fft', function (e) {
+		Audio._core.on('fft', function (e) {
 			// do something with the FFT data
 			console.count('fft');
 		});
 
 		// Elementary meter callback
-		Audio.#core.on('meter', function (e) {
+		Audio._core.on('meter', function (e) {
 			// do something with the meter data
 			console.count('meter');
 		});
 
 		// Elementary snapshot callback
-		Audio.#silentCore.on('snapshot', function (e) {
-			Playlist.update(($pl) => {
+		Audio._silentCore.on('snapshot', function (e) {
+			PlaylistMusic.update(($pl) => {
 				$pl.currentTrack.progress = clipToRange(e.data as number, 0, 1);
 				return $pl;
 			});
@@ -205,13 +211,26 @@ export class AudioCore {
 	/**
 	 * @description Elementary Audio WebRenderer uses a virtual file system to reference audio files.
 	 * https://www.elementary.audio/docs/packages/web-renderer#virtual-file-system
-	 * Update the virtual file system using data loaded from the +page.ts load() function
-		todo: better typing for vfsDictionaryEntry
+	 * Update the virtual file system using data loaded from a load() function.
+	 *
+	 * @param rawAudioBuffer
+	 * will be decoded to audio buffer for VFS use
+	 * @param playlistStore
+	 * a Writable that holds titles and other data derived from the buffers
+	 * @param core
+	 * the Elementary core which will register and use the VFS dictionary entry
 	 */
-	async updateVFS(rawAudioBuffer: RawAudioBuffer) {
+	
+	async updateVFS(
+		rawAudioBuffer: RawAudioBuffer,
+		playlistStore: Writable<MusicContainer | SpeechContainer>,
+		core: WebRenderer | null
+	) {
+
 		let vfsDictionaryEntry: any;
 
-		this.decodeRawBuffer(rawAudioBuffer).then(([decoded, vfsPath]) => {
+		this.decodeRawBuffer(rawAudioBuffer).then((decodedBuffer) => {
+			let { decodedBuffer: decoded, title, vfsPath } = decodedBuffer;
 			if (!decoded) {
 				console.warn('Decoding skipped.');
 				return;
@@ -220,18 +239,25 @@ export class AudioCore {
 			for (let i = 0; i < decoded.numberOfChannels; i++) {
 				vfsDictionaryEntry = {
 					...vfsDictionaryEntry,
-					[`${vfsPath}${channelExtensionFor(i + 1)}`]: decoded.getChannelData(i)
+					[`${vfsPath + channelExtensionFor(i + 1)}`]: decoded.getChannelData(i)
 				};
 			}
-			//console.log('vfsDictionaryEntry', vfsDictionaryEntry);
-			Audio.#core?.updateVirtualFileSystem(vfsDictionaryEntry);
+			// update data in the passed store
+			playlistStore.update(($pl) => {
+				$pl.titles.push(title);
+				return $pl;
+			});
+			// update the VFS in the passed Elementary core
+			console.log('Updating VFS with', vfsDictionaryEntry);
+			core?.updateVirtualFileSystem(vfsDictionaryEntry);
 		});
 	}
 
 	/**
 	 * @description Decodes the raw audio buffer into an AudioBuffer, asynchonously with guards
 	 */
-	async decodeRawBuffer(rawAudioBuffer: RawAudioBuffer): Promise<[AudioBuffer | null, string]> {
+
+	async decodeRawBuffer(rawAudioBuffer: RawAudioBuffer): Promise<DecodedTrackContainer> {
 		const stopwatch = Date.now();
 		while (!rawAudioBuffer) await new Promise((resolve) => setTimeout(resolve, 100));
 		const { body, header } = rawAudioBuffer;
@@ -246,14 +272,12 @@ export class AudioCore {
 			console.log(new Error('Decoding skipped. Dummy buffer created.'));
 			decoded = Audio.actx?.createBuffer(1, 1, 44100);
 		} finally {
-			const { vfsPath } = header;
-			const bytes = decoded?.getChannelData(0).length;
-			header.bytes = bytes || 0;
+			header.bytes = decoded?.getChannelData(0).length || 0;
 			console.log(
 				'Decoded audio with length ',
-				bytes,
+				header.bytes,
 				' to ',
-				vfsPath,
+				header.vfsPath,
 				' in ',
 				Date.now() - stopwatch,
 				'ms'
@@ -265,32 +289,36 @@ export class AudioCore {
 		}
 		// update the DurationElement in the playlist container map
 		if (decoded && decoded.duration > 1) {
-			Playlist.update(($plist) => {
+			PlaylistMusic.update(($plist) => {
 				// guard against the 1 samp skipped buffer hack above
 				if (!decoded) return $plist;
-				$plist.durations.set(header.name, decoded.duration);
+				$plist.durations.set(header.title as string, decoded.duration);
 				return $plist;
 			});
 		}
-		return [decoded, header.vfsPath];
+		return {
+			title: header.title as string,
+			vfsPath: header.vfsPath as string,
+			decodedBuffer: decoded
+		};
 	}
 
 	/**
 	 * @description Wraps the Elementary core Render function
 	 */
 	render(stereoSignal: StereoSignal): void {
-		if (!Audio.#core || !stereoSignal) return;
+		if (!Audio._core || !stereoSignal) return;
 		Audio.status = 'playing';
 		const final = stereoOut(stereoSignal);
-		Audio.#core.render(final.left, final.right);
+		Audio._core.render(final.left, final.right);
 	}
 
 	/**
 	 * @description silent render of a control signal, for handling a signal with a side effect like the progress counter composite, which emits an event _and_ an audiorate signal
 	 */
 	controlRender(controlSignal: Signal): void {
-		if (!Audio.#silentCore || !controlSignal) return;
-		Audio.#silentCore.render(el.mul(controlSignal, 0));
+		if (!Audio._silentCore || !controlSignal) return;
+		Audio._silentCore.render(el.mul(controlSignal, 0));
 	}
 
 	/**
@@ -412,7 +440,7 @@ export class AudioCore {
 	get audioBuffersReady(): boolean {
 		return typeof Audio._currentTrackName === 'string';
 	}
-	get currentTrackName(): string {
+	get currentTrackTitle(): string {
 		return Audio._currentTrackName;
 	}
 
@@ -460,20 +488,20 @@ export class AudioCore {
 	}
 	/*---- setters --------------------------------*/
 
-	set currentVFSPath(path: string) {
-		//	console.log('set currentVFSPath', path);
-		Playlist.update(($plist) => {
-			$plist.currentTrack.path = path;
-			return $plist;
-		});
-	}
+	// set currentVFSPath(path: string) {
+	// 	console.log('set currentVFSPath', path);
+	// 	PlaylistMusic.update(($plist) => {
+	// 		$plist.currentTrack.vfsPath = path;
+	// 		return $plist;
+	// 	});
+	// }
 
-	set currentTrackName(name: string) {
-		Playlist.update(($plist) => {
-			$plist.currentTrack.name = name;
-			return $plist;
-		});
-	}
+	// set currentTrackTitle(title: string) {
+	// 	PlaylistMusic.update(($plist) => {
+	// 		$plist.currentTrack.title = title;
+	// 		return $plist;
+	// 	});
+	// }
 
 	set masterVolume(normLevel: number | NodeRepr_t) {
 		Audio._masterVolume.update(() => normLevel);

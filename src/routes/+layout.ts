@@ -5,25 +5,31 @@
  * trying to avoid reloading the same assets on page navigation
  */
 
-import { get } from 'svelte/store';
-import { AUDIO_ASSETS_PREFIX, Playlist, VFS_PATH_PREFIX } from '$lib/stores/stores';
-import type { PlaylistContainer, RawAudioBuffer } from 'src/typeDeclarations.js';
+import { LoadingSomething, PlaylistMusic } from '$lib/stores/stores';
+import type { RawAudioBuffer } from 'src/typeDeclarations.js';
 import { error } from '@sveltejs/kit';
 
-let playlist: Array<string>;
+let pathlist: Array<string>;
 
-const unsubscribe = Playlist.subscribe((container: PlaylistContainer) => {
-	playlist = container.playlist;
+const unsubscribe = PlaylistMusic.subscribe((container) => {
+	pathlist = container.audioAssetPaths;
 });
 
 const target = (entry: string, i: number): string => `${entry}`;
 
 export async function load({ fetch }) {
-	let responses: Array<any> = [];
-	let rawAudioBuffers: Array<Promise<any>> = [];
 
-	for (let i = 0; i < playlist.length; i++) {
-		const entry = playlist[i];
+	let responses: Array<any> = [];
+	let promisingAudioBuffers: Array<Promise<any>> = [];
+
+	LoadingSomething.update(($loading) => {
+		$loading.count += pathlist.length;
+		$loading.state = true;
+		return $loading;
+	})
+
+	for (let i = 0; i < pathlist.length; i++) {
+		const entry = pathlist[i];
 		const loadFrom: string = target(entry, i);
 		console.log('Fetching ', loadFrom);
 		const stopwatch = Date.now();
@@ -33,29 +39,28 @@ export async function load({ fetch }) {
 
 	for (let i = 0; i < responses.length; i++) {
 		const response = responses[i];
-
 		const rawArrayBuffer = async () => {
 			return await response.arrayBuffer();
 		};
 
 		if (response.ok) {
-			const name = playlist[i].replace(get(AUDIO_ASSETS_PREFIX), '');
-			const structuredAudioBuffer: RawAudioBuffer = {
+			const title = pathlist[i].replace(/.*\/([^/]+)$/, '$1') as string;
+			const promisingAudioBuffer: RawAudioBuffer = {
 				header: {
-					name,
+					title,
 					bytes: 0,
-					vfsPath: get(VFS_PATH_PREFIX) + name
+					globPath: pathlist[i]
 				},
 				body: rawArrayBuffer()
 			};
 			const wrap = async () => {
-				return structuredAudioBuffer;
+				return promisingAudioBuffer;
 			};
-			rawAudioBuffers.push(wrap());
+			promisingAudioBuffers.push(wrap());
 		} else {
-			throw error(404, 'ArrayBuffer fetch failed 😿');
+			throw error(404, 'Audio file load failed. 😿');
 		}
 	}
 	unsubscribe();
-	return { buffers: rawAudioBuffers };
+	return { buffers: promisingAudioBuffers };
 }

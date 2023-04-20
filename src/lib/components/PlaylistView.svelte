@@ -4,35 +4,39 @@ import { ListBox, ListBoxItem } from '@skeletonlabs/skeleton';
 import { Icon } from '@steeze-ui/svelte-icon';
 import  {CircleDash, CircleFilled} from '@steeze-ui/carbon-icons';
 import {Audio} from '$lib/classes/Audio';
-import { Playlist, VFS_PATH_PREFIX } from "$lib/stores/stores";
+import { PlaylistMusic, VFS_PATH_PREFIX } from "$lib/stores/stores";
+	import { get } from 'svelte/store';
+	import { Utils } from '$lib/classes/Utils';
 
 export let tracklisting:Array<string>;
 
 let valueSingle: number;
+
 const dividerClass = 'my-12 h-0.5 border-t-0 bg-primary-300 opacity-100 dark:opacity-50'
 
-$: current = Audio.currentTrackName;
+$: current = Audio.currentTrackTitle;
+
 
 function HandlePlaylistChoice(e?:any, name?:string) {
-		// can simulate event with a passed `name` value for programmatic track selection
+		// needs to simulate event with a passed `name` value for programmatic track selection
 		if (!e && name) { 
 			e={currentTarget:{name:name}}; 
 		};
-		$Playlist.show = false;
-		Audio.playWithScrubFromVFS( { trigger: 0, startOffset: 0 });
-		Playlist.update( (plist) => {
-			const { currentTrack } = plist;
-			plist.currentTrack = {
-				...currentTrack, 
-				duration: plist.durations.get(e.currentTarget.name), 
-				name: e.currentTarget.name,
-				path: $VFS_PATH_PREFIX+e.currentTarget.name,
-				progress: 0,
-				offset: 0
-			};
-				//console.log('Current track from store: ',plist.currentTrack);
-			return plist;
+
+		const currentTrack = {
+			title: e.currentTarget.name,
+			vfsPath: get(VFS_PATH_PREFIX) + e.currentTarget.name,
+			progress: 0,
+			duration: $PlaylistMusic.durations.get(e.currentTarget.name),
+		}
+		
+		PlaylistMusic.update((ct) => {
+			ct.currentTrack = currentTrack;
+			return ct;
 		});
+
+		$PlaylistMusic.show = false;
+		Audio.playWithScrubFromVFS( { trigger: 0, startOffset: 0 });
 		Audio.playWithScrubFromVFS( { trigger: 1, startOffset: 0 });
 	}
 
@@ -52,7 +56,8 @@ function HandlePlaylistChoice(e?:any, name?:string) {
             <Icon src={current === title ? CircleFilled : CircleDash} class="h-4 mt-1"/>
         </span>
     </svelte:fragment>
-    {title.replace('.mp3', '')} 
+    {Utils.formatTitle(title)}
+	
 </ListBoxItem>
 <hr class={dividerClass} />
 
