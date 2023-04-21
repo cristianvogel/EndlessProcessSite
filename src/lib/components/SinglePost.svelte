@@ -1,6 +1,5 @@
 <script lang="ts">
 	// Single post view
-	import AudioPlayer from '$lib/components/EmbeddedAudioPlayer.svelte';
 	import { singlePost } from '$lib/stores/stores';
 	import { Icon } from '@steeze-ui/svelte-icon';
 	import { Close, PageFirst } from '@steeze-ui/carbon-icons';
