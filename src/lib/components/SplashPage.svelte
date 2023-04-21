@@ -3,7 +3,7 @@
 	import SplashSVG from '$lib/components/SplashSVG.svelte';
 	import NowPlaying from './NowPlaying.svelte';
 	import {Audio} from '$lib/classes/Audio';
-	import { loadingSomething, singlePost } from '$lib/stores/stores';
+	import { LoadingSomething, singlePost } from '$lib/stores/stores';
 	import FolderScan from '$lib/components/FolderScan.svelte';
 	import TextToSpeech from '$lib/components/Speech/TextToSpeech.svelte';
 	const { audioStatus } = Audio.stores
@@ -12,7 +12,7 @@
 	$: postView = $singlePost.isOpen;
 
 </script>
-{#if $loadingSomething.state}
+{#if !$LoadingSomething.state}
    <div class='absolute info top-30 left-3 -z-10'><FolderScan /></div>
 {/if}
 

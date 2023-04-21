@@ -5,9 +5,10 @@
 	import { Events, ChartMarimekko, Cube, ProgressBarRound } from '@steeze-ui/carbon-icons';
 	import ElementaryPlayer from '$lib/components/ElementaryPlayer.svelte';
 	import Progress from '$lib/components/Progress.svelte';
-	import { CablesText, CablesIsLoaded, PlaysCount, Playlist } from '$lib/stores/stores';
+	import { CablesText, CablesIsLoaded, PlaysCount, PlaylistMusic, VFS_PATH_PREFIX } from '$lib/stores/stores';
 	import { Audio } from '$lib/classes/Audio';
 	import { createEventDispatcher } from 'svelte';
+	import { get } from 'svelte/store';
 
 	const dispatch = createEventDispatcher();
 
@@ -23,8 +24,8 @@
 		// check if the click was on the playlist button
 
 		if (e.currentTarget.id === 'playlist'){
-			$Playlist.show = !$Playlist.show;
-			dispatch('playlistChanged', $Playlist.show);
+			$PlaylistMusic.show = !$PlaylistMusic.show;
+			dispatch('playlistChanged', $PlaylistMusic.show);
 		}
 		
 		if (e.currentTarget.id === 'transport') {
@@ -42,15 +43,18 @@
 		}
 		// initialise first track data if this is the first play
 		if ($PlaysCount === 0) { 
-			$Playlist.currentTrack = {
-										name: $Playlist.playlist[0], 
-										path: $Playlist.playlist[0], 
-										duration: $Playlist.durations.get($Playlist.playlist[0]), 
+			const firstTitle = $PlaylistMusic.titles[0]
+			$PlaylistMusic.currentTrack = {
+										title: firstTitle, 
+										vfsPath: get(VFS_PATH_PREFIX) + firstTitle, 
+										duration: $PlaylistMusic.durations.get(firstTitle), 
 										progress: 0,
 										offset: 0
 									}
 								$PlaysCount += 1; // todo: A modal prompting to buy the music after a number of plays ?
 								}
+
+								console.log('Cued track:', $PlaylistMusic.currentTrack.title)
 
 		if ($audioStatus === 'playing') {
 			Audio.pause();

@@ -1,32 +1,39 @@
 /**
  * Audio file ingestor  -- SPEECH
- *
- * todo: Load from folder ( using hard coded path for now)
- * todo: decode buffers
+ * It duplicates the behaviour of the load() function in src/routes/+layout.ts
+ * @todo: refactor all file loading to be done in the same SvelteKit +load function?
+ * not sure how to do that yet...
  */
 
 import { get } from 'svelte/store';
-import { AUDIO_ASSETS_PREFIX, PlaylistSpeech, VFS_PATH_PREFIX } from '$lib/stores/stores';
-import type { VoiceContainer, RawAudioBuffer } from 'src/typeDeclarations.js';
+import { LoadingSomething, PlaylistSpeech, VFS_PATH_PREFIX } from '$lib/stores/stores';
+import type { SpeechContainer, RawAudioBuffer } from 'src/typeDeclarations.js';
 import { error } from '@sveltejs/kit';
 
-const sourceURL_prefix = get(AUDIO_ASSETS_PREFIX) + '/speech/';
-let playlist: Array<string>;
+// const sourceURL_prefix = get(AUDIO_ASSETS_PREFIX) + '/speech/';
+let pathlist: Array<string>;
 
-const unsubscribe = PlaylistSpeech.subscribe((container: VoiceContainer) => {
-	playlist = container.playlist;
+const unsubscribe = PlaylistSpeech.subscribe((container) => {
+	pathlist = container.audioAssetPaths;
 });
 
 const target = (entry: string, i: number): string => `${entry}`;
 
 export async function load({ fetch }) {
-	let responses: Array<any> = [];
-	let rawAudioBuffers: Array<Promise<any>> = [];
 
-	for (let i = 0; i < playlist.length; i++) {
-		const entry = playlist[i];
+	let responses: Array<any> = [];
+	let promisingAudioBuffers: Array<Promise<any>> = [];
+
+	LoadingSomething.update(($loading) => {
+		$loading.count += pathlist.length;
+		$loading.state = true;
+		return $loading;
+	})
+
+	for (let i = 0; i < pathlist.length; i++) {
+		const entry = pathlist[i];
 		const loadFrom: string = target(entry, i);
-		console.log('Fetching ', loadFrom);
+		console.log('Fetching speech ', loadFrom);
 		const stopwatch = Date.now();
 		responses.push(await fetch(loadFrom));
 		console.log(' in ', Date.now() - stopwatch, 'ms');
@@ -40,24 +47,23 @@ export async function load({ fetch }) {
 		};
 
 		if (response.ok) {
-			const name = playlist[i].replace(get(AUDIO_ASSETS_PREFIX), '::voice::');
-			const structuredAudioBuffer: RawAudioBuffer = {
+			const title = 'voice::' + pathlist[i].replace(/.*\/([^/]+)$/, '$1') as string;
+			const promisingAudioBuffer: RawAudioBuffer = {
 				header: {
-					name,
+					title,
 					bytes: 0,
-					vfsPath: get(VFS_PATH_PREFIX) + name
+					globPath: pathlist[i]
 				},
 				body: rawArrayBuffer()
 			};
 			const wrap = async () => {
-				return structuredAudioBuffer;
+				return promisingAudioBuffer;
 			};
-			rawAudioBuffers.push(wrap());
+			promisingAudioBuffers.push(wrap());
 		} else {
-			console.log('ArrayBuffer fetch failed 😿');
-			throw error(404);
+			throw error(404, 'Audio file load failed. 😿');
 		}
 	}
 	unsubscribe();
-	return { buffers: rawAudioBuffers };
+	return { buffers: promisingAudioBuffers };
 }

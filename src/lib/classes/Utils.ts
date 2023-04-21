@@ -1,5 +1,5 @@
 /*
- * some useful routines, mostly written by Copilot
+ * some useful routines, mostly written with Copilot and GPT3
  */
 
 
@@ -31,14 +31,25 @@ export const clipTo0 = (value: number): number => {
 	return Math.max(value, 0);
 };
 
+export function channelExtensionFor(channel: number) {
+	return `.channel.${channel.toString()}`;
+};
 
 export const Wait = {
-	forNull: async function (variable: any, interval = 100): Promise<void> {
-		console.log('waiting for null...');
-		await new Promise<void>((resolve) => {
+	forValid: async function (variable: any, interval = 100, maxAttempts = 50): Promise<void> {
+		console.log('waiting for valid...');
+		let attempts = 0;
+		await new Promise<void>((resolve, reject) => {
 			const timer = setInterval(() => {
-				if (variable !== null) {
-					console.log('Not Null!');
+				if (variable !== null && variable !== undefined) {
+					attempts++;
+					if (attempts >= maxAttempts) {
+						clearInterval(timer);
+						reject(new Error('Maximum number of attempts exceeded'));
+					} else {
+						console.log('ready -> ', variable);
+					}
+				} else {
 					clearInterval(timer);
 					resolve();
 				}
@@ -46,12 +57,20 @@ export const Wait = {
 		});
 	},
 
-	forTrue: async function (variable: boolean | null, interval = 100): Promise<void> {
+	forTrue: async function (variable: boolean | null, interval = 100, maxAttempts = 50): Promise<void> {
 		console.log('waiting for true...');
-		await new Promise<void>((resolve) => {
+		let attempts = 0;
+		await new Promise<void>((resolve, reject) => {
 			const timer = setInterval(() => {
 				if (variable === true) {
-					console.log('Truthy!');
+					attempts++;
+					if (attempts >= maxAttempts) {
+						clearInterval(timer);
+						reject(new Error('Maximum number of attempts exceeded'));
+					} else {
+						console.log('Truthy!');
+					}
+				} else {
 					clearInterval(timer);
 					resolve();
 				}
@@ -60,13 +79,13 @@ export const Wait = {
 	}
 };
 
-export function channelExtensionFor  (channel: number)  {
-			return `.channel.${channel.toString()}`;
-		};
-
 export const Utils = {
 	generateRandomKey(): string {
 		return Math.random().toString(36);
+	},
+
+	formatTitle(title: string): string {
+		return title.replace('.mp3', '').replace(/_/g, '・').replace(/([A-Z])/g, ' $1')
 	},
 
 	formatDate(date: string): string {
