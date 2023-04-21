@@ -82,7 +82,7 @@ type ProgressOptions = {
 
 type Signal = NodeRepr_t;
 
-type RawAudioBuffer = {
+type ArrayBufferContainer = {
 	header: {
 		globPath: string;
 		title?: string;

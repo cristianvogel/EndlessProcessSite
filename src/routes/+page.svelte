@@ -5,8 +5,8 @@
 	 */
 	import type { LayoutData } from './$types';
 	import { Audio } from '$lib/classes/Audio';
-	import type { RawAudioBuffer } from 'src/typeDeclarations';
-	import { VFS_PATH_PREFIX, PlaylistMusic } from '$lib/stores/stores';
+	import type { ArrayBufferContainer } from 'src/typeDeclarations';
+	import { VFS_PATH_PREFIX, PlaylistMusic, LayoutDataLoaded } from '$lib/stores/stores';
 	import { get } from 'svelte/store';
 
 	export let data: LayoutData;
@@ -21,11 +21,14 @@
 	 * @todo abstract out the parallel decoder
 	 */
 
-	let parallel: Array<any> = [];
 
+if (data.buffers?.length > 0) {
+	LayoutDataLoaded.update(($ldl) => {$ldl=true; return $ldl});
+	let parallel: Array<any> = [];
+	
 	Promise.all(data.buffers).then((buffers) => {
 		for (let i = 0; i < buffers.length; i++) {
-			const track: RawAudioBuffer = buffers[i];
+			const track: ArrayBufferContainer = buffers[i];
 
 			const vfsPath = get(VFS_PATH_PREFIX) + track.header.title;
 			const header = { ...track.header, vfsPath };
@@ -42,4 +45,8 @@
 			console.log('AUDIO: Parallel promises resolved')
 		);
 	});
+
+} else {
+	console.log('AUDIO: No buffers to decode');
+}
 </script>

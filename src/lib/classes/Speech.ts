@@ -1,20 +1,21 @@
-import type { AudioCoreStatus, DecodedTrackContainer, RawAudioBuffer, StereoSignal } from 'src/typeDeclarations';
+import type { AudioCoreStatus, DecodedTrackContainer, ArrayBufferContainer, StereoSignal } from 'src/typeDeclarations';
 import { get } from 'svelte/store';
 import WebRenderer from '@elemaudio/web-renderer';
 import { writable, type Writable } from 'svelte/store';
 import { AudioCore } from '$lib/classes/Audio';
 import { load } from '$lib/classes/IngestorSpeechFiles';
 import { channelExtensionFor } from './Utils';
-import { Decoding, PlaylistSpeech, VFS_PATH_PREFIX } from '$lib/stores/stores';
+import { PlaylistSpeech, VFS_PATH_PREFIX } from '$lib/stores/stores';
 import { stereoOut } from '$lib/audio/AudioFunctions';
 import { el } from '@elemaudio/core';
 
 // ════════╡ Voice ╞═══════
 // todo: add a way to set the voice's position in the audio file
 // todo: add a way to set the voice's start offset in the audio file
+// 🚨 this is still a demo/test and not a full implementation
 
 export class VoiceCore extends AudioCore {
-	_voiceCore: WebRenderer | null;
+	_core: WebRenderer | null;
 	_silentVoiceCore: WebRenderer | null;
 	_voiceCoreStatus: Writable<AudioCoreStatus>;
 	_currentVFSPath: string;
@@ -25,7 +26,7 @@ export class VoiceCore extends AudioCore {
 
 	constructor() {
 		super();
-		this._voiceCore = this._silentVoiceCore = null;
+		this._core = this._silentVoiceCore = null;
 		this._voiceCoreStatus = writable('loading');
 		this._endNodes = writable({
 			mainCore: null,
@@ -41,7 +42,7 @@ export class VoiceCore extends AudioCore {
 	}
 
 	async init(): Promise<void> {
-		VoiceOver._voiceCore = new WebRenderer();
+		VoiceOver._core = new WebRenderer();
 		VoiceOver._silentVoiceCore = new WebRenderer();
 
 		/** 
@@ -62,7 +63,7 @@ export class VoiceCore extends AudioCore {
 
 
 		// initialise the voice cores
-		VoiceOver.voiceEndNode = await VoiceOver._voiceCore
+		VoiceOver.voiceEndNode = await VoiceOver._core
 			.initialize(super.actx, {
 				numberOfInputs: 1,
 				numberOfOutputs: 1,
@@ -83,14 +84,14 @@ export class VoiceCore extends AudioCore {
 				return node;
 			});
 
-		VoiceOver._voiceCore.on('error', function (e) {
+		VoiceOver._core.on('error', function (e) {
 			console.error('🔇 ', e);
 		});
 		VoiceOver._silentVoiceCore.on('error', function (e) {
 			console.error('🔇 ', e);
 		});
 
-		VoiceOver._voiceCore.on('load', () => {
+		VoiceOver._core.on('load', () => {
 			console.log('Voice Core loaded  🎤');
 			VoiceOver.status = 'ready';
 		});
@@ -102,7 +103,7 @@ export class VoiceCore extends AudioCore {
 	 * @todo inherit decodeRawBuffer() from super
 	 */
 
-	async decodeRawBuffer(rawAudioBuffer: RawAudioBuffer): Promise<DecodedTrackContainer> {
+	async decodeRawBuffer(rawAudioBuffer: ArrayBufferContainer): Promise<DecodedTrackContainer> {
 		const stopwatch = Date.now();
 		while (!rawAudioBuffer) await new Promise((resolve) => setTimeout(resolve, 100));
 		const { body, header } = rawAudioBuffer;
@@ -128,10 +129,6 @@ export class VoiceCore extends AudioCore {
 				Date.now() - stopwatch,
 				'ms'
 			);
-			Decoding.update(($d) => {
-				$d.done = true;
-				return $d;
-			});
 		}
 		// update the DurationElement in the playlist container map
 		if (decoded && decoded.duration > 1) {
@@ -158,10 +155,9 @@ export class VoiceCore extends AudioCore {
 
 	parallelDecoder(buffers: any) {
 		let parallel: Array<any> = [];
-
 		Promise.all(buffers).then((resolved) => {
 			for (let i = 0; i < resolved.length; i++) {
-				const track: RawAudioBuffer = resolved[i];
+				const track: ArrayBufferContainer = resolved[i];
 
 				const vfsPath = get(VFS_PATH_PREFIX) + track.header.title;
 				const header = { ...track.header, vfsPath };
@@ -193,10 +189,10 @@ export class VoiceCore extends AudioCore {
 	}
 
 	render(stereoSignal: StereoSignal): void {
-		if (!VoiceOver._voiceCore || !stereoSignal) return;
+		if (!VoiceOver._core || !stereoSignal) return;
 		VoiceOver.status = 'playing';
 		const final = stereoOut(stereoSignal);
-		VoiceOver._voiceCore.render(final.left, final.right);
+		VoiceOver._core.render(final.left, final.right);
 	}
 
 	/*---- getters --------------------------------*/

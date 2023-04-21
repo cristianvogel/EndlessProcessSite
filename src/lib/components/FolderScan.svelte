@@ -5,7 +5,7 @@
   import { PlaylistMusic } from '$lib/stores/stores';
 
  	let trackTitles:Array<string>;
-	$: trackTitles = $PlaylistMusic.names;
+	$: trackTitles = $PlaylistMusic.titles;
 
 </script>
   <div class='flex items-center'>

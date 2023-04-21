@@ -47,7 +47,7 @@ export const Wait = {
 						clearInterval(timer);
 						reject(new Error('Maximum number of attempts exceeded'));
 					} else {
-						console.log('ready -> ', variable);
+						console.log('Waited now, ready..');
 					}
 				} else {
 					clearInterval(timer);
@@ -85,7 +85,12 @@ export const Utils = {
 	},
 
 	formatTitle(title: string): string {
-		return title.replace('.mp3', '').replace(/_/g, '・').replace(/([A-Z])/g, ' $1')
+		let formattedTitle = title.replace('.mp3', '').replace(/_/g, '・').replace(/([A-Z])/g, ' $1');
+		const lastDotIndex = formattedTitle.lastIndexOf('.');
+		if (lastDotIndex > 0) {
+			formattedTitle = formattedTitle.substring(0, lastDotIndex);
+		}
+		return formattedTitle
 	},
 
 	formatDate(date: string): string {

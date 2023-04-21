@@ -7,7 +7,7 @@
 
 import { get } from 'svelte/store';
 import { LoadingSomething, PlaylistSpeech, VFS_PATH_PREFIX } from '$lib/stores/stores';
-import type { SpeechContainer, RawAudioBuffer } from 'src/typeDeclarations.js';
+import type { SpeechContainer, ArrayBufferContainer } from 'src/typeDeclarations.js';
 import { error } from '@sveltejs/kit';
 
 // const sourceURL_prefix = get(AUDIO_ASSETS_PREFIX) + '/speech/';
@@ -48,7 +48,7 @@ export async function load({ fetch }) {
 
 		if (response.ok) {
 			const title = 'voice::' + pathlist[i].replace(/.*\/([^/]+)$/, '$1') as string;
-			const promisingAudioBuffer: RawAudioBuffer = {
+			const promisingAudioBuffer: ArrayBufferContainer = {
 				header: {
 					title,
 					bytes: 0,
@@ -65,5 +65,10 @@ export async function load({ fetch }) {
 		}
 	}
 	unsubscribe();
+	LoadingSomething.update(($loading) => {
+		$loading.count += pathlist.length;
+		$loading.state = false;
+		return $loading;
+	})
 	return { buffers: promisingAudioBuffers };
 }

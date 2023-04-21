@@ -4,11 +4,13 @@ import { writable, type Readable, type Writable, readable, get } from 'svelte/st
 import type { SinglePost, RawFFT, MusicContainer, SpeechContainer } from 'src/typeDeclarations';
 import { getMusicFiles, getSpeechFiles } from '$lib/classes/Files';
 
-//---- UI related -------------------
+//---- UX / State related -------------------
 export const LoadingSomething: Writable<{ state: boolean; count: number }> = writable({
 	state: false,
 	count: 0
 });
+
+export const LayoutDataLoaded: Writable<boolean> = writable(false);
 
 //---- Blog related -------------------
 // Todo: Implement sanitiser for the content

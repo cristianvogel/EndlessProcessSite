@@ -3,14 +3,14 @@ import type {
 	StereoSignal,
 	AudioCoreStatus,
 	Signal,
-	RawAudioBuffer,
+	ArrayBufferContainer,
 	SamplerOptions,
 	DecodedTrackContainer,
 	MusicContainer, SpeechContainer
 } from 'src/typeDeclarations';
 
 import { scrubbingSamplesPlayer, stereoOut, bufferProgress } from '$lib/audio/AudioFunctions';
-import { Utils, Wait, channelExtensionFor, clipToRange } from '$lib/classes/Utils';
+import { channelExtensionFor, clipToRange } from '$lib/classes/Utils';
 import {
 	CablesPatch,
 	PlaylistMusic,
@@ -214,7 +214,7 @@ export class AudioCore {
 	 * Update the virtual file system using data loaded from a load() function.
 	 *
 	 * @param rawAudioBuffer
-	 * will be decoded to audio buffer for VFS use
+	 * header and body ArrayBufferContainer - will be decoded to audio buffer for VFS use
 	 * @param playlistStore
 	 * a Writable that holds titles and other data derived from the buffers
 	 * @param core
@@ -223,7 +223,7 @@ export class AudioCore {
 	 */
 	
 	async updateVFS(
-		rawAudioBuffer: RawAudioBuffer,
+		rawAudioBuffer: ArrayBufferContainer,
 		playlistStore: Writable<MusicContainer | SpeechContainer>,
 		core: AudioCore
 	) {
@@ -233,7 +233,7 @@ export class AudioCore {
 
 		this.decodeRawBuffer(rawAudioBuffer).then((decodedBuffer) => {
 			let { decodedBuffer: decoded, title, vfsPath } = decodedBuffer;
-			if (!decoded) {
+			if (!decoded || decoded.length < 16) {
 				console.warn('Decoding skipped.');
 				return;
 			}
@@ -259,7 +259,7 @@ export class AudioCore {
 	 * @description Decodes the raw audio buffer into an AudioBuffer, asynchonously with guards
 	 */
 
-	async decodeRawBuffer(rawAudioBuffer: RawAudioBuffer): Promise<DecodedTrackContainer> {
+	async decodeRawBuffer(rawAudioBuffer: ArrayBufferContainer): Promise<DecodedTrackContainer> {
 		const stopwatch = Date.now();
 		while (!rawAudioBuffer) await new Promise((resolve) => setTimeout(resolve, 100));
 		const { body, header } = rawAudioBuffer;

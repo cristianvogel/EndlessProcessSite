@@ -12,7 +12,7 @@
 	$: postView = $singlePost.isOpen;
 
 </script>
-{#if !$LoadingSomething.state}
+{#if $LoadingSomething.state}
    <div class='absolute info top-30 left-3 -z-10'><FolderScan /></div>
 {/if}
 
