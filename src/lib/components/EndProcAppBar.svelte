@@ -54,7 +54,7 @@
 								$PlaysCount += 1; // todo: A modal prompting to buy the music after a number of plays ?
 								}
 
-								console.log('first track:', $PlaylistMusic.currentTrack.title)
+								console.log('Cued track:', $PlaylistMusic.currentTrack.title)
 
 		if ($audioStatus === 'playing') {
 			Audio.pause();

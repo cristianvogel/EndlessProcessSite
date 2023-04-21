@@ -8,7 +8,7 @@
 	import { Wait } from '$lib/classes/Utils';
 
 	const { content, title, cardIndex, featuredImageUrl } = $singlePost;
-	Wait.forNull(content.sanitisedHTML);
+	Wait.forValid(content.sanitisedHTML);
 
 	//  a function that extracts all <img> elements from the content, which is a string of HTML and removes them from the content
 	function extractImages(): { prunedHTML: Document; imageURLs: Array<string> } {

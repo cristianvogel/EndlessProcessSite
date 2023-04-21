@@ -170,7 +170,7 @@ export class VoiceCore extends AudioCore {
 					return super.updateVFS({
 						header,
 						body: decoded,
-					}, PlaylistSpeech, VoiceOver._voiceCore);
+					}, PlaylistSpeech, VoiceOver);
 				});
 			}
 

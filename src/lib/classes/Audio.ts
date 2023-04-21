@@ -10,7 +10,7 @@ import type {
 } from 'src/typeDeclarations';
 
 import { scrubbingSamplesPlayer, stereoOut, bufferProgress } from '$lib/audio/AudioFunctions';
-import { Wait, channelExtensionFor, clipToRange } from '$lib/classes/Utils';
+import { Utils, Wait, channelExtensionFor, clipToRange } from '$lib/classes/Utils';
 import {
 	CablesPatch,
 	PlaylistMusic,
@@ -218,14 +218,16 @@ export class AudioCore {
 	 * @param playlistStore
 	 * a Writable that holds titles and other data derived from the buffers
 	 * @param core
-	 * the Elementary core which will register and use the VFS dictionary entry
+	 * the Elementary core which will register and use the VFS dictionary entry.
+	 * 🚨 Guard against race conditions by only updating the VFS when the core is loaded.
 	 */
 	
 	async updateVFS(
 		rawAudioBuffer: RawAudioBuffer,
 		playlistStore: Writable<MusicContainer | SpeechContainer>,
-		core: WebRenderer | null
+		core: AudioCore
 	) {
+
 
 		let vfsDictionaryEntry: any;
 
@@ -248,8 +250,8 @@ export class AudioCore {
 				return $pl;
 			});
 			// update the VFS in the passed Elementary core
-			console.log('Updating VFS with', vfsDictionaryEntry);
-			core?.updateVirtualFileSystem(vfsDictionaryEntry);
+			console.log('VFS entry: ', Object.keys(vfsDictionaryEntry), '. Valid core?', core ? true : false);
+			core._core?.updateVirtualFileSystem(vfsDictionaryEntry);
 		});
 	}
 

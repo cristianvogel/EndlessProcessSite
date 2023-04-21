@@ -36,8 +36,8 @@ export function channelExtensionFor(channel: number) {
 };
 
 export const Wait = {
-	forNull: async function (variable: any, interval = 100, maxAttempts = 50): Promise<void> {
-		console.log('waiting for null...');
+	forValid: async function (variable: any, interval = 100, maxAttempts = 50): Promise<void> {
+		console.log('waiting for valid...');
 		let attempts = 0;
 		await new Promise<void>((resolve, reject) => {
 			const timer = setInterval(() => {
@@ -47,7 +47,7 @@ export const Wait = {
 						clearInterval(timer);
 						reject(new Error('Maximum number of attempts exceeded'));
 					} else {
-						console.log('Not Null!', variable);
+						console.log('ready -> ', variable);
 					}
 				} else {
 					clearInterval(timer);

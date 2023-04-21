@@ -34,7 +34,7 @@
 				return Audio.updateVFS({
 					header,
 					body: decoded
-				}, PlaylistMusic, Audio._core );
+				}, PlaylistMusic, Audio );
 			});
 		}
 
