@@ -1,6 +1,6 @@
 /**
-   * Get all files in the folder.
-    @About 
+    @Description Get all files in the folder.
+    @Notes
     The import.meta.glob cannot accept anything but a literal. 
     Therefore the folderName variable is  only used as a reference here, and I will repeat the function for the Speech files path.
 	>>>>>>>>>>>>>>>>

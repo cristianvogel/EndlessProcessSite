@@ -1,13 +1,12 @@
-import type { AudioCoreStatus, DecodedTrackContainer, ArrayBufferContainer, StereoSignal } from 'src/typeDeclarations';
+import type { AudioCoreStatus, DecodedTrackContainer, ArrayBufferContainer, StereoSignal } from '../../typeDeclarations';
 import { get } from 'svelte/store';
 import WebRenderer from '@elemaudio/web-renderer';
 import { writable, type Writable } from 'svelte/store';
 import { AudioCore } from '$lib/classes/Audio';
-import { load } from '$lib/classes/IngestorSpeechFiles';
-import { channelExtensionFor } from './Utils';
-import { PlaylistSpeech, VFS_PATH_PREFIX } from '$lib/stores/stores';
-import { stereoOut } from '$lib/audio/AudioFunctions';
-import { el } from '@elemaudio/core';
+
+import { OutputMeters, PlaylistMusic, SpeechCoreLoaded, VFS_PATH_PREFIX } from '$lib/stores/stores';
+import { meter, stereoOut } from '$lib/audio/AudioFunctions';
+import { el, type NodeRepr_t } from '@elemaudio/core';
 
 // ════════╡ Voice ╞═══════
 // todo: add a way to set the voice's position in the audio file
@@ -23,6 +22,7 @@ export class VoiceCore extends AudioCore {
 	_currentChapterDurationSeconds: number;
 	_scrubbing: boolean;
 	_currentChapterName: string;
+	_sidechain: number;
 
 	constructor() {
 		super();
@@ -39,11 +39,19 @@ export class VoiceCore extends AudioCore {
 		this._currentChapterName = '';
 		this._currentChapterDurationSeconds = 0;
 		this._scrubbing = false;
+		this._sidechain = 0;
+	}
+
+	subscribeToStores(): void {
+		OutputMeters.subscribe(($meters) => {
+			this._sidechain = $meters['MusicAudible'] || 0;
+		});
 	}
 
 	async init(): Promise<void> {
 		VoiceOver._core = new WebRenderer();
 		VoiceOver._silentVoiceCore = new WebRenderer();
+		VoiceOver.subscribeToStores();
 
 		/** 
 		 * @description: load the speech buffers from the VFS
@@ -51,10 +59,7 @@ export class VoiceCore extends AudioCore {
 		 * @todo: refactor this to be done in the same place?
 		 */
 
-		load({ fetch }).then((buffersContainer: any) => {
-			console.log('speech buffers', buffersContainer);
-			this.parallelDecoder(buffersContainer.buffers);
-		});
+		// load the speech files
 
 		while (!super.actx) {
 			console.log('Waiting for first WebRenderer instance to load...');
@@ -91,7 +96,15 @@ export class VoiceCore extends AudioCore {
 			console.error('🔇 ', e);
 		});
 
+		VoiceOver._core.on('meter', function (e) {
+			OutputMeters.update(($o) => {
+				$o = { ...$o, SpeechAudible: e.max };
+				return $o;
+			})
+		})
+
 		VoiceOver._core.on('load', () => {
+			SpeechCoreLoaded.set(true);
 			console.log('Voice Core loaded  🎤');
 			VoiceOver.status = 'ready';
 		});
@@ -100,103 +113,46 @@ export class VoiceCore extends AudioCore {
 	}
 
 	/**
-	 * @todo inherit decodeRawBuffer() from super
-	 */
-
-	async decodeRawBuffer(rawAudioBuffer: ArrayBufferContainer): Promise<DecodedTrackContainer> {
-		const stopwatch = Date.now();
-		while (!rawAudioBuffer) await new Promise((resolve) => setTimeout(resolve, 100));
-		const { body, header } = rawAudioBuffer;
-		let decoded: AudioBuffer | null = null;
-		// we need audio context in order to decode the audio data
-		while (!super.actx || !body) {
-			await new Promise((resolve) => setTimeout(resolve, 100));
-		}
-		try {
-			decoded = await super.actx.decodeAudioData(body as ArrayBuffer);
-		} catch (error) {
-			console.log(new Error('Decoding skipped. Dummy buffer created.'));
-			decoded = super.actx?.createBuffer(1, 1, 44100);
-		} finally {
-
-			header.bytes = decoded?.getChannelData(0).length || 0;
-			console.log(
-				'Decoded audio with length ',
-				header.bytes,
-				' to ',
-				header.vfsPath,
-				' in ',
-				Date.now() - stopwatch,
-				'ms'
-			);
-		}
-		// update the DurationElement in the playlist container map
-		if (decoded && decoded.duration > 1) {
-			PlaylistSpeech.update(($plist) => {
-				// guard against the 1 samp skipped buffer hack above
-				if (!decoded) return $plist;
-				$plist.durations.set(header.title as string, decoded.duration);
-				return $plist;
-			});
-		}
-		return {
-			title: header.title as string,
-			vfsPath: header.vfsPath as string,
-			decodedBuffer: decoded
-		};
-	}
-
-	/**
-	 * @description
-	 * Parallel Assets Worker
-	 * see ./src/+page.svelte
-	 * @todo abstract out the parallel decoder
-	 */
-
-	parallelDecoder(buffers: any) {
-		let parallel: Array<any> = [];
-		Promise.all(buffers).then((resolved) => {
-			for (let i = 0; i < resolved.length; i++) {
-				const track: ArrayBufferContainer = resolved[i];
-
-				const vfsPath = get(VFS_PATH_PREFIX) + track.header.title;
-				const header = { ...track.header, vfsPath };
-				parallel.push(async () => {
-					const decoded: ArrayBuffer = await track.body;
-					return super.updateVFS({
-						header,
-						body: decoded,
-					}, PlaylistSpeech, VoiceOver);
-				});
-			}
-
-			Promise.all(parallel.map((func) => func())).then(() =>
-				console.log('SPEECH: Parallel promises resolved')
-			);
-		});
-	}
-
-	/**
+	 * @description hacky version of a mono 2 stereo
 	 * @todo inherit playFromVFS() & render() from super
+	 * @todo this is soundhacky for fun, will need refining into Memoised audio functions
 	 */
-	playFromVFS(): void {
-		const test = get(PlaylistSpeech).currentChapter.vfsPath;
-		console.log('playFromVFS speech->', test);
+	playFromVFS(gate: Number = 1): void {
+
+		const test = get(PlaylistMusic).currentChapter?.vfsPath;
+		console.log('Speech Test hard coded vfs path! ->', test);
+
+		const lr =
+			[
+				el.sample({ path: test, mode: 'gate' },
+					gate as number,
+					0.901),
+
+				el.sample({ path: test, mode: 'gate' },
+					gate as number,
+					0.900)
+			];
+
 		VoiceOver.render({
-			left: el.sample({ path: test, mode: 'trigger' }, 1, 1),
-			right: el.sample({ path: test, mode: 'trigger' }, 1, 1)
-		});
+			left:
+				lr[0],
+			right:
+				lr[1]
+		}, 'vox');
 	}
 
-	render(stereoSignal: StereoSignal): void {
+	render(stereoSignal: StereoSignal, key?: string): void {
 		if (!VoiceOver._core || !stereoSignal) return;
 		VoiceOver.status = 'playing';
-		const final = stereoOut(stereoSignal);
-		VoiceOver._core.render(final.left, final.right);
+		const final = stereoOut(stereoSignal, key);
+		VoiceOver._core.render(el.add(meter(final), final.left), final.right);
 	}
 
 	/*---- getters --------------------------------*/
 
+	get sidechain() {
+		return this._sidechain;
+	}
 	get voiceEndNode() {
 		return get(this._endNodes).mainCore;
 	}

@@ -43,7 +43,7 @@
 		}
 		// initialise first track data if this is the first play
 		if ($PlaysCount === 0) { 
-			const firstTitle = $PlaylistMusic.titles[0]
+			const firstTitle = $PlaylistMusic.titles.music[0]
 			$PlaylistMusic.currentTrack = {
 										title: firstTitle, 
 										vfsPath: get(VFS_PATH_PREFIX) + firstTitle, 
@@ -100,6 +100,7 @@
 		</span>
 		{/if}
 		</svelte:fragment>
+
 
 	<!-- Persistent nav buttons -->
 	<svelte:fragment slot="trail">

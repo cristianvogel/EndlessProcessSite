@@ -6,59 +6,67 @@ import type {
 	ArrayBufferContainer,
 	SamplerOptions,
 	DecodedTrackContainer,
-	MusicContainer, SpeechContainer
-} from 'src/typeDeclarations';
+	MusicContainer,
+	SpeechContainer
+} from '../../typeDeclarations';
 
 import { scrubbingSamplesPlayer, stereoOut, bufferProgress } from '$lib/audio/AudioFunctions';
 import { channelExtensionFor, clipToRange } from '$lib/classes/Utils';
 import {
 	CablesPatch,
 	PlaylistMusic,
-	Decoding,
-	Scrubbing
+	Decoded,
+	Scrubbing,
+	OutputMeters,
+	MusicCoreLoaded,
+	VFS_PATH_PREFIX
 } from '$lib/stores/stores';
 import WebRenderer from '@elemaudio/web-renderer';
 import type { NodeRepr_t } from '@elemaudio/core';
 import { el } from '@elemaudio/core';
+
 
 // todo: set a sample rate constant prop
 
 export class AudioCore {
 	_core: WebRenderer | null;
 	_silentCore: WebRenderer | null;
-	protected _AudioCoreStatus: Writable<AudioCoreStatus>;
-	protected _contextIsRunning: Writable<boolean>;
-	protected _elemLoaded: Writable<boolean>;
-	protected _audioContext: Writable<AudioContext>;
-	protected _endNodes: Writable<any>;
-	protected _masterVolume: Writable<number | Signal>;
-	protected _currentTrackName: string;
-	protected _currentVFSPath: string;
-	protected _currentTrackDurationSeconds: number;
-	protected _scrubbing: boolean;
+	_AudioCoreStatus: Writable<AudioCoreStatus>;
+	_contextIsRunning: Writable<boolean>;
+	_audioContext: Writable<AudioContext>;
+	_endNodes: Writable<any>;
+	_masterVolume: Writable<number | Signal>;
+	_currentTrackName: string;
+	_currentVFSPath: string;
+	_currentTrackDurationSeconds: number;
+	_scrubbing: boolean;
+	_sidechain: number | undefined;
+
+
 
 	constructor() {
 		this._core = this._silentCore = null;
 		this._masterVolume = writable(1); // default master volume
 		this._AudioCoreStatus = writable('loading');
 		this._contextIsRunning = writable(false);
-		this._elemLoaded = writable(false);
 		this._audioContext = writable();
 		this._endNodes = writable({
 			mainCore: null,
 			silentCore: null
 		});
+
 		// these below are dynamically set from store subscriptions
 		this._currentVFSPath = '';
 		this._currentTrackName = '';
 		this._currentTrackDurationSeconds = 0;
 		this._scrubbing = false;
+		this._sidechain = 0
 	}
 
 	subscribeToStores() {
 		/**
 		 * @description
-		 *  Subscribers to update AudioCore with current track info
+		*  Subscribers that update the Audio class 's intertnal state
 		 */
 		PlaylistMusic.subscribe(($p) => (Audio._currentTrackName = $p.currentTrack.title));
 
@@ -68,14 +76,19 @@ export class AudioCore {
 
 		PlaylistMusic.subscribe(
 			($p) =>
-				(Audio._currentTrackDurationSeconds = $p.currentTrack.duration
-					? $p.currentTrack.duration
-					: 0)
+			(Audio._currentTrackDurationSeconds = $p.currentTrack.duration
+				? $p.currentTrack.duration
+				: 0)
 		);
 
 		Scrubbing.subscribe(($Scrubbing) => {
 			Audio._scrubbing = $Scrubbing;
 		});
+
+		OutputMeters.subscribe(($meters) => {
+			this._sidechain = $meters.SpeechAudible;
+		});
+
 	}
 
 	cleanup() {
@@ -117,7 +130,6 @@ export class AudioCore {
 				outputChannelCount: [2]
 			})
 			.then((node) => {
-				Audio._elemLoaded.set(true);
 				return node;
 			});
 
@@ -133,7 +145,7 @@ export class AudioCore {
 			});
 
 		Audio.routeToCables();
-		Audio.connectToDestination(Audio.elemEndNode); // connect the Elem end node to the destination
+		Audio.connectToDestination(Audio.elemEndNode);
 
 		/* ---- Event Driven Callbacks ----------------- */
 
@@ -142,7 +154,8 @@ export class AudioCore {
 
 		// Elementary load callback
 		Audio._core.on('load', () => {
-			console.log('Main core loaded 🔊?', Audio.elemLoaded);
+			MusicCoreLoaded.set(true)
+			console.log('Main core loaded 🔊');
 		});
 
 		Audio._silentCore.on('load', () => {
@@ -168,8 +181,10 @@ export class AudioCore {
 
 		// Elementary meter callback
 		Audio._core.on('meter', function (e) {
-			// do something with the meter data
-			console.count('meter');
+			OutputMeters.update(($o) => {
+				$o = { ...$o, MusicAudible: e.max }
+				return $o;
+			})
 		});
 
 		// Elementary snapshot callback
@@ -213,7 +228,7 @@ export class AudioCore {
 	 * https://www.elementary.audio/docs/packages/web-renderer#virtual-file-system
 	 * Update the virtual file system using data loaded from a load() function.
 	 *
-	 * @param rawAudioBuffer
+	 * @param container
 	 * header and body ArrayBufferContainer - will be decoded to audio buffer for VFS use
 	 * @param playlistStore
 	 * a Writable that holds titles and other data derived from the buffers
@@ -221,51 +236,61 @@ export class AudioCore {
 	 * the Elementary core which will register and use the VFS dictionary entry.
 	 * 🚨 Guard against race conditions by only updating the VFS when the core is loaded.
 	 */
-	
-	async updateVFS(
-		rawAudioBuffer: ArrayBufferContainer,
-		playlistStore: Writable<MusicContainer | SpeechContainer>,
-		core: AudioCore
-	) {
 
+	async updateVFS(
+		container: ArrayBufferContainer,
+		core: WebRenderer | null
+	) {
 
 		let vfsDictionaryEntry: any;
 
-		this.decodeRawBuffer(rawAudioBuffer).then((decodedBuffer) => {
-			let { decodedBuffer: decoded, title, vfsPath } = decodedBuffer;
+		Audio.decodeRawBuffer(container).then((data) => {
+			let { decodedBuffer: decoded, title } = data;
 			if (!decoded || decoded.length < 16) {
 				console.warn('Decoding skipped.');
 				return;
 			}
-			// adds a channel extension to the path for each channel, the extension starts at 1 (not 0)
-			for (let i = 0; i < decoded.numberOfChannels; i++) {
-				vfsDictionaryEntry = {
-					...vfsDictionaryEntry,
-					[`${vfsPath + channelExtensionFor(i + 1)}`]: decoded.getChannelData(i)
-				};
+
+			// update the DurationElement in the playlist container map
+			if (decoded && decoded.duration > 1) {
+				PlaylistMusic.update(($plist) => {
+					// guard against the 1 samp skipped buffer hack above
+					if (!decoded) return $plist;
+					$plist.durations.set(title as string, decoded.duration);
+					return $plist;
+				});
 			}
-			// update data in the passed store
-			playlistStore.update(($pl) => {
-				$pl.titles.push(title);
-				return $pl;
-			});
-			// update the VFS in the passed Elementary core
-			console.log('VFS entry: ', Object.keys(vfsDictionaryEntry), '. Valid core?', core ? true : false);
-			core._core?.updateVirtualFileSystem(vfsDictionaryEntry);
+
+			// adds a channel extension to the path for each channel, the extension starts at 1 (not 0)
+
+			for (let i = 0; i < decoded.numberOfChannels; i++) {
+
+				const vfsKey = get(VFS_PATH_PREFIX) + title + channelExtensionFor(i + 1);
+				vfsDictionaryEntry =
+				{
+					[vfsKey]: decoded.getChannelData(i)
+				};
+
+				console.log('VFS entry: ', vfsDictionaryEntry);
+				core?.updateVirtualFileSystem(vfsDictionaryEntry);
+			}
 		});
 	}
 
 	/**
 	 * @description Decodes the raw audio buffer into an AudioBuffer, asynchonously with guards
 	 */
+	async decodeRawBuffer(container: ArrayBufferContainer): Promise<DecodedTrackContainer> {
 
-	async decodeRawBuffer(rawAudioBuffer: ArrayBufferContainer): Promise<DecodedTrackContainer> {
+		//const storeDestination = core.
 		const stopwatch = Date.now();
-		while (!rawAudioBuffer) await new Promise((resolve) => setTimeout(resolve, 100));
-		const { body, header } = rawAudioBuffer;
+		while (!container) await new Promise((resolve) => setTimeout(resolve, 100));
+
+		const { body, header } = container;
+
 		let decoded: AudioBuffer | null = null;
 		// we need audio context in order to decode the audio data
-		while (!Audio.actx || !body) {
+		while (!Audio.actx) {
 			await new Promise((resolve) => setTimeout(resolve, 100));
 		}
 		try {
@@ -279,25 +304,17 @@ export class AudioCore {
 				'Decoded audio with length ',
 				header.bytes,
 				' to ',
-				header.vfsPath,
+				get(VFS_PATH_PREFIX) + header.title,
 				' in ',
 				Date.now() - stopwatch,
 				'ms'
 			);
-			Decoding.update(($d) => {
+			Decoded.update(($d) => {
 				$d.done = true;
 				return $d;
 			});
 		}
-		// update the DurationElement in the playlist container map
-		if (decoded && decoded.duration > 1) {
-			PlaylistMusic.update(($plist) => {
-				// guard against the 1 samp skipped buffer hack above
-				if (!decoded) return $plist;
-				$plist.durations.set(header.title as string, decoded.duration);
-				return $plist;
-			});
-		}
+
 		return {
 			title: header.title as string,
 			vfsPath: header.vfsPath as string,
@@ -311,7 +328,13 @@ export class AudioCore {
 	render(stereoSignal: StereoSignal): void {
 		if (!Audio._core || !stereoSignal) return;
 		Audio.status = 'playing';
-		const final = stereoOut(stereoSignal);
+		let final: StereoSignal = stereoOut(stereoSignal);
+		let sc = Audio._sidechain
+
+		final = {
+			left: el.mul(1 - sc, final.left) as Signal,
+			right: el.mul(1 - sc, final.right) as Signal
+		};
 		Audio._core.render(final.left, final.right);
 	}
 
@@ -400,7 +423,7 @@ export class AudioCore {
 	}
 
 	// todo: pause or resume Cables patch
-	pauseCables(state: 'pause' | 'resume'): void {}
+	pauseCables(state: 'pause' | 'resume'): void { }
 
 	suspend(): void {
 		Audio.actx.suspend().then(() => {
@@ -425,6 +448,10 @@ export class AudioCore {
 			endNodes: Audio._endNodes,
 			masterVolume: Audio._masterVolume
 		};
+	}
+
+	get sidechain() {
+		return this._sidechain;
 	}
 
 	get scrubbing(): boolean {
@@ -466,7 +493,7 @@ export class AudioCore {
 	}
 
 	get elemLoaded() {
-		return get(Audio._elemLoaded);
+		return get(AudioCoresLoaded);
 	}
 
 	get isRunning(): boolean {
@@ -488,22 +515,8 @@ export class AudioCore {
 	get baseState(): AudioCoreStatus {
 		return Audio.actx.state as AudioCoreStatus;
 	}
+
 	/*---- setters --------------------------------*/
-
-	// set currentVFSPath(path: string) {
-	// 	console.log('set currentVFSPath', path);
-	// 	PlaylistMusic.update(($plist) => {
-	// 		$plist.currentTrack.vfsPath = path;
-	// 		return $plist;
-	// 	});
-	// }
-
-	// set currentTrackTitle(title: string) {
-	// 	PlaylistMusic.update(($plist) => {
-	// 		$plist.currentTrack.title = title;
-	// 		return $plist;
-	// 	});
-	// }
 
 	set masterVolume(normLevel: number | NodeRepr_t) {
 		Audio._masterVolume.update(() => normLevel);

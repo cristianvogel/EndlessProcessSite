@@ -6,3 +6,4 @@ node_modules
 .prettierignore
 .prettierrc
 .DS_Store
+.env

@@ -5,7 +5,7 @@
 
 import { createNode, el, resolve } from '@elemaudio/core';
 
-import type { Signal } from 'src/typeDeclarations';
+import type { Signal } from '../../typeDeclarations';
 
 //--- detunedSaws --------------------------------------------------------
 

@@ -12,6 +12,13 @@ interface SinglePost {
 	isOpen?: boolean;
 }
 
+type MetersContainer = {
+	MusicAudible?: number,
+	MusicSilent?: number,
+	SpeechAudible?: number,
+	SpeechSilent?: number,
+}
+
 type AudioCoreStatus =
 	| 'suspended'
 	| 'loading'
@@ -24,8 +31,8 @@ type AudioCoreStatus =
 	| 'scrubbing'
 	| 'error';
 
-//-════════╡ Music ╞═══════
-interface MusicContainer {
+//-════════╡ Music and Speech ╞═══════
+interface PlaylistContainer {
 	currentTrack: {
 		title: string;
 		vfsPath: string;
@@ -34,24 +41,18 @@ interface MusicContainer {
 		offset?: number;
 		progress: number;
 	};
-	audioAssetPaths: Array<string>;
-	titles: Array<string>;
-	show: boolean;
-	durations: Map<string, number>;
-}
-
-//════════╡ Voice ╞═══════
-type ChapterID = `chapter-${string}`;
-interface SpeechContainer extends Omit<MusicContainer, 'currentTrack' | 'show'> {
-	currentChapter: {
+	currentChapter?: {
 		progress: number;
 		title: string;
 		vfsPath: string;
 		duration?: number;
 		offset?: number;
 	};
+	audioAssetPaths: { music: Array<string>, speech: Array<string> };
+	titles: { music: Array<string>, speech: Array<string> }
+	show: boolean;
+	durations: Map<string, number>;
 }
-
 
 type HtmlContent = { rawHTML: string; sanitisedHTML: string };
 
@@ -89,8 +90,9 @@ type ArrayBufferContainer = {
 		bytes?: number;
 		vfsPath?: string;
 	};
-	body: ArrayBuffer | Promise<ArrayBuffer>;
+	body: any;
 };
+
 
 type DecodedTrackContainer = { title: string; vfsPath: string; decodedBuffer: AudioBuffer | null };
 
