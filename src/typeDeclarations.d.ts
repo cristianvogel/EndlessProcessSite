@@ -12,6 +12,13 @@ interface SinglePost {
 	isOpen?: boolean;
 }
 
+type MetersContainer = {
+	MusicAudible?: number,
+	MusicSilent?: number,
+	SpeechAudible?: number,
+	SpeechSilent?: number,
+}
+
 type AudioCoreStatus =
 	| 'suspended'
 	| 'loading'
@@ -82,6 +89,17 @@ type ProgressOptions = {
 
 type Signal = NodeRepr_t;
 
+
+// type ArrayBufferContainer = {
+// 	header: {
+// 		globPath: string;
+// 		title?: string;
+// 		bytes?: number;
+// 		vfsPath?: string;
+// 	};
+// 	body: ArrayBuffer | Promise<ArrayBuffer>;
+// };
+
 type ArrayBufferContainer = {
 	header: {
 		globPath: string;
@@ -89,8 +107,9 @@ type ArrayBufferContainer = {
 		bytes?: number;
 		vfsPath?: string;
 	};
-	body: ArrayBuffer | Promise<ArrayBuffer>;
+	body: any;
 };
+
 
 type DecodedTrackContainer = { title: string; vfsPath: string; decodedBuffer: AudioBuffer | null };
 

@@ -1,14 +1,29 @@
 <script lang="ts">
+
+/**
+ * @todo this is a demo, has hardcoded VFS path
+*/
+
     import { Icon } from '@steeze-ui/svelte-icon';
     import { VoiceActivate } from'@steeze-ui/carbon-icons';
     import {VoiceOver} from '$lib/classes/Speech';
     import ElevenLabsLogo from '$lib/images/ElevenLabsLogo.svelte';
-	import { SlideToggle } from '@skeletonlabs/skeleton';
-    import { VFS_PATH_PREFIX, PlaylistSpeech } from '$lib/stores/stores';
+	import { ProgressBar, SlideToggle } from '@skeletonlabs/skeleton';
+    import { VFS_PATH_PREFIX, PlaylistSpeech, OutputMeters } from '$lib/stores/stores';
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
+	
+    import { tweened } from 'svelte/motion';
+	import { bounceInOut } from 'svelte/easing';
 
     let activated: boolean = false;
+
+    $: progress.set(Math.round ($OutputMeters.SpeechAudible as number ))
+    
+    const progress = tweened(0, {
+		duration: 200,
+		easing: bounceInOut
+	});
 
     function voiceActivated(e: any) {
         if (VoiceOver.status === 'suspended') {
@@ -28,7 +43,7 @@
 			return p;
 		});
 
-        VoiceOver.playFromVFS();
+        VoiceOver.playFromVFS( activated ? 1 : 0);
     }
 
     onMount(() => {     
@@ -38,7 +53,7 @@
 
 </script>
 
-<div class='grid grid-rows-3 grid-flow-col gap-0 p-0 mt-4 '>
+<div class='absolute grid grid-rows-3 grid-cols-2 grid-flow-col gap-1 p-0 mt-4 bottom-100% right-14 '>
     <div>
         <Icon src={VoiceActivate} 
         class='w-9 p-1 fill-secondary-200 rounded-md '/>
@@ -56,4 +71,16 @@
         on:change={voiceActivated}
         />
     </div>
+    <div class="-rotate-90 col-start-2 row-start-2 -ml-12 -mr-6  ">
+    	<ProgressBar
+		label="Progress Bar"
+		value={$progress ** (1/3)}
+		meter="bg-gradient-to-r from-blue-800 to-green-600"
+		rounded="rounded-1"
+        height="h-2"
+		min={0}
+		max={1}
+	/>
+    </div>
 </div>
+

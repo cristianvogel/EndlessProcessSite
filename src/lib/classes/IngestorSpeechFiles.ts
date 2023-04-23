@@ -7,7 +7,7 @@
 
 import { get } from 'svelte/store';
 import { LoadingSomething, PlaylistSpeech, VFS_PATH_PREFIX } from '$lib/stores/stores';
-import type { SpeechContainer, ArrayBufferContainer } from 'src/typeDeclarations.js';
+import type { SpeechContainer, ArrayBufferContainer } from '../../typeDeclarations';
 import { error } from '@sveltejs/kit';
 
 // const sourceURL_prefix = get(AUDIO_ASSETS_PREFIX) + '/speech/';

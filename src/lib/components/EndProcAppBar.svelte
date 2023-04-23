@@ -101,6 +101,7 @@
 		{/if}
 		</svelte:fragment>
 
+
 	<!-- Persistent nav buttons -->
 	<svelte:fragment slot="trail">
 		<div class="flex justify-end flex-wrap">

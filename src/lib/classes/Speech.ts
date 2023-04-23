@@ -1,13 +1,12 @@
-import type { AudioCoreStatus, DecodedTrackContainer, ArrayBufferContainer, StereoSignal } from 'src/typeDeclarations';
+import type { AudioCoreStatus, DecodedTrackContainer, ArrayBufferContainer, StereoSignal, Signal } from '../../typeDeclarations';
 import { get } from 'svelte/store';
 import WebRenderer from '@elemaudio/web-renderer';
 import { writable, type Writable } from 'svelte/store';
 import { AudioCore } from '$lib/classes/Audio';
 import { load } from '$lib/classes/IngestorSpeechFiles';
-import { channelExtensionFor } from './Utils';
-import { PlaylistSpeech, VFS_PATH_PREFIX } from '$lib/stores/stores';
-import { stereoOut } from '$lib/audio/AudioFunctions';
-import { el } from '@elemaudio/core';
+import { OutputMeters, PlaylistSpeech, VFS_PATH_PREFIX } from '$lib/stores/stores';
+import { meter, stereoOut } from '$lib/audio/AudioFunctions';
+import { el, type NodeRepr_t } from '@elemaudio/core';
 
 // ════════╡ Voice ╞═══════
 // todo: add a way to set the voice's position in the audio file
@@ -23,6 +22,7 @@ export class VoiceCore extends AudioCore {
 	_currentChapterDurationSeconds: number;
 	_scrubbing: boolean;
 	_currentChapterName: string;
+	_sidechain: number;
 
 	constructor() {
 		super();
@@ -39,11 +39,19 @@ export class VoiceCore extends AudioCore {
 		this._currentChapterName = '';
 		this._currentChapterDurationSeconds = 0;
 		this._scrubbing = false;
+		this._sidechain = 0;
+	}
+
+	subscribeToStores(): void {
+		OutputMeters.subscribe(($meters) => {
+			this._sidechain = $meters['MusicAudible'] || 0;
+		});
 	}
 
 	async init(): Promise<void> {
 		VoiceOver._core = new WebRenderer();
 		VoiceOver._silentVoiceCore = new WebRenderer();
+		VoiceOver.subscribeToStores();
 
 		/** 
 		 * @description: load the speech buffers from the VFS
@@ -90,6 +98,13 @@ export class VoiceCore extends AudioCore {
 		VoiceOver._silentVoiceCore.on('error', function (e) {
 			console.error('🔇 ', e);
 		});
+
+		VoiceOver._core.on('meter', function (e) {
+			OutputMeters.update(($o) => {
+				$o = { ...$o, SpeechAudible: e.max };
+				return $o;
+			})
+		})
 
 		VoiceOver._core.on('load', () => {
 			console.log('Voice Core loaded  🎤');
@@ -177,14 +192,31 @@ export class VoiceCore extends AudioCore {
 	}
 
 	/**
+	 * @description hacky version of a mono 2 stereo
 	 * @todo inherit playFromVFS() & render() from super
+	 * @todo this is soundhacky for fun, will need refining into Memoised audio functions
 	 */
-	playFromVFS(): void {
+	playFromVFS(gate: Number = 1): void {
+
 		const test = get(PlaylistSpeech).currentChapter.vfsPath;
 		console.log('playFromVFS speech->', test);
+
+		const lr =
+			[
+				el.sample({ path: test, mode: 'gate' },
+					gate as number,
+					el.const({ key: 'rateL', value: 0.9 })),
+
+				el.sample({ path: test, mode: 'gate' },
+					gate as number,
+					el.const({ key: 'rateR', value: 0.901 }))
+			];
+
 		VoiceOver.render({
-			left: el.sample({ path: test, mode: 'trigger' }, 1, 1),
-			right: el.sample({ path: test, mode: 'trigger' }, 1, 1)
+			left:
+				lr[0],
+			right:
+				lr[1]
 		});
 	}
 
@@ -193,10 +225,14 @@ export class VoiceCore extends AudioCore {
 		VoiceOver.status = 'playing';
 		const final = stereoOut(stereoSignal);
 		VoiceOver._core.render(final.left, final.right);
+		VoiceOver._core?.render(meter(final));
 	}
 
 	/*---- getters --------------------------------*/
 
+	get sidechain() {
+		return this._sidechain;
+	}
 	get voiceEndNode() {
 		return get(this._endNodes).mainCore;
 	}

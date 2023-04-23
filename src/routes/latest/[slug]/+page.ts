@@ -4,6 +4,8 @@ import type { PageLoad } from './$types';
 
 let postTitle = '';
 
+export const prerender = 'auto';
+
 const query = `
     query getPostBySlug($slug: ID!) {
       post(id: $slug, idType: SLUG) {

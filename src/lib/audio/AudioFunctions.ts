@@ -14,7 +14,8 @@ import { Audio } from '$lib/classes/Audio';
 import { el } from '@elemaudio/core';
 import { channelExtensionFor, clipTo0 } from '$lib/classes/Utils';
 import { detunedSaws, attenuate, progress } from '$lib/audio/composites';
-import type { StereoSignal, SamplerOptions, ProgressOptions, Signal } from 'src/typeDeclarations';
+import type { StereoSignal, SamplerOptions, ProgressOptions, Signal } from '../../typeDeclarations';
+
 
 /**
  * @description Buffer progress
@@ -22,6 +23,15 @@ import type { StereoSignal, SamplerOptions, ProgressOptions, Signal } from 'src/
 
 export function bufferProgress(props: ProgressOptions): Signal {
 	return progress(props);
+}
+
+/**
+ * @description Meter
+ * 
+ */
+
+export function meter(signal: StereoSignal): Signal {
+	return el.meter(signal.left);
 }
 
 /**

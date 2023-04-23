@@ -2,7 +2,7 @@
 	import { Audio } from '$lib/classes/Audio';
 	import { Icon } from '@steeze-ui/svelte-icon';
 	import { PauseOutline, PlayOutline, QueryQueue } from '@steeze-ui/carbon-icons';
-	import { Decoding, PlaylistMusic } from '$lib/stores/stores';
+	import { Decoded, PlaylistMusic } from '$lib/stores/stores';
 	import PlaylistView from './PlaylistView.svelte';
 
 	const { audioStatus } = Audio.stores;
@@ -25,7 +25,7 @@
 
 <svelte:window on:mousedown={forceAudioContextResume} />
 
-{#if ($audioStatus !== 'loading' || 'closed ') && $Decoding.done}
+{#if ($audioStatus !== 'loading' || 'closed ') && $Decoded.done}
 	<div class="z-10 flex basis-1/2 flex-row gap-4 ">
 		<button
 			class="basis-1/8 shrink-0 items-center rounded-full bg-surface-700 p-1"

@@ -1,5 +1,7 @@
 import { error } from '@sveltejs/kit';
 
+export const prerender = 'auto';
+
 const query = `
 query GetPosts {
     posts {
