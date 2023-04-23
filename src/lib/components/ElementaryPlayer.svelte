@@ -10,7 +10,7 @@
 	let clickListenerRegistered = false;
 	let trackTitles: Array<string>;
 
-	$: trackTitles = $PlaylistMusic.titles;
+	$: trackTitles = $PlaylistMusic.titles.music;
 	$: isPlaying = $audioStatus === 'playing';
 
 	function forceAudioContextResume() {

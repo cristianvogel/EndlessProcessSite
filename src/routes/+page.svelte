@@ -6,17 +6,16 @@
 	import type { PageData } from './$types';
 	import { Audio } from '$lib/classes/Audio';
 	import type { ArrayBufferContainer } from '../typeDeclarations';
-	import { VFS_PATH_PREFIX, PlaylistMusic, PlaylistSpeech, MusicCoreLoaded, SpeechCoreLoaded } from '$lib/stores/stores';
+	import { VFS_PATH_PREFIX, PlaylistMusic, MusicCoreLoaded, SpeechCoreLoaded } from '$lib/stores/stores';
 	import { get } from 'svelte/store';
 	import { error } from '@sveltejs/kit';
-	import type WebAudioRenderer from '@elemaudio/web-renderer';
 	import { VoiceOver } from '$lib/classes/Speech';
 
 
 	export let data: PageData
 
-	const musicBuffers = data.final.music;
-	const speechBuffers = data.final.speech;
+	const musicBuffers = data.music;
+	const speechBuffers = data.speech;
 
 	$: if( $MusicCoreLoaded )
 	
@@ -26,6 +25,7 @@
 		if (response.ok)
 		{		
 			await response.arrayBuffer().then( (body) => {
+				console.log('body?', body)
 				const promisingAudioBuffer: ArrayBufferContainer = {
 				header: {
 					title,
@@ -35,9 +35,13 @@
 				},
 				body
 			};
+					
+				PlaylistMusic.update(($p) => {
+					$p.titles.music.push(title);
+					return $p;
+				});
 				Audio.updateVFS(promisingAudioBuffer, 
-								PlaylistMusic,
-								Audio._core as WebAudioRenderer)
+								Audio._core )
 			})
 				
         } else {
@@ -61,9 +65,12 @@
 				},
 				body
 			};
+			PlaylistMusic.update(($p) => {
+					$p.titles.speech.push(title);
+					return $p;
+				});
 				Audio.updateVFS(promisingAudioBuffer, 
-								PlaylistSpeech,
-								VoiceOver._core as WebAudioRenderer)
+								VoiceOver._core )
 			})
 				
         } else {

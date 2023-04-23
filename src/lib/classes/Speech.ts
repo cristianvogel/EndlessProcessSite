@@ -4,7 +4,7 @@ import WebRenderer from '@elemaudio/web-renderer';
 import { writable, type Writable } from 'svelte/store';
 import { AudioCore } from '$lib/classes/Audio';
 
-import { OutputMeters, PlaylistSpeech, SpeechCoreLoaded, VFS_PATH_PREFIX } from '$lib/stores/stores';
+import { OutputMeters, PlaylistMusic, SpeechCoreLoaded, VFS_PATH_PREFIX } from '$lib/stores/stores';
 import { meter, stereoOut } from '$lib/audio/AudioFunctions';
 import { el, type NodeRepr_t } from '@elemaudio/core';
 
@@ -113,71 +113,24 @@ export class VoiceCore extends AudioCore {
 	}
 
 	/**
-	 * @todo inherit decodeRawBuffer() from super
-	 */
-
-	async decodeRawBuffer(rawAudioBuffer: ArrayBufferContainer): Promise<DecodedTrackContainer> {
-		const stopwatch = Date.now();
-		while (!rawAudioBuffer) await new Promise((resolve) => setTimeout(resolve, 100));
-		const { body, header } = rawAudioBuffer;
-		let decoded: AudioBuffer | null = null;
-		// we need audio context in order to decode the audio data
-		while (!super.actx || !body) {
-			await new Promise((resolve) => setTimeout(resolve, 100));
-		}
-		try {
-			decoded = await super.actx.decodeAudioData(body as ArrayBuffer);
-		} catch (error) {
-			console.log(new Error('Decoding skipped. Dummy buffer created.'));
-			decoded = super.actx?.createBuffer(1, 1, 44100);
-		} finally {
-
-			header.bytes = decoded?.getChannelData(0).length || 0;
-			console.log(
-				'Decoded audio with length ',
-				header.bytes,
-				' to ',
-				header.vfsPath,
-				' in ',
-				Date.now() - stopwatch,
-				'ms'
-			);
-		}
-		// update the DurationElement in the playlist container map
-		if (decoded && decoded.duration > 1) {
-			PlaylistSpeech.update(($plist) => {
-				// guard against the 1 samp skipped buffer hack above
-				if (!decoded) return $plist;
-				$plist.durations.set(header.title as string, decoded.duration);
-				return $plist;
-			});
-		}
-		return {
-			title: header.title as string,
-			vfsPath: header.vfsPath as string,
-			decodedBuffer: decoded
-		};
-	}
-
-	/**
 	 * @description hacky version of a mono 2 stereo
 	 * @todo inherit playFromVFS() & render() from super
 	 * @todo this is soundhacky for fun, will need refining into Memoised audio functions
 	 */
 	playFromVFS(gate: Number = 1): void {
 
-		const test = get(PlaylistSpeech).currentChapter.vfsPath;
-		console.log('playFromVFS speech->', test);
+		const test = get(PlaylistMusic).currentChapter?.vfsPath;
+		console.log('Speech Test hard coded vfs path! ->', test);
 
 		const lr =
 			[
 				el.sample({ path: test, mode: 'gate' },
 					gate as number,
-					el.const({ key: 'rateL', value: 0.9 })),
+					0.901),
 
 				el.sample({ path: test, mode: 'gate' },
 					gate as number,
-					el.const({ key: 'rateR', value: 0.901 }))
+					0.900)
 			];
 
 		VoiceOver.render({
@@ -185,15 +138,14 @@ export class VoiceCore extends AudioCore {
 				lr[0],
 			right:
 				lr[1]
-		});
+		}, 'vox');
 	}
 
-	render(stereoSignal: StereoSignal): void {
+	render(stereoSignal: StereoSignal, key?: string): void {
 		if (!VoiceOver._core || !stereoSignal) return;
 		VoiceOver.status = 'playing';
-		const final = stereoOut(stereoSignal);
-		VoiceOver._core.render(final.left, final.right);
-		VoiceOver._core?.render(meter(final));
+		const final = stereoOut(stereoSignal, key);
+		VoiceOver._core.render(el.add(meter(final), final.left), final.right);
 	}
 
 	/*---- getters --------------------------------*/

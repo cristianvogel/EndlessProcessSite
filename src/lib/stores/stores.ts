@@ -58,8 +58,8 @@ export const VFS_PATH_PREFIX: Readable<string> = readable('vfs::');
  * @todo: ID3, description, loaded flag
  */
 export const PlaylistMusic: Writable<MusicContainer> = writable({
-	audioAssetPaths: getMusicFiles(),
-	titles: new Array<string>(),
+	audioAssetPaths: { music: getMusicFiles(), speech: getSpeechFiles() },
+	titles: { music: new Array<string>(), speech: new Array<string>() },
 	durations: new Map<string, number>(),
 	show: false,
 	currentTrack: {
@@ -69,6 +69,13 @@ export const PlaylistMusic: Writable<MusicContainer> = writable({
 		duration: 0,
 		offset: 0,
 		progress: 0
+	},
+	currentChapter: {
+		progress: 0,
+		title: '',
+		vfsPath: '',
+		duration: 0,
+		offset: 0
 	}
 });
 export type DurationsMapElement = { key: string; value: number };
@@ -77,14 +84,7 @@ export const PlaysCount: Writable<number> = writable(0);
 
 export const Scrubbing: Writable<boolean> = writable(false);
 
-//---------- Speech -----------------------
 
-export const PlaylistSpeech: Writable<SpeechContainer> = writable({
-	audioAssetPaths: getSpeechFiles(),
-	titles: new Array<string>(),
-	durations: new Map<string, number>(),
-	currentChapter: { title: '', vfsPath: '', duration: 0, progress: 0 }
-});
 
 //---------- deprecating zone -----------------------
 // 🚮 

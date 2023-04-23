@@ -9,7 +9,7 @@
     import {VoiceOver} from '$lib/classes/Speech';
     import ElevenLabsLogo from '$lib/images/ElevenLabsLogo.svelte';
 	import { ProgressBar, SlideToggle } from '@skeletonlabs/skeleton';
-    import { VFS_PATH_PREFIX, PlaylistSpeech, OutputMeters } from '$lib/stores/stores';
+    import { VFS_PATH_PREFIX, OutputMeters, PlaylistMusic } from '$lib/stores/stores';
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
 	
@@ -34,11 +34,9 @@
             title: e.currentTarget.name,
             vfsPath: get(VFS_PATH_PREFIX) + e.currentTarget.name,
             progress: 0,
-            duration: $PlaylistSpeech.durations.get(e.currentTarget.name),
-            offset: 0
         }
 
-     	PlaylistSpeech.update((p) => {
+     	PlaylistMusic.update((p) => {
 			p.currentChapter = currentChapter;
 			return p;
 		});
@@ -63,7 +61,7 @@
     </div>
     <div class="-mt-5"> 
         <SlideToggle 
-        name="voice::demo.mp3.channel.1" 
+        name="demo.mp3.channel.1" 
         bind:checked={activated} 
         size='sm' 
         active='bg-secondary-600'

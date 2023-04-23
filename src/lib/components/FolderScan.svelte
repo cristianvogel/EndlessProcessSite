@@ -5,12 +5,12 @@
   import { PlaylistMusic } from '$lib/stores/stores';
 
  	let trackTitles:Array<string>;
-	$: trackTitles = $PlaylistMusic.titles;
+	$: trackTitles = $PlaylistMusic.titles.music;
 
 </script>
   <div class='flex items-center'>
   <div class='mr-1'>
-  <Icon src={Layers} class="h-4 rotate-270"/>
+  <Icon src={Layers} class="h-4 rotate-270"/> 
   </div> 
   <div class='text-sm'>
     <p>Virtual File System.</p>

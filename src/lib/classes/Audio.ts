@@ -18,11 +18,13 @@ import {
 	Decoded,
 	Scrubbing,
 	OutputMeters,
-	MusicCoreLoaded
+	MusicCoreLoaded,
+	VFS_PATH_PREFIX
 } from '$lib/stores/stores';
 import WebRenderer from '@elemaudio/web-renderer';
 import type { NodeRepr_t } from '@elemaudio/core';
 import { el } from '@elemaudio/core';
+
 
 // todo: set a sample rate constant prop
 
@@ -74,9 +76,9 @@ export class AudioCore {
 
 		PlaylistMusic.subscribe(
 			($p) =>
-				(Audio._currentTrackDurationSeconds = $p.currentTrack.duration
-					? $p.currentTrack.duration
-					: 0)
+			(Audio._currentTrackDurationSeconds = $p.currentTrack.duration
+				? $p.currentTrack.duration
+				: 0)
 		);
 
 		Scrubbing.subscribe(($Scrubbing) => {
@@ -143,7 +145,7 @@ export class AudioCore {
 			});
 
 		Audio.routeToCables();
-		Audio.connectToDestination(Audio.elemEndNode); 
+		Audio.connectToDestination(Audio.elemEndNode);
 
 		/* ---- Event Driven Callbacks ----------------- */
 
@@ -182,7 +184,7 @@ export class AudioCore {
 			OutputMeters.update(($o) => {
 				$o = { ...$o, MusicAudible: e.max }
 				return $o;
-			})	
+			})
 		});
 
 		// Elementary snapshot callback
@@ -226,7 +228,7 @@ export class AudioCore {
 	 * https://www.elementary.audio/docs/packages/web-renderer#virtual-file-system
 	 * Update the virtual file system using data loaded from a load() function.
 	 *
-	 * @param rawAudioBuffer
+	 * @param container
 	 * header and body ArrayBufferContainer - will be decoded to audio buffer for VFS use
 	 * @param playlistStore
 	 * a Writable that holds titles and other data derived from the buffers
@@ -234,46 +236,57 @@ export class AudioCore {
 	 * the Elementary core which will register and use the VFS dictionary entry.
 	 * 🚨 Guard against race conditions by only updating the VFS when the core is loaded.
 	 */
-	
+
 	async updateVFS(
-		rawAudioBuffer: ArrayBufferContainer,
-		playlistStore: Writable<MusicContainer | SpeechContainer>,
+		container: ArrayBufferContainer,
 		core: WebRenderer | null
 	) {
+
 		let vfsDictionaryEntry: any;
 
-		this.decodeRawBuffer(rawAudioBuffer).then((decodedBuffer) => {
-			let { decodedBuffer: decoded, title, vfsPath } = decodedBuffer;
+		Audio.decodeRawBuffer(container).then((data) => {
+			let { decodedBuffer: decoded, title } = data;
 			if (!decoded || decoded.length < 16) {
 				console.warn('Decoding skipped.');
 				return;
 			}
+
+			// update the DurationElement in the playlist container map
+			if (decoded && decoded.duration > 1) {
+				PlaylistMusic.update(($plist) => {
+					// guard against the 1 samp skipped buffer hack above
+					if (!decoded) return $plist;
+					$plist.durations.set(title as string, decoded.duration);
+					return $plist;
+				});
+			}
+
 			// adds a channel extension to the path for each channel, the extension starts at 1 (not 0)
+
 			for (let i = 0; i < decoded.numberOfChannels; i++) {
+
+				const vfsKey = get(VFS_PATH_PREFIX) + title + channelExtensionFor(i + 1);
 				vfsDictionaryEntry =
 				{
-					[`${vfsPath + channelExtensionFor(i + 1)}`]: decoded.getChannelData(i)
+					[vfsKey]: decoded.getChannelData(i)
 				};
+
+				console.log('VFS entry: ', vfsDictionaryEntry);
+				core?.updateVirtualFileSystem(vfsDictionaryEntry);
 			}
-			// update data in the passed store
-			playlistStore.update(($pl) => {
-				$pl.titles.push(title);
-				return $pl;
-			});
-			// update the VFS in the passed Elementary core
-			console.log('VFS entry: ', Object.keys(vfsDictionaryEntry), '. Valid core?', core ? true : false);
-			core?.updateVirtualFileSystem(vfsDictionaryEntry);
 		});
 	}
 
 	/**
 	 * @description Decodes the raw audio buffer into an AudioBuffer, asynchonously with guards
 	 */
-	async decodeRawBuffer(rawAudioBuffer: ArrayBufferContainer): Promise<DecodedTrackContainer> {
-		const stopwatch = Date.now();
-		while (!rawAudioBuffer) await new Promise((resolve) => setTimeout(resolve, 100));
+	async decodeRawBuffer(container: ArrayBufferContainer): Promise<DecodedTrackContainer> {
 
-		const { body, header } = rawAudioBuffer;
+		//const storeDestination = core.
+		const stopwatch = Date.now();
+		while (!container) await new Promise((resolve) => setTimeout(resolve, 100));
+
+		const { body, header } = container;
 
 		let decoded: AudioBuffer | null = null;
 		// we need audio context in order to decode the audio data
@@ -291,7 +304,7 @@ export class AudioCore {
 				'Decoded audio with length ',
 				header.bytes,
 				' to ',
-				header.vfsPath,
+				get(VFS_PATH_PREFIX) + header.title,
 				' in ',
 				Date.now() - stopwatch,
 				'ms'
@@ -301,15 +314,7 @@ export class AudioCore {
 				return $d;
 			});
 		}
-		// update the DurationElement in the playlist container map
-		if (decoded && decoded.duration > 1) {
-			PlaylistMusic.update(($plist) => {
-				// guard against the 1 samp skipped buffer hack above
-				if (!decoded) return $plist;
-				$plist.durations.set(header.title as string, decoded.duration);
-				return $plist;
-			});
-		}
+
 		return {
 			title: header.title as string,
 			vfsPath: header.vfsPath as string,
@@ -418,7 +423,7 @@ export class AudioCore {
 	}
 
 	// todo: pause or resume Cables patch
-	pauseCables(state: 'pause' | 'resume'): void {}
+	pauseCables(state: 'pause' | 'resume'): void { }
 
 	suspend(): void {
 		Audio.actx.suspend().then(() => {
