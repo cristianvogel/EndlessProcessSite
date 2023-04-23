@@ -6,8 +6,7 @@ import type {
 	ArrayBufferContainer,
 	SamplerOptions,
 	DecodedTrackContainer,
-	MusicContainer,
-	SpeechContainer
+
 } from '../../typeDeclarations';
 
 import { scrubbingSamplesPlayer, stereoOut, bufferProgress } from '$lib/audio/AudioFunctions';
