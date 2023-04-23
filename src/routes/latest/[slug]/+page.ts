@@ -1,6 +1,7 @@
 // todo: actually get the post data from the API
 // this is placeholder code and is not being used
-import type { PageLoad } from './$types';
+
+import type { PageLoad } from "./$types";
 
 let postTitle = '';
 
@@ -39,7 +40,7 @@ const query = `
 
 const apiURL = 'https://endless-process.net/graphql';
 
-export const load = async ({ params }) => {
+export const load = (async ({ params }) => {
 	postTitle = params.slug;
 
 	const response = await fetch(apiURL, {
@@ -72,4 +73,4 @@ export const load = async ({ params }) => {
 			error: error
 		};
 	}
-};
+}) satisfies PageLoad;

@@ -7,7 +7,7 @@
 
 import { PlaylistMusic } from '$lib/stores/stores';
 import { get } from 'svelte/store';
-import type { PageLoad } from './$types';
+import type { LayoutLoad } from './$types';
 
 type ResponseAndPath = { path: string, response: Response };
 let final: { music: Array<ResponseAndPath>, speech: Array<ResponseAndPath> };
@@ -38,4 +38,4 @@ export const load = (async ({ fetch }) => {
         music: resolver(get(PlaylistMusic).audioAssetPaths.music),
         speech: resolver(get(PlaylistMusic).audioAssetPaths.speech)
     };
-}) satisfies PageLoad
+}) satisfies LayoutLoad

@@ -1,4 +1,4 @@
-import { error } from '@sveltejs/kit';
+import { error, type ServerLoad } from '@sveltejs/kit';
 
 export const prerender = 'auto';
 
@@ -22,7 +22,7 @@ query GetPosts {
  `;
 const apiURL = 'https://endless-process.net/graphql';
 
-export async function load({ fetch }) {
+export const load = (async ({ fetch }) => {
 
 	const response = await fetch(apiURL, {
 		method: 'POST',
@@ -41,4 +41,4 @@ export async function load({ fetch }) {
 	}
 	//todo: handle error with SvelteKit error page
 	if (!response) throw error(404, 'Load posts failed.');
-}
+}) satisfies ServerLoad;
