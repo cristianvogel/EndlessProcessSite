@@ -1,7 +1,7 @@
 // This file defines the stores used in the app
 
-import { writable, type Readable, type Writable, readable, get } from 'svelte/store';
-import type { SinglePost, RawFFT, MusicContainer, SpeechContainer, StereoSignal, MetersContainer } from '../../typeDeclarations';
+import { writable, type Readable, type Writable, readable } from 'svelte/store';
+import type { SinglePost, RawFFT, MusicContainer, SpeechContainer, MetersContainer } from '../../typeDeclarations';
 import { getMusicFiles, getSpeechFiles } from '$lib/classes/Files';
 
 //---- UX / State related -------------------
@@ -14,7 +14,9 @@ export const Decoded: Writable<{ done: boolean; progress?: number }> = writable(
 	done: false,
 });
 
-export const LayoutDataLoaded: Writable<boolean> = writable(false);
+export const MusicCoreLoaded: Writable<boolean> = writable(false);
+export const SpeechCoreLoaded: Writable<boolean> = writable(false);
+
 
 //---- Blog related -------------------
 // Todo: Implement sanitiser for the content

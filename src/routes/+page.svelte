@@ -6,28 +6,21 @@
 	import type { PageData } from './$types';
 	import { Audio } from '$lib/classes/Audio';
 	import type { ArrayBufferContainer } from '../typeDeclarations';
-	import { VFS_PATH_PREFIX, PlaylistMusic, LayoutDataLoaded } from '$lib/stores/stores';
+	import { VFS_PATH_PREFIX, PlaylistMusic, PlaylistSpeech, MusicCoreLoaded, SpeechCoreLoaded } from '$lib/stores/stores';
 	import { get } from 'svelte/store';
 	import { error } from '@sveltejs/kit';
-	import { mapToRange } from '$lib/classes/Utils';
 	import type WebAudioRenderer from '@elemaudio/web-renderer';
+	import { VoiceOver } from '$lib/classes/Speech';
 
 
-	export let data: PageData;
+	export let data: PageData
 
-/**
-	 * @description Parallel Assets Worker
-	 * Resolve all the promises in the data.buffers array
-	 * then construct another array of promises which intends to decode
-	 * the buffers in parallel. Then resolve that array to update
-	 * the VFS and playlist with the decoded buffers.
-	 * 🚨 These methods don't work properly with for...each loops
-	 * @todo abstract out the parallel decoder
-	 */
+	const musicBuffers = data.final.music;
+	const speechBuffers = data.final.speech;
 
-	const buffers = data.responses;
-
-	buffers.forEach( async (buffer)  => {
+	$: if( $MusicCoreLoaded )
+	
+	 {  musicBuffers.forEach( async (buffer)  => {
 		const { path, response } = buffer;
 		const title = path.replace(/.*\/([^/]+)$/, '$1') as string;	
 		if (response.ok)
@@ -45,11 +38,38 @@
 				Audio.updateVFS(promisingAudioBuffer, 
 								PlaylistMusic,
 								Audio._core as WebAudioRenderer)
-				})
+			})
+				
         } else {
-            throw error(404, 'Audio file load failed. 🔇');
+            throw error(404, 'Music file load failed. 🔇');
         }
-	});
+	})};
+
+		$: if( $SpeechCoreLoaded )
+	 {  speechBuffers.forEach( async (buffer)  => {
+		const { path, response } = buffer;
+		const title = path.replace(/.*\/([^/]+)$/, '$1') as string;	
+		if (response.ok)
+		{		
+			await response.arrayBuffer().then( (body) => {
+				const promisingAudioBuffer: ArrayBufferContainer = {
+				header: {
+					title,
+					bytes: 0,
+					globPath: path,
+					vfsPath: `${get(VFS_PATH_PREFIX)}${path}`
+				},
+				body
+			};
+				Audio.updateVFS(promisingAudioBuffer, 
+								PlaylistSpeech,
+								VoiceOver._core as WebAudioRenderer)
+			})
+				
+        } else {
+            throw error(404, 'speech file load failed. 🔇');
+        }
+	})};
 
 	
 

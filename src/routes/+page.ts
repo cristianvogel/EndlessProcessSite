@@ -5,30 +5,54 @@
  * trying to avoid reloading the same assets on page navigation
  */
 
-import { PlaylistMusic } from '$lib/stores/stores';
+import { PlaylistMusic, PlaylistSpeech } from '$lib/stores/stores';
 import { get } from 'svelte/store';
 import type { PageLoad } from './$types';
 
+type ResponseAndPath = { path: string, response: Response };
+let final: { music: Array<ResponseAndPath>, speech: Array<ResponseAndPath> };
 let pathlist: Array<string>;
-pathlist = get(PlaylistMusic).audioAssetPaths;
+
 
 export const load = (async ({ fetch }) => {
 
-    const target = (entry: string, i: number): string => `${entry}`;
-    console.log('+ load..⬇︎')
-    let responses: Array<{ path: string, response: Response }> = [];
+    pathlist = get(PlaylistMusic).audioAssetPaths;
+    console.log('+ music load..⬇︎', pathlist)
+
+    let musicData: Array<ResponseAndPath> = [];
 
     for (let i = 0; i < pathlist.length; i++) {
         const path = pathlist[i];
-        const loadFrom: string = target(path, i);
+        const loadFrom: string = `${path}`;
         const stopwatch = Date.now();
-        responses.push(
+        musicData.push(
             {
                 path,
                 response: await fetch(loadFrom)
             });
-        console.log('Fetched: ', loadFrom, Date.now() - stopwatch, 'ms');
+        console.log('Fetched music asset: ', loadFrom, Date.now() - stopwatch, 'ms');
     }
 
-    return { responses };
+    final = { ...final, music: musicData }
+
+
+
+    pathlist = get(PlaylistSpeech).audioAssetPaths;
+    console.log('+ speech load..⬇︎', pathlist)
+    let speechData: Array<ResponseAndPath> = [];
+    for (let i = 0; i < pathlist.length; i++) {
+        const path = pathlist[i];
+        const loadFrom: string = `${path}`;
+        const stopwatch = Date.now();
+        speechData.push(
+            {
+                path,
+                response: await fetch(loadFrom)
+            });
+        console.log('Fetched speech asset: ', loadFrom, Date.now() - stopwatch, 'ms');
+    }
+
+    final = { music: musicData, speech: speechData }
+
+    return { final };
 }) satisfies PageLoad

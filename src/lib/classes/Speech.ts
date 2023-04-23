@@ -1,10 +1,10 @@
-import type { AudioCoreStatus, DecodedTrackContainer, ArrayBufferContainer, StereoSignal, Signal } from '../../typeDeclarations';
+import type { AudioCoreStatus, DecodedTrackContainer, ArrayBufferContainer, StereoSignal } from '../../typeDeclarations';
 import { get } from 'svelte/store';
 import WebRenderer from '@elemaudio/web-renderer';
 import { writable, type Writable } from 'svelte/store';
 import { AudioCore } from '$lib/classes/Audio';
-import { load } from '$lib/classes/IngestorSpeechFiles';
-import { OutputMeters, PlaylistSpeech, VFS_PATH_PREFIX } from '$lib/stores/stores';
+
+import { OutputMeters, PlaylistSpeech, SpeechCoreLoaded, VFS_PATH_PREFIX } from '$lib/stores/stores';
 import { meter, stereoOut } from '$lib/audio/AudioFunctions';
 import { el, type NodeRepr_t } from '@elemaudio/core';
 
@@ -59,10 +59,7 @@ export class VoiceCore extends AudioCore {
 		 * @todo: refactor this to be done in the same place?
 		 */
 
-		load({ fetch }).then((buffersContainer: any) => {
-			console.log('speech buffers', buffersContainer);
-			this.parallelDecoder(buffersContainer.buffers);
-		});
+		// load the speech files
 
 		while (!super.actx) {
 			console.log('Waiting for first WebRenderer instance to load...');
@@ -107,6 +104,7 @@ export class VoiceCore extends AudioCore {
 		})
 
 		VoiceOver._core.on('load', () => {
+			SpeechCoreLoaded.set(true);
 			console.log('Voice Core loaded  🎤');
 			VoiceOver.status = 'ready';
 		});
@@ -159,36 +157,6 @@ export class VoiceCore extends AudioCore {
 			vfsPath: header.vfsPath as string,
 			decodedBuffer: decoded
 		};
-	}
-
-	/**
-	 * @description
-	 * Parallel Assets Worker
-	 * see ./src/+page.svelte
-	 * @todo abstract out the parallel decoder
-	 */
-
-	parallelDecoder(buffers: any) {
-		let parallel: Array<any> = [];
-		Promise.all(buffers).then((resolved) => {
-			for (let i = 0; i < resolved.length; i++) {
-				const track: ArrayBufferContainer = resolved[i];
-
-				const vfsPath = get(VFS_PATH_PREFIX) + track.header.title;
-				const header = { ...track.header, vfsPath };
-				parallel.push(async () => {
-					const decoded: ArrayBuffer = await track.body;
-					return super.updateVFS({
-						header,
-						body: decoded,
-					}, PlaylistSpeech, VoiceOver);
-				});
-			}
-
-			Promise.all(parallel.map((func) => func())).then(() =>
-				console.log('SPEECH: Parallel promises resolved')
-			);
-		});
 	}
 
 	/**

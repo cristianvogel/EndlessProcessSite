@@ -59,7 +59,6 @@ interface SpeechContainer extends Omit<MusicContainer, 'currentTrack' | 'show'> 
 	};
 }
 
-
 type HtmlContent = { rawHTML: string; sanitisedHTML: string };
 
 type Url = string;
@@ -88,17 +87,6 @@ type ProgressOptions = {
 };
 
 type Signal = NodeRepr_t;
-
-
-// type ArrayBufferContainer = {
-// 	header: {
-// 		globPath: string;
-// 		title?: string;
-// 		bytes?: number;
-// 		vfsPath?: string;
-// 	};
-// 	body: ArrayBuffer | Promise<ArrayBuffer>;
-// };
 
 type ArrayBufferContainer = {
 	header: {
