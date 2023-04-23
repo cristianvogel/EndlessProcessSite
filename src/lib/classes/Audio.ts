@@ -6,17 +6,19 @@ import type {
 	ArrayBufferContainer,
 	SamplerOptions,
 	DecodedTrackContainer,
-	MusicContainer, SpeechContainer
+	MusicContainer,
+	SpeechContainer
 } from '../../typeDeclarations';
 
 import { scrubbingSamplesPlayer, stereoOut, bufferProgress } from '$lib/audio/AudioFunctions';
-import { Wait, channelExtensionFor, clipToRange } from '$lib/classes/Utils';
+import { channelExtensionFor, clipToRange } from '$lib/classes/Utils';
 import {
 	CablesPatch,
 	PlaylistMusic,
 	Decoded,
 	Scrubbing,
-	OutputMeters
+	OutputMeters,
+	MusicCoreLoaded
 } from '$lib/stores/stores';
 import WebRenderer from '@elemaudio/web-renderer';
 import type { NodeRepr_t } from '@elemaudio/core';
@@ -29,7 +31,6 @@ export class AudioCore {
 	_silentCore: WebRenderer | null;
 	_AudioCoreStatus: Writable<AudioCoreStatus>;
 	_contextIsRunning: Writable<boolean>;
-	_elemLoaded: Writable<boolean>;
 	_audioContext: Writable<AudioContext>;
 	_endNodes: Writable<any>;
 	_masterVolume: Writable<number | Signal>;
@@ -46,7 +47,6 @@ export class AudioCore {
 		this._masterVolume = writable(1); // default master volume
 		this._AudioCoreStatus = writable('loading');
 		this._contextIsRunning = writable(false);
-		this._elemLoaded = writable(false);
 		this._audioContext = writable();
 		this._endNodes = writable({
 			mainCore: null,
@@ -128,7 +128,6 @@ export class AudioCore {
 				outputChannelCount: [2]
 			})
 			.then((node) => {
-				Audio._elemLoaded.set(true);
 				return node;
 			});
 
@@ -153,7 +152,8 @@ export class AudioCore {
 
 		// Elementary load callback
 		Audio._core.on('load', () => {
-			console.log('Main core loaded 🔊?', Audio.elemLoaded);
+			MusicCoreLoaded.set(true)
+			console.log('Main core loaded 🔊');
 		});
 
 		Audio._silentCore.on('load', () => {
@@ -240,7 +240,6 @@ export class AudioCore {
 		playlistStore: Writable<MusicContainer | SpeechContainer>,
 		core: WebRenderer | null
 	) {
-		Wait.forTrue(Audio.elemLoaded, 1000, 50)
 		let vfsDictionaryEntry: any;
 
 		this.decodeRawBuffer(rawAudioBuffer).then((decodedBuffer) => {
@@ -251,8 +250,8 @@ export class AudioCore {
 			}
 			// adds a channel extension to the path for each channel, the extension starts at 1 (not 0)
 			for (let i = 0; i < decoded.numberOfChannels; i++) {
-				vfsDictionaryEntry = {
-					...vfsDictionaryEntry,
+				vfsDictionaryEntry =
+				{
 					[`${vfsPath + channelExtensionFor(i + 1)}`]: decoded.getChannelData(i)
 				};
 			}
@@ -489,7 +488,7 @@ export class AudioCore {
 	}
 
 	get elemLoaded() {
-		return get(Audio._elemLoaded);
+		return get(AudioCoresLoaded);
 	}
 
 	get isRunning(): boolean {
