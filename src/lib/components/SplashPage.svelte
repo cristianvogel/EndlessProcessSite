@@ -17,7 +17,7 @@
 {/if}
 
 	
-	<div class='absolute info top-30 right-1 -mt-2'><TextToSpeech/></div>
+	<div class='absolute info top-24 right-24 '><TextToSpeech/></div>
 
 <div class="container mx-auto my- w-[30%] flex-none" on:mousedown>
 	<div class="space-y-2 text-center">
@@ -31,7 +31,7 @@
 	
 		{#if splash}
 		   <h2 class="gradient-text opacity-90" >
-				Welcome!
+				Welcome.
 			</h2>
 			{:else}
 	    <NowPlaying />
