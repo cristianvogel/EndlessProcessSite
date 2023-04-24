@@ -10,8 +10,6 @@ import { get } from 'svelte/store';
 import type { LayoutLoad } from './$types';
 
 type ResponseAndPath = { path: string, response: Response };
-let final: { music: Array<ResponseAndPath>, speech: Array<ResponseAndPath> };
-let pathlist: Array<string>;
 
 /**
  * @todo: Consolidate into one function

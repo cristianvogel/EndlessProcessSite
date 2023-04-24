@@ -1,6 +1,6 @@
 import { error, type ServerLoad } from '@sveltejs/kit';
 
-export const prerender = 'auto';
+export const prerender = false;
 
 const query = `
 query GetPosts {
