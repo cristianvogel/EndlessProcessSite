@@ -230,8 +230,8 @@ export class AudioCore {
 		}
 
 		const stereoComp = {
-			left: el.compress(20, 100, -30, 50, el.in({ channel: 0 }), Audio._out.left),
-			right: el.compress(20, 100, -30, 50, el.in({ channel: 0 }), Audio._out.right)
+			left: el.compress(20, 160, -35, 90, el.in({ channel: 0 }), Audio._out.left),
+			right: el.compress(20, 160, -35, 90, el.in({ channel: 0 }), Audio._out.right)
 		}
 		Audio.status = 'playing';
 		Audio._core.render(stereoComp.left, stereoComp.right);

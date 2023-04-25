@@ -16,6 +16,7 @@
 
 	$: audioBuffersReady = Audio.audioBuffersReady;
 
+
 	/**
 	 * @description ----------------------------------------------
 	 * interactivity handler for the player controls
@@ -65,8 +66,9 @@
 	}
 </script>
 
+
 <AppBar
-	background="bg-surface-800"
+	background="endproc-card-bg"
 	gridColumns="grid-cols-3"
 	slotTrail="place-content-end"
 	slotLead="mb-0 h-10"
@@ -123,3 +125,9 @@
 		</div>
 	</svelte:fragment>
 </AppBar>
+
+<style>
+	.logo-item {
+		background-color: transparent;
+	}
+</style>

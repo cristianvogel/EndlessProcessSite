@@ -1,6 +1,6 @@
 <script>
 	// Splash opening
-	import SplashSVG from '$lib/components/SplashSVG.svelte';
+	import SplashSVG from '$lib/components/images/SplashSVG.svelte';
 	import NowPlaying from './NowPlaying.svelte';
 	import {Audio} from '$lib/classes/Audio';
 	import { LoadingSomething, singlePost } from '$lib/stores/stores';

@@ -28,7 +28,7 @@
 {#if ($audioStatus !== 'loading' || 'closed ') && $Decoded.done}
 	<div class="z-10 flex basis-1/2 flex-row gap-4 ">
 		<button
-			class="basis-1/8 shrink-0 items-center rounded-full bg-surface-700 p-1"
+			class="basis-1/8 shrink-0 items-center rounded-full bg-transparent p-1"
 			id="transport"
 			on:click
 		>
@@ -39,15 +39,22 @@
 			/>
 		</button>
 		<button
-			class="basis-1/8 shrink-0 items-center rounded-full bg-surface-700 p-2"
+			class="basis-1/8 shrink-0 items-center rounded-full bg-transparent p-2"
 			id="playlist"
 			on:click
 		>
-			<Icon src={QueryQueue} class=" h-8 rotate-180 fill-secondary-300" data-sveltekit-noscroll />
+			<Icon src={QueryQueue} class="h-8 rotate-180 fill-secondary-300" data-sveltekit-noscroll />
 		</button>
 		{#if $PlaylistMusic.show}
-			<!-- Playlist -->
-			<div class="indent-x-10 text-s absolute top-10 bg-surface-700 p-3 text-tertiary-800">
+			<!-- Playlist popup card  -->
+			<div class="absolute card top-20 
+			md:left-20 sm:left-0 
+			text-sm text-primary-200   
+			p-2 w-25% 
+			md:variant-filled-surface
+			" 
+			data-sveltekit-noscroll
+			>
 				<PlaylistView tracklisting={trackTitles} />
 			</div>
 		{/if}

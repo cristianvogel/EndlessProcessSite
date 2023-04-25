@@ -103,8 +103,8 @@ export const Utils = {
 		return Math.random().toString(36);
 	},
 
-	formatDate(date: string): string {
-		const dateObj = new Date(date);
+	formatDate(date: string | Date): string {
+		const dateObj: Date = typeof date === 'string' ? new Date(date) : date;
 		const options: any = { year: 'numeric', month: 'long', day: 'numeric' };
 		return dateObj.toLocaleDateString('en-US', options);
 	},

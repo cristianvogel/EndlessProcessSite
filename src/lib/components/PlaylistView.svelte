@@ -6,13 +6,13 @@ import  {CircleDash, CircleFilled} from '@steeze-ui/carbon-icons';
 import {Audio} from '$lib/classes/Audio';
 import { PlaylistMusic, VFS_PATH_PREFIX } from "$lib/stores/stores";
 	import { get } from 'svelte/store';
-	import { formatTitleFromGlobalPath } from '$lib/classes/Utils';
+	import { Utils, formatTitleFromGlobalPath } from '$lib/classes/Utils';
 
 export let tracklisting:Array<string>;
 
 let valueSingle: number;
 
-const dividerClass = 'my-12 h-0.5 border-t-0 bg-primary-300 opacity-100 dark:opacity-50'
+const dividerClass = 'my-12 h-0.5 border-t-0 bg-primary-800 opacity-100 dark:opacity-50'
 
 $: current = Audio.currentTrackTitle;
 
@@ -43,7 +43,10 @@ function HandlePlaylistChoice(e?:any, name?:string) {
 </script>
 
  <ListBox> 	
-    <h2 class="text-2xl text-tertiary-600 font-bold">Featured Music</h2>
+	<div class='text-xs ml-2 -mt-0.5 pl-0.5 absolute'>{Utils.formatDate(new Date())}</div>
+    <h2 class="text-2xl text-secondary-300 font-bold p-2 rounded-lg">
+		Featured Music</h2>
+		
     <hr class={dividerClass} />	
  {#each tracklisting  as title,i}
 	<ListBoxItem 
@@ -56,7 +59,8 @@ function HandlePlaylistChoice(e?:any, name?:string) {
             <Icon src={current === title ? CircleFilled : CircleDash} class="h-4 mt-1"/>
         </span>
     </svelte:fragment>
-    {formatTitleFromGlobalPath(title)}
+	<div class='gradient-text text-xl '> {formatTitleFromGlobalPath(title)}</div>
+ 
 	
 </ListBoxItem>
 <hr class={dividerClass} />

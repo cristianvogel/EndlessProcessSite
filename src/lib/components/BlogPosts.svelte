@@ -10,10 +10,10 @@
 
 	const defaultFeaturedImage = '/Default_Avatar.svg';
 	export let data: any;
-	const featuredImageStyle =
-		'object-contain opacity-70 hover:opacity-100 rounded-lg p-1 w-full aspect-square';
+
 	let isPhone: boolean = false;
 	let isTablet: boolean = false;
+	const gradients = './svg/spectrum-gradient.svg'
 
 	$: cardEnter = false;
 
@@ -79,11 +79,12 @@
 					{@const featuredImageUrl = featuredImage
 						? featuredImage.node.sourceUrl
 						: defaultFeaturedImage}
-					{@const beforeStyle = `background-image: url(${featuredImageUrl}); 
-          background-repeat: no-repeat; 
-          background-position-y: 23%; 
-          background-size: cover;
-          opacity: 0.3`}
+					{@const beforeStyle = 
+						`background-image: url(${gradients}); 
+						 background-repeat: no-repeat; 
+						 background-size: cover;
+						 opacity: 0.3`
+						}
 					<div
 						class="card break-inside-avoid-column px-0 w-full variant-soft-surface"
 						id={cardIndex}
@@ -97,17 +98,17 @@
 						<a href="/latest/{routeSlug}">
 							<section class="p-4 hover:bg-zinc-800 relative">
 								<!--  -->
-								<h1 class="text-secondary-400">
+								<h1 class="text-secondary-300">
 									{title ?? 'New Post'}
 								</h1>
 
-								<!-- <div
+								<div
 									class="absolute inset-0 z-0 
-                          before:content 
-                          before:absolute 
-                          before:inset-0"
+											before:content 
+											before:absolute 
+											before:inset-0"
 									style={beforeStyle}
-								/> -->
+								/>
 							</section>
 						</a>
 						<section class="card-footer p-2 w-full text-tertiary-600">
@@ -119,3 +120,4 @@
 		</ul>
 	</div>
 </main>
+

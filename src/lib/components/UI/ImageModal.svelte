@@ -9,11 +9,11 @@
 <div class="fixed z-10 inset-0 overflow-y-auto" on:mousedown={onClose}>
   <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center">
     <!-- Background overlay -->
-    <div class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75"></div>
+    <div class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75 "></div>
     <!-- Modal content container -->
-    <div class="relative z-10 w-full max-w-md mx-auto my-auto rounded-lg shadow-lg" >
+    <div class="relative z-10 w-auto max-w-2xl mx-auto my-auto rounded-lg shadow-lg" >
       <!-- Image -->
-      <img src={imageUrl} alt={altText} class="w-full h-auto rounded-lg" >
+      <img src={imageUrl} alt={altText} class="w-full h-full rounded-lg object-"  >
       <!-- Close button -->
       <button
         class="absolute top-0 right-0 m-2 text-tertiary-500 hover:text-tertiary-800"
