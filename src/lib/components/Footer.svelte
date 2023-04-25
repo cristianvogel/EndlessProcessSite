@@ -5,5 +5,5 @@
 			text-xs
 			fading-bg"
 		>
-			Endless Process © 2023
+			<a href='mailto:info@cristianvogel.com'>Endless Process © 2023</a>
 	</div>
