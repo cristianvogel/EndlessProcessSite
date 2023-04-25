@@ -2,7 +2,12 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-	plugins: [sveltekit()]
-	// other config options...
+
+	plugins: [sveltekit()],
+	server: {
+		fs: {
+			allow: ['./static/audiofiles']
+		}
+	}
 });
 
