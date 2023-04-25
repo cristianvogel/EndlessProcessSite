@@ -10,7 +10,7 @@ import { get } from 'svelte/store';
 import type { LayoutLoad } from './$types';
 import { formatTitleFromGlobalPath } from '$lib/classes/Utils';
 
-type AssetLoadResponse = {
+export type AssetLoadResponse = {
     title: string,
     path: string,
     response: Response
@@ -33,8 +33,8 @@ export const load = (async ({ fetch }) => {
                     title,
                     path,
                     response: await fetch(path)
-                });
-            console.log('Resolving asset from: ', path, ' in ', Date.now() - stopwatch, 'ms. Title rewritten to: ', title);
+                });         
+            console.log('Loading ', title, ' in ', Date.now() - stopwatch, 'ms');       
         }
         return result;
     }
