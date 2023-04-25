@@ -10,7 +10,7 @@ import type {
 } from '../../typeDeclarations';
 
 import { scrubbingSamplesPlayer, stereoOut, bufferProgress } from '$lib/audio/AudioFunctions';
-import { channelExtensionFor, clipToRange } from '$lib/classes/Utils';
+import { channelExtensionFor, clipToRange, processEachChannel } from '$lib/classes/Utils';
 import {
 	CablesPatch,
 	PlaylistMusic,
@@ -39,13 +39,14 @@ export class AudioCore {
 	_currentVFSPath: string;
 	_currentTrackDurationSeconds: number;
 	_scrubbing: boolean;
-	_sidechain: number | undefined;
+	_sidechain: number | Signal;
+	_out: StereoSignal
 
 
 
 	constructor() {
 		this._core = this._silentCore = null;
-		this._masterVolume = writable(1); // default master volume
+		this._masterVolume = writable(0.2); // default master volume
 		this._AudioCoreStatus = writable('loading');
 		this._contextIsRunning = writable(false);
 		this._audioContext = writable();
@@ -53,6 +54,7 @@ export class AudioCore {
 			mainCore: null,
 			silentCore: null
 		});
+		this._out = { left: 0 as unknown as Signal, right: 0 as unknown as Signal };
 
 		// these below are dynamically set from store subscriptions
 		this._currentVFSPath = '';
@@ -65,7 +67,7 @@ export class AudioCore {
 	subscribeToStores() {
 		/**
 		 * @description
-		*  Subscribers that update the Audio class 's intertnal state
+		*  Subscribers that update the Audio class 's intertnal statem from outside
 		 */
 		PlaylistMusic.subscribe(($p) => (Audio._currentTrackName = $p.currentTrack.title));
 
@@ -85,9 +87,9 @@ export class AudioCore {
 		});
 
 		OutputMeters.subscribe(($meters) => {
-			this._sidechain = $meters.SpeechAudible;
+			if (!Audio._core) return;
+			Audio._sidechain = el.sm($meters.SpeechAudible as number) as Signal;
 		});
-
 	}
 
 	cleanup() {
@@ -101,19 +103,16 @@ export class AudioCore {
 	 */
 	async init(ctx?: AudioContext): Promise<void> {
 		/**
-		 * @description Came up with the idea of using a second WebRenderer instance
-		 * to handle  audio rate 'control' signals and emit side effects, without
-		 * hitting the hardware outputs. Monitoring for impact hit on performance, but
-		 * seems to be fine so far. Calling this 'Two-Webrenderers-and-a-microphone'
-		 * pattern '💿💿🎤'
+		 * @name SignalComputation
+		 * @info The 'silent core' signal computer harnesses a second 
+		 * WebRenderer instance to compute at audio rate
+		 * and emit event based on results, without the 
+		 * unwanted side effect of outputting DC to speakers 
 		 */
 		Audio._core = new WebRenderer();
 		Audio._silentCore = new WebRenderer();
 
-		// Subscribe to Svelte stores outside of component
-		Audio.subscribeToStores();
-
-		// Choose a context to use
+		// this is the one AudioContext to use throughout
 		if (ctx) {
 			Audio.actx = ctx;
 			console.log('Passing existing AudioContext');
@@ -121,7 +120,7 @@ export class AudioCore {
 			console.log('No context!');
 		}
 
-		// Elementary connecting promise : Main Core
+		// Elementary Node : Main Core
 		Audio.elemEndNode = await Audio._core
 			.initialize(Audio.actx, {
 				numberOfInputs: 1,
@@ -132,7 +131,7 @@ export class AudioCore {
 				return node;
 			});
 
-		// Elementary connecting promise : Silent Core
+		// Elementary Node : Silent Core
 		Audio.elemSilentNode = await Audio._silentCore
 			.initialize(Audio.actx, {
 				numberOfInputs: 1,
@@ -148,12 +147,12 @@ export class AudioCore {
 
 		/* ---- Event Driven Callbacks ----------------- */
 
-		// BaseAudioContext state change callback
 		Audio.actx.addEventListener('statechange', Audio.stateChangeHandler);
 
-		// Elementary load callback
 		Audio._core.on('load', () => {
 			MusicCoreLoaded.set(true)
+			// Subscribe to Svelte stores outside of component
+			Audio.subscribeToStores();
 			console.log('Main core loaded 🔊');
 		});
 
@@ -161,7 +160,6 @@ export class AudioCore {
 			console.log('Silent core loaded');
 		});
 
-		// Elementary error reporting
 		Audio._core.on('error', function (e) {
 			console.error('🔇 ', e);
 			//Audio.cleanup();
@@ -172,21 +170,19 @@ export class AudioCore {
 			//Audio.cleanup();
 		});
 
-		// Elementary FFT callback
 		Audio._core.on('fft', function (e) {
 			// do something with the FFT data
 			console.count('fft');
 		});
 
-		// Elementary meter callback
 		Audio._core.on('meter', function (e) {
+			console.log('meter received in main core ', e.max);
 			OutputMeters.update(($o) => {
 				$o = { ...$o, MusicAudible: e.max }
 				return $o;
 			})
 		});
 
-		// Elementary snapshot callback
 		Audio._silentCore.on('snapshot', function (e) {
 			PlaylistMusic.update(($pl) => {
 				$pl.currentTrack.progress = clipToRange(e.data as number, 0, 1);
@@ -195,22 +191,15 @@ export class AudioCore {
 		});
 	}
 
-	/*---- Callback handlers ------------------------------*/
-	private stateChangeHandler = () => {
-		Audio._contextIsRunning.update(() => {
-			return Audio.actx.state === 'running';
-		});
-		Audio._AudioCoreStatus.update(() => {
-			return Audio.baseState;
-		});
-	};
-
-	/*---- Implementations  ------------------------------*/
 	/**
 	 * @description Connect a node to the BaseAudioContext destination
-	 */
+	  */
 	connectToDestination(node: AudioNode) {
 		node.connect(Audio.actx.destination);
+	}
+
+	connectToMain(node: AudioNode) {
+		node.connect(Audio.elemEndNode);
 	}
 
 	/**
@@ -221,6 +210,71 @@ export class AudioCore {
 		Audio.elemEndNode.connect(cablesSend);
 		get(CablesPatch).getVar('CablesAnalyzerNodeInput').setValue(cablesSend);
 	}
+
+	private stateChangeHandler = () => {
+		Audio._contextIsRunning.update(() => {
+			return Audio.actx.state === 'running';
+		});
+		Audio._AudioCoreStatus.update(() => {
+			return Audio.baseState;
+		});
+	};
+
+	/**
+	* @description Wraps the Elementary core Render function
+	 */
+	render(stereoSignal?: StereoSignal, key?: string): void {
+		if (!Audio._core) return;
+		if (stereoSignal) {
+			Audio._out = stereoOut(stereoSignal);
+		}
+
+		const stereoComp = {
+			left: el.compress(20, 160, -40, 30, el.in({ channel: 0 }), Audio._out.left),
+			right: el.compress(20, 160, -40, 30, el.in({ channel: 0 }), Audio._out.right)
+		}
+		Audio.status = 'playing';
+		Audio._core.render(stereoComp.left, stereoComp.right);
+	}
+
+	/**
+	 * @description silent render of a control signal, for handling a signal with a side effect like the progress counter composite, which emits an event _and_ an audiorate signal
+	 */
+	controlRender(controlSignal: Signal): void {
+		if (!Audio._silentCore || !controlSignal) return;
+		Audio._silentCore.render(el.mul(controlSignal, 0));
+	}
+
+	/**
+	 * @description: Plays samples from a VFS path, with scrubbing
+	 */
+	playWithScrubFromVFS(props: SamplerOptions) {
+		Audio.render(scrubbingSamplesPlayer(props));
+		Audio.progressBar({
+			run: props.trigger as number,
+			startOffset: props.startOffset || 0
+		});
+	}
+
+	/**
+	 * @description: Render the progress counter composite and its callback sideeffect
+	 */
+	progressBar(props: { run: number; startOffset: number }) {
+		let { run = 1, startOffset: startOffsetMs = 0 } = props;
+		let rate = 10;
+		const totalDurMs = Audio.currentTrackDurationSeconds * 1000;
+		Audio.controlRender(
+			bufferProgress({
+				key: Audio.currentTrackDurationSeconds + '_progBar',
+				totalDurMs,
+				run,
+				rate,
+				startOffset: startOffsetMs
+			})
+		);
+	}
+
+
 
 	/**
 	 * @description Elementary Audio WebRenderer uses a virtual file system to reference audio files.
@@ -251,17 +305,13 @@ export class AudioCore {
 			}
 
 			// update the DurationElement in the playlist container map
-			if (decoded && decoded.duration > 1) {
-				PlaylistMusic.update(($plist) => {
-					// guard against the 1 samp skipped buffer hack above
-					if (!decoded) return $plist;
-					$plist.durations.set(title as string, decoded.duration);
-					return $plist;
-				});
-			}
+			PlaylistMusic.update(($plist) => {
+				if (!decoded) return $plist;
+				$plist.durations.set(title as string, decoded.duration);
+				return $plist;
+			});
 
 			// adds a channel extension to the path for each channel, the extension starts at 1 (not 0)
-
 			for (let i = 0; i < decoded.numberOfChannels; i++) {
 
 				const vfsKey = get(VFS_PATH_PREFIX) + title + channelExtensionFor(i + 1);
@@ -269,8 +319,6 @@ export class AudioCore {
 				{
 					[vfsKey]: decoded.getChannelData(i)
 				};
-
-				console.log('VFS entry: ', vfsDictionaryEntry);
 				core?.updateVirtualFileSystem(vfsDictionaryEntry);
 			}
 		});
@@ -321,58 +369,7 @@ export class AudioCore {
 		};
 	}
 
-	/**
-	 * @description Wraps the Elementary core Render function
-	 */
-	render(stereoSignal: StereoSignal): void {
-		if (!Audio._core || !stereoSignal) return;
-		Audio.status = 'playing';
-		let final: StereoSignal = stereoOut(stereoSignal);
-		let sc = Audio._sidechain
 
-		final = {
-			left: el.mul(1 - sc, final.left) as Signal,
-			right: el.mul(1 - sc, final.right) as Signal
-		};
-		Audio._core.render(final.left, final.right);
-	}
-
-	/**
-	 * @description silent render of a control signal, for handling a signal with a side effect like the progress counter composite, which emits an event _and_ an audiorate signal
-	 */
-	controlRender(controlSignal: Signal): void {
-		if (!Audio._silentCore || !controlSignal) return;
-		Audio._silentCore.render(el.mul(controlSignal, 0));
-	}
-
-	/**
-	 * @description: Plays samples from a VFS path, with scrubbing
-	 */
-	playWithScrubFromVFS(props: SamplerOptions) {
-		Audio.render(scrubbingSamplesPlayer(props));
-		Audio.progressBar({
-			run: props.trigger as number,
-			startOffset: props.startOffset || 0
-		});
-	}
-
-	/**
-	 * @description: Render the progress counter composite and its callback sideeffect
-	 */
-	progressBar(props: { run: number; startOffset: number }) {
-		let { run = 1, startOffset: startOffsetMs = 0 } = props;
-		let rate = 10;
-		const totalDurMs = Audio.currentTrackDurationSeconds * 1000;
-		Audio.controlRender(
-			bufferProgress({
-				key: Audio.currentTrackDurationSeconds + '_progBar',
-				totalDurMs,
-				run,
-				rate,
-				startOffset: startOffsetMs
-			})
-		);
-	}
 
 	/**
 	 * @description: Tries to resume the base AudioContext
@@ -448,69 +445,54 @@ export class AudioCore {
 			masterVolume: Audio._masterVolume
 		};
 	}
-
 	get sidechain() {
 		return this._sidechain;
 	}
-
 	get scrubbing(): boolean {
 		return Audio._scrubbing;
 	}
-
 	get currentTrackDurationSeconds(): number {
 		return Audio._currentTrackDurationSeconds;
 	}
-
 	get currentVFSPath(): string {
 		return Audio._currentVFSPath;
 	}
-
 	get audioBuffersReady(): boolean {
 		return typeof Audio._currentTrackName === 'string';
 	}
 	get currentTrackTitle(): string {
 		return Audio._currentTrackName;
 	}
-
 	get masterVolume(): number | NodeRepr_t {
 		return get(Audio._masterVolume);
 	}
-
 	get contextAndStatus() {
 		return derived([Audio._audioContext, Audio._AudioCoreStatus], ([$audioContext, $status]) => {
 			return { context: $audioContext, status: $status };
 		});
 	}
-
 	get actx() {
 		return get(Audio.contextAndStatus).context;
 	}
-
 	get status() {
 		console.log('get status', get(Audio._AudioCoreStatus));
 		return get(Audio._AudioCoreStatus);
 	}
-
 	get elemLoaded() {
-		return get(AudioCoresLoaded);
+		return get(MusicCoreLoaded);
 	}
-
 	get isRunning(): boolean {
 		return get(Audio._contextIsRunning);
 	}
-
 	get isMuted(): boolean {
 		return Audio.status !== ('playing' || 'running') || !Audio.isRunning;
 	}
-
 	get elemSilentNode() {
 		return get(Audio._endNodes).silentCore;
 	}
-
 	get elemEndNode() {
 		return get(Audio._endNodes).mainCore;
 	}
-
 	get baseState(): AudioCoreStatus {
 		return Audio.actx.state as AudioCoreStatus;
 	}

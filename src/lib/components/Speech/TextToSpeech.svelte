@@ -14,15 +14,15 @@
 	import { get } from 'svelte/store';
 	
     import { tweened } from 'svelte/motion';
-	import {  quadInOut } from 'svelte/easing';
+	import {  bounceInOut } from 'svelte/easing';
 
     let activated: boolean = false;
 
-    $: progress.set(Math.round ($OutputMeters.SpeechAudible as number ))
+    $: progress.set(Math.abs(Math.round( 100 * ($OutputMeters.SpeechAudible as number ))))
     
     const progress = tweened(0, {
 		duration: 100,
-		easing: quadInOut
+		easing: bounceInOut
 	});
 
     function voiceActivated(e: any) {
@@ -61,7 +61,7 @@
     </div>
     <div class="-mt-5"> 
         <SlideToggle 
-        name="demo.mp3.channel.1" 
+        name="demo.mp3" 
         bind:checked={activated} 
         size='sm' 
         active='bg-secondary-600'
@@ -72,13 +72,13 @@
     <div class="col-start-2 row-start-3 mt-3 -mr-10  ">
     	<ProgressBar
 		label="Progress Bar"
-		value={$progress ** (1/3)}
+		value={$progress * 4}
 		meter="bg-gradient-to-r from-blue-800 to-green-600"
 		rounded="rounded-1"
         height="h-2"
 		min={0}
-		max={1}
-	/>
+		max={100}
+	/> 
     </div>
 </div>
 

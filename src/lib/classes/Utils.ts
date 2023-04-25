@@ -2,10 +2,19 @@
  * some useful routines, mostly written with Copilot and GPT3
  */
 
+import type { Signal, StereoSignal } from "../../typeDeclarations";
+
 
 export const clipToRange = (value: number, min: number, max: number): number => {
 	return Math.min(Math.max(value, min), max);
 };
+
+export const processEachChannel = (channels: StereoSignal, process: any): StereoSignal => {
+	return {
+		left: process(channels.left),
+		right: process(channels.right)
+	}
+}
 
 export const randomStream = (props: { periodMs: number; range: number }): Promise<number> => {
 	const { periodMs: n, range: r } = props;

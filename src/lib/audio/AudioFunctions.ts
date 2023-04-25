@@ -10,32 +10,37 @@
  * 
  */
 
-import { Audio } from '$lib/classes/Audio';
+import { Audio, AudioCore } from '$lib/classes/Audio';
 import { el } from '@elemaudio/core';
 import { channelExtensionFor, clipTo0 } from '$lib/classes/Utils';
 import { detunedSaws, attenuate, progress } from '$lib/audio/composites';
 import type { StereoSignal, SamplerOptions, ProgressOptions, Signal } from '../../typeDeclarations';
 
 
-/**
- * @description Buffer progress
+/**════════════════════════════════════════════════
+ * @name bufferProgress
+ * @description Buffer progress as audio rate signal
+ * ════════════════════════════════════════════════
  */
 
 export function bufferProgress(props: ProgressOptions): Signal {
 	return progress(props);
 }
 
-/**
- * @description Meter
- * 
+/**════════════════════════════════════════════════
+ * @name meter
+ * @description trigger metering callback on one channel
+ * ════════════════════════════════════════════════
  */
 
-export function meter(signal: StereoSignal): Signal {
-	return el.meter(signal.left);
+export function meter(signal: StereoSignal, gain: number = 20): Signal {
+	return el.meter(el.mul(gain, el.add(signal.left, signal.right)));
 }
 
-/**
- * @description Endless Process track player
+/**════════════════════════════════════════════════
+ * @name scrubbingSamplesPlayer
+ * @description Samples player with a granular scrubbing action
+ * ════════════════════════════════════════════════
  */
 
 export function scrubbingSamplesPlayer(props: SamplerOptions): StereoSignal {
@@ -75,33 +80,92 @@ export function scrubbingSamplesPlayer(props: SamplerOptions): StereoSignal {
 	return { left: left, right: right };
 }
 
-
-/**
- * @description Stereo output
+/**════════════════════════════════════════════════
+ * @name driftingSamplesPlayer
+ * @description 
+ * Samples player where one channel (optionally) drifts in rate to create a tape phase effect
+ * ════════════════════════════════════════════════
  */
 
-export function stereoOut(stereoSignal: StereoSignal, key: string = ''): StereoSignal {
+export function driftingSamplesPlayer(coreClass: AudioCore, props: SamplerOptions): StereoSignal {
+	let { trigger = 1,
+		rate = 1,
+		startOffset = 0,
+		vfsPath = coreClass.currentVFSPath,
+		monoSum = false,
+		drift = 0 } = props;
+
+	let kr, kl, path, rateWithDrift;
+	let left, right;
+	const currentVFSPath = vfsPath;
+
+	if (typeof drift === 'number' && typeof rate === 'number') {
+		rateWithDrift = drift + rate;
+	}
+
+	startOffset = clipTo0(startOffset);
+	path = currentVFSPath + channelExtensionFor(1);
+	kl = currentVFSPath + '_left';
+
+	left = el.sample(
+		{
+			key: kl,
+			path,
+			mode: 'gate',
+			startOffset: startOffset * 44.1
+		},
+		trigger,
+		rate
+	);
+
+	path = currentVFSPath + channelExtensionFor(monoSum ? 1 : 2);
+	kr = currentVFSPath + '_right';
+
+	right = el.sample(
+		{
+			key: kr,
+			path,
+			mode: 'gate',
+			startOffset: startOffset * 44.1
+		},
+		trigger,
+		rateWithDrift as number
+	);
+
+	if (monoSum) { left = el.add(el.mul(0.5, left), el.mul(0.5, right)); right = left; }
+	return { left: left as Signal, right: right as Signal };
+}
+
+
+/**════════════════════════════════════════════════
+ * @name stereoOut
+ * @description Stereo output
+ * ════════════════════════════════════════════════
+ */
+
+export function stereoOut(stereoSignal: StereoSignal): StereoSignal {
+
 	return {
 		left: attenuate(
 			{
-				level: Audio.masterVolume,
-				key: key + '_master_L'
+				level: Audio.masterVolume as number,
 			},
 			stereoSignal.left
 		),
 		right: attenuate(
 			{
 				level: Audio.masterVolume,
-				key: key + '_master_R'
 			},
 			stereoSignal.right
 		)
 	};
 }
 
-/**
- * @description demo synth with two dualSaws in stereo
+/**════════════════════════════════════════════════
+ * @name demoSynth
+ * @description Demo synth with two dualSaws in stereo
  * uses detunedSaws interface
+ * ════════════════════════════════════════════════
  */
 
 export function demoSynth(): StereoSignal {
@@ -121,8 +185,10 @@ export function demoSynth(): StereoSignal {
 	};
 }
 
-/**
+/**════════════════════════════════════════════════
+ * @name testTone
  * @description Stereo test tone
+ * ════════════════════════════════════════════════
  */
 export function testTone(): StereoSignal {
 	return {

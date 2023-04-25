@@ -17,7 +17,7 @@
 {/if}
 
 	
-	<div class='absolute info top-24 right-24 '><TextToSpeech/></div>
+	<div class='absolute info md:top-24 sm:top-30 right-24 '><TextToSpeech/></div>
 
 <div class="container mx-auto my- w-[30%] flex-none" on:mousedown>
 	<div class="space-y-2 text-center">

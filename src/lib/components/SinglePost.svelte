@@ -42,7 +42,7 @@
 
 </script>
 
-<div class="flex justify-end md:-mb-20 md:mr-14">
+<div class="flex justify-start md:-mb-20 md:mr-14">
 	<span class="chip variant-soft hover:variant-filled-secondary ml-3 p-0 z-50">
 		<a href='/blog'><Icon src={PageFirst} class="fill-tertiary-400 h-8 w-10 p-0 m-0" /></a>
 	</span>

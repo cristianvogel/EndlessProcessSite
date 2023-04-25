@@ -67,10 +67,12 @@ type SamplerOptions = {
 	vfsPath?: string; // defaults to current track
 	trigger?: Signal | number;
 	rate?: Signal | number;
+	drift?: Signal | number;
 	loop?: boolean;
 	loopStart?: number;
 	loopEnd?: number;
 	startOffset?: number;
+	monoSum?: boolean;
 };
 
 type ProgressOptions = {
