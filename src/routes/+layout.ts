@@ -8,8 +8,13 @@
 import { PlaylistMusic } from '$lib/stores/stores';
 import { get } from 'svelte/store';
 import type { LayoutLoad } from './$types';
+import { formatTitleFromGlobalPath } from '$lib/classes/Utils';
 
-type ResponseAndPath = { path: string, response: Response };
+type AssetLoadResponse = {
+    title: string,
+    path: string,
+    response: Response
+};
 
 /**
  * @todo: Consolidate into one function
@@ -18,17 +23,18 @@ export const load = (async ({ fetch }) => {
 
     async function resolver(pathlist: string[]) {
 
-        let result: Array<ResponseAndPath> = [];
+        let result: Array<AssetLoadResponse> = [];
         for (let i = 0; i < pathlist.length; i++) {
             const path = pathlist[i];
-            const loadFrom: string = `${path}`;
             const stopwatch = Date.now();
+            const title = formatTitleFromGlobalPath(path);
             result.push(
                 {
+                    title,
                     path,
-                    response: await fetch(loadFrom)
+                    response: await fetch(path)
                 });
-            console.log('Resolved asset from: ', loadFrom, ' in ', Date.now() - stopwatch, 'ms');
+            console.log('Resolving asset from: ', path, ' in ', Date.now() - stopwatch, 'ms. Title rewritten to: ', title);
         }
         return result;
     }

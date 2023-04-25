@@ -85,8 +85,7 @@ export class VoiceCore extends AudioCore {
 	 * @override
 	 */
 	playFromVFS(gate: Number = 1): void {
-
-		const { vfsPath } = get(PlaylistMusic).currentChapter;
+		const { vfsPath, title } = get(PlaylistMusic).currentChapter;
 		const test = driftingSamplesPlayer(VoiceOver,
 			{
 				vfsPath,
@@ -95,6 +94,7 @@ export class VoiceCore extends AudioCore {
 				drift: 1.0e-3,
 				monoSum: true,
 			});
+		console.log('🎤 -> ', vfsPath);
 		VoiceOver.render(test);
 	}
 
@@ -102,10 +102,10 @@ export class VoiceCore extends AudioCore {
 	  * @override
 	  */
 	render(stereoSignal: StereoSignal, key?: string): void {
+		// do I need a key here??
 		if (!VoiceOver._core) return;
-
 		VoiceOver.status = 'playing';
-		let final = stereoOut(stereoSignal, key);
+		let final = stereoOut(stereoSignal);
 		final = {
 			left: el.mul(VoiceOver.voiceVolume, final.left) as Signal,
 			right: el.mul(VoiceOver.voiceVolume, final.right) as Signal

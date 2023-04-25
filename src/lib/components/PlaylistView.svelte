@@ -6,7 +6,7 @@ import  {CircleDash, CircleFilled} from '@steeze-ui/carbon-icons';
 import {Audio} from '$lib/classes/Audio';
 import { PlaylistMusic, VFS_PATH_PREFIX } from "$lib/stores/stores";
 	import { get } from 'svelte/store';
-	import { Utils } from '$lib/classes/Utils';
+	import { formatTitleFromGlobalPath } from '$lib/classes/Utils';
 
 export let tracklisting:Array<string>;
 
@@ -20,7 +20,7 @@ $: current = Audio.currentTrackTitle;
 function HandlePlaylistChoice(e?:any, name?:string) {
 		// needs to simulate event with a passed `name` value for programmatic track selection
 		if (!e && name) { 
-			e={currentTarget:{name:name}}; 
+			e={currentTarget:{name}}; 
 		};
 
 		const currentTrack = {
@@ -56,7 +56,7 @@ function HandlePlaylistChoice(e?:any, name?:string) {
             <Icon src={current === title ? CircleFilled : CircleDash} class="h-4 mt-1"/>
         </span>
     </svelte:fragment>
-    {Utils.formatTitle(title)}
+    {formatTitleFromGlobalPath(title)}
 	
 </ListBoxItem>
 <hr class={dividerClass} />

@@ -88,18 +88,19 @@ export const Wait = {
 	}
 };
 
+export function formatTitleFromGlobalPath(filePath: string): string {
+	const regex = /^.*\/([^\/]+\.[^.]+)$/;
+	const match = regex.exec(filePath);
+	const filename = match ? match[1] : null;
+	let filenameWithoutPath = filename ? filename.replace(/.*\//, '') : filePath;
+	filenameWithoutPath = filenameWithoutPath.replace(/\..+$/, "")
+	const fromCamelCase = filenameWithoutPath.replace(/_/g, ' by ').replace(/([A-Z])/g, ' $1').trim();
+	return fromCamelCase
+}
+
 export const Utils = {
 	generateRandomKey(): string {
 		return Math.random().toString(36);
-	},
-
-	formatTitle(title: string): string {
-		let formattedTitle = title.replace('.mp3', '').replace(/_/g, '・').replace(/([A-Z])/g, ' $1');
-		const lastDotIndex = formattedTitle.lastIndexOf('.');
-		if (lastDotIndex > 0) {
-			formattedTitle = formattedTitle.substring(0, lastDotIndex);
-		}
-		return formattedTitle
 	},
 
 	formatDate(date: string): string {

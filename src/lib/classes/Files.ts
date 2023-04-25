@@ -13,7 +13,7 @@
 export function getMusicFiles(): string[] {
 	let filePaths: string[] = [];
 
-	const files = import.meta.glob('../../../src/audiofiles/music/*', {
+	const files = import.meta.glob('../../../static/audiofiles/music/*', {
 		eager: true,
 		import: 'default'
 	});
@@ -27,7 +27,7 @@ export function getMusicFiles(): string[] {
 export function getSpeechFiles(): string[] {
 	let filePaths: string[] = [];
 
-	const files = import.meta.glob('../../../src/audiofiles/speech/*', {
+	const files = import.meta.glob('../../../static/audiofiles/speech/*', {
 		eager: true,
 		import: 'default'
 	});

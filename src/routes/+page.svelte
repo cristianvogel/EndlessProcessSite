@@ -3,29 +3,25 @@
 	 * @description
 	 * Parallel Assets Worker
 	 */
-	import type { PageData } from './$types';
+	import type { LayoutData } from './$types';
 	import { Audio } from '$lib/classes/Audio';
 	import type { ArrayBufferContainer } from '../typeDeclarations';
 	import { VFS_PATH_PREFIX, PlaylistMusic, MusicCoreLoaded, SpeechCoreLoaded } from '$lib/stores/stores';
 	import { get } from 'svelte/store';
 	import { error } from '@sveltejs/kit';
 	import { VoiceOver } from '$lib/classes/Speech';
-	import { Warning } from 'postcss';
 
-
-	export let data: PageData
+	export let data: LayoutData
 
 	const musicBuffers = data.music;
 	const speechBuffers = data.speech;
 
 $: if( $MusicCoreLoaded ) {  
     musicBuffers.forEach(async (buffer) => {
-        const { path, response } = buffer;
-        const title = path.replace(/.*\/([^/]+)$/, '$1') as string;   
+        const { path, response, title } = buffer;
         if (response.ok) {        
             try {
                 const body = await response.arrayBuffer();
-                console.log('body?', body);
                 const promisingAudioBuffer: ArrayBufferContainer = {
                     header: {
                         title,
@@ -51,8 +47,7 @@ $: if( $MusicCoreLoaded ) {
 
 $: if( $SpeechCoreLoaded ) {
     speechBuffers.forEach(async (buffer) => {
-        const { path, response } = buffer;
-        const title = path.replace(/.*\/([^/]+)$/, '$1') as string;
+        const { path, response, title } = buffer;
         if (response.ok) {        
             try {
                 const body = await response.arrayBuffer();

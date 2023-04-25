@@ -61,7 +61,7 @@
     </div>
     <div class="-mt-5"> 
         <SlideToggle 
-        name="demo.mp3" 
+        name="demo" 
         bind:checked={activated} 
         size='sm' 
         active='bg-secondary-600'
