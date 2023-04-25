@@ -4,9 +4,11 @@
 	import { Icon } from '@steeze-ui/svelte-icon';
 	import { Close, PageFirst } from '@steeze-ui/carbon-icons';
 	import { onDestroy, onMount } from 'svelte';
-	import { Wait } from '$lib/classes/Utils';
+	import ImageModal from './UI/ImageModal.svelte';
 
+	let modalOpen = false;
 	const { content, title, cardIndex, featuredImageUrl } = $singlePost;
+	$:selectedImage = '';
 
 	//  a function that extracts all <img> elements from the content, which is a string of HTML and removes them from the content
 	function extractImages(): { prunedHTML: Document; imageURLs: Array<string> } {
@@ -25,6 +27,11 @@
 
 	const { prunedHTML, imageURLs } = extractImages();
 
+	function activeImage(e:any) {
+		e.target.style.cursor = 'zoom-in';
+		selectedImage = e.target.src;
+	};	
+
 	onMount(() => {
 		singlePost.update((post) => {
 			post.isOpen = true;
@@ -42,6 +49,8 @@
 
 </script>
 
+
+
 <div class="flex justify-start md:-mb-20 md:mr-14">
 	<span class="chip variant-soft hover:variant-filled-secondary ml-3 p-0 z-50">
 		<a href='/blog'><Icon src={PageFirst} class="fill-tertiary-400 h-8 w-10 p-0 m-0" /></a>
@@ -56,6 +65,13 @@
 		<h6 class="subheading">{cardIndex}</h6>
 		<h1 class="">{title}</h1>
 	</div>
+
+	{#if modalOpen }
+	   <ImageModal imageUrl={selectedImage} altText={title} onClose={()=>modalOpen = false} />
+	{/if}
+	
+
+
 	<section class="grid grid-cols-3 p-1 divide-x-2 divide-tertiary-800 ">
 		{#if prunedHTML}
 			<div class="
@@ -67,13 +83,22 @@
 			opacity-80
 			">
 				<ul>
-					<!-- <span class="flex justify-end"><AudioPlayer /></span> -->
 					{#if featuredImageUrl}
-						<img src={featuredImageUrl} alt="featured artwork" class="w-35 h-22 p-3" />
+						<img src={featuredImageUrl} alt="featured artwork" class="w-35 h-22 p-3" 
+						on:click={()=>modalOpen = true}
+						on:mouseenter={activeImage}
+						on:focus={activeImage}
+						on:keypress={activeImage}
+						 />
 					{/if}
 		
 					{#each imageURLs as url}
-						<img src={url} alt="featured artwork" class="w-35 h-22 p-3" />
+						<img src={url} alt="featured artwork" class="w-35 h-22 p-3"
+						on:click={()=>modalOpen = true}
+						on:mouseenter={activeImage}
+						on:focus={activeImage}
+						on:keypress={activeImage} 
+						/>
 					{/each}
 				</ul>
 			</div>
@@ -91,3 +116,7 @@
 		{/if}
 	</section>
 </div>
+
+<style>
+	
+</style>

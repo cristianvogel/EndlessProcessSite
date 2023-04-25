@@ -54,7 +54,7 @@ async function loadAudioBuffers(buffers: AssetLoadResponse[], type: 'music' | 's
     }
   });
 
-  await Promise.all(promises);
+   Promise.all(promises);
 }
 
 
