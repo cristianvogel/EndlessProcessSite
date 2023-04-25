@@ -46,7 +46,7 @@ export class AudioCore {
 
 	constructor() {
 		this._core = this._silentCore = null;
-		this._masterVolume = writable(0.2); // default master volume
+		this._masterVolume = writable(0.5); // default master volume
 		this._AudioCoreStatus = writable('loading');
 		this._contextIsRunning = writable(false);
 		this._audioContext = writable();
@@ -230,8 +230,8 @@ export class AudioCore {
 		}
 
 		const stereoComp = {
-			left: el.compress(20, 160, -40, 30, el.in({ channel: 0 }), Audio._out.left),
-			right: el.compress(20, 160, -40, 30, el.in({ channel: 0 }), Audio._out.right)
+			left: el.compress(20, 100, -30, 50, el.in({ channel: 0 }), Audio._out.left),
+			right: el.compress(20, 100, -30, 50, el.in({ channel: 0 }), Audio._out.right)
 		}
 		Audio.status = 'playing';
 		Audio._core.render(stereoComp.left, stereoComp.right);
