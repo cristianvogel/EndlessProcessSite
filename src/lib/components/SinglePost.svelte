@@ -60,7 +60,7 @@
 	</span>
 </div>
 <!-- <div class="m-0 p-6 bg-gradient-to-br from-transparent to-surface-800 m-3"> -->
-	<div class="card variant-soft-warning md:m-20 sm:m-1">
+	<div class="card variant-soft-surface md:m-20 sm:m-1">
 	<div class="bg-transparent p-3 text-tertiary-400 opacity-80">
 		<h6 class="subheading">{cardIndex}</h6>
 		<h1 class="">{title}</h1>

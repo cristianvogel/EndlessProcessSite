@@ -86,7 +86,7 @@
 						 opacity: 0.3`
 						}
 					<div
-						class="card break-inside-avoid-column px-0 w-full variant-soft-surface"
+						class="card break-inside-avoid-column px-0 w-full variant-ghost-surface"
 						id={cardIndex}
 						on:mouseenter={(e) =>
 							handleCardEnter({ e, cardIndex, title, content, featuredImageUrl, id, date })}
