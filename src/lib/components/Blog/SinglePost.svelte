@@ -4,7 +4,7 @@
 	import { Icon } from '@steeze-ui/svelte-icon';
 	import { Close, PageFirst } from '@steeze-ui/carbon-icons';
 	import { onDestroy, onMount } from 'svelte';
-	import ImageModal from './UI/ImageModal.svelte';
+	import ImageModal from '$lib/components/UI/ImageModal.svelte';
 
 	let modalOpen = false;
 	const { content, title, cardIndex, featuredImageUrl } = $singlePost;

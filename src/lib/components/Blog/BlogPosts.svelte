@@ -3,21 +3,34 @@
 	 * Blog posts layout page
 	 */
 	import { Icon } from '@steeze-ui/svelte-icon';
+	import {  Data2, IntentRequestActive, IntentRequestInactive, JoinInner, Settings } from '@steeze-ui/carbon-icons'
 	import { CaretSortDown } from '@steeze-ui/carbon-icons';
 	import { singlePost } from '$lib/stores/stores';
 	import { Utils } from '$lib/classes/Utils';
 	import { onMount } from 'svelte';
 
 	const defaultFeaturedImage = '/Default_Avatar.svg';
-	export let data: any;
+	const placeHolderCard = {
+		id: '',
+		title: '∞ ',
+		content: `<div class='info'>Loading...</div>`,
+		date: ''
+	}
+
+	const placeHolders = new Array(5).fill(placeHolderCard)
+
+	export let blogPosts = placeHolders;
+	export let loaded:boolean;
 
 	let isPhone: boolean = false;
 	let isTablet: boolean = false;
 	const gradients = './svg/spectrum-gradient.svg'
 
+
 	$: cardEnter = false;
 
-	// the singPost store is set here and then used in the single post view
+
+	// the single post store is set here and then used in the single post view
 	function handleCardEnter({
 		e,
 		cardIndex,
@@ -61,19 +74,24 @@
 	onMount(() => {
 		responsive();
 	});
+
+	$:placehold = !loaded
 </script>
 
 <svelte:window on:resize={responsive} />
 
 <main>
 	<div class="p-2 space-y-8 ">
-		<Icon src={CaretSortDown} class="h-8 animate-pulse" />
+		<Icon 
+			src={placehold ? Settings : CaretSortDown} 
+			class={placehold ?  "h-8 animate-spin" : "h-8 animate-pulse"} 
+		/>
 		<ul
 			class= "md:container md:mx-auto md:px-0
 				sm:columns-1 md:columns-3
 			gap-3 space-y-10 text-xl max-w-prose"
 		>
-				{#each data.posts as { id, title, featuredImage, content, date }, index}
+				{#each (placehold ? placeHolders : blogPosts) as { id, title, featuredImage, content, date }, index}
 					{@const cardIndex = Utils.repeatChar('═', index) + '・' + Utils.formatDate(date)}
 					{@const routeSlug = Utils.camelCaseNoWhiteSpace(title ?? id)}
 					{@const featuredImageUrl = featuredImage
@@ -86,7 +104,7 @@
 						 opacity: 0.3`
 						}
 					<div
-						class="card break-inside-avoid-column px-0 w-full variant-ghost-surface"
+						class="card break-inside-avoid-column {placehold ? 'variant-soft-surface' : 'variant-ghost-surface'} px-0 w-full"
 						id={cardIndex}
 						on:mouseenter={(e) =>
 							handleCardEnter({ e, cardIndex, title, content, featuredImageUrl, id, date })}
@@ -97,9 +115,16 @@
 						</header>
 						<a href="/latest/{routeSlug}">
 							<section class="p-4 hover:bg-zinc-800 relative">
-								<!--  -->
+								<!-- title  -->
 								<h1 class="text-secondary-300">
+									{#if !placehold}
 									{title ?? 'New Post'}
+									{:else}
+									<Icon 
+									src={JoinInner}
+									class= "h-8 animate-ping"
+								/>
+									{/if}
 								</h1>
 
 								<div
@@ -113,7 +138,16 @@
 						</a>
 						<section class="card-footer p-2 w-full text-tertiary-600">
 							<!-- todo: sanitise HTML for production -->
-							{@html Utils.trimAndAddReadMoreLink(content ?? 'No content')}
+							{#if !placehold}
+							   	{@html Utils.trimAndAddReadMoreLink(content ?? '')}
+							{:else}
+								<Icon 
+									src={Data2}
+									class= "h-8 animate-ping"
+								/>
+							{/if}
+							
+						
 						</section>
 					</div>
 				{/each}
@@ -121,3 +155,8 @@
 	</div>
 </main>
 
+<style>
+	.info {
+		background-color: aqua;
+	}
+</style>

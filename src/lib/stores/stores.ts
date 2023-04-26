@@ -1,7 +1,7 @@
 // This file defines the stores used in the app
 
 import { writable, type Readable, type Writable, readable } from 'svelte/store';
-import type { SinglePost, RawFFT, MusicContainer, SpeechContainer, MetersContainer } from '../../typeDeclarations';
+import type { SinglePost, RawFFT, PlaylistContainer, MetersContainer } from '../../typeDeclarations';
 import { getMusicFiles, getSpeechFiles } from '$lib/classes/Files';
 
 //---- UX / State related -------------------
@@ -57,7 +57,7 @@ export const VFS_PATH_PREFIX: Readable<string> = readable('vfs::');
 /** 
  * @todo: ID3, description, loaded flag
  */
-export const PlaylistMusic: Writable<MusicContainer> = writable({
+export const PlaylistMusic: Writable<PlaylistContainer> = writable({
 	audioAssetPaths: { music: getMusicFiles(), speech: getSpeechFiles() },
 	titles: { music: new Array<string>(), speech: new Array<string>() },
 	durations: new Map<string, number>(),

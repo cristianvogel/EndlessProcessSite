@@ -44,6 +44,14 @@ export function channelExtensionFor(channel: number) {
 	return `.channel.${channel.toString()}`;
 };
 
+export function sleep(value: any, ms: number): Promise<any> {
+	return new Promise((fulfil) => {
+		setTimeout(() => {
+			fulfil(value);
+		}, ms);
+	});
+}
+
 export const Wait = {
 	forValid: async function (variable: any, interval = 100, maxAttempts = 50): Promise<void> {
 		console.log('waiting for valid...');
@@ -104,6 +112,9 @@ export const Utils = {
 	},
 
 	formatDate(date: string | Date): string {
+		if (!date) {
+			return '';
+		}
 		const dateObj: Date = typeof date === 'string' ? new Date(date) : date;
 		const options: any = { year: 'numeric', month: 'long', day: 'numeric' };
 		return dateObj.toLocaleDateString('en-US', options);
