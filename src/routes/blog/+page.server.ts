@@ -1,5 +1,5 @@
 
-import { error, type ServerLoad } from '@sveltejs/kit';
+import type { ServerLoad } from '@sveltejs/kit';
 
 export const prerender = false;
 
@@ -24,8 +24,7 @@ query GetPosts {
 const apiURL = 'https://endless-process.net/graphql';
 
 export const load = (async ({ fetch }) => {
-
-	return {
+  return {
 		streamed: {
 			posts: fetch(apiURL, {
 				method: 'POST',

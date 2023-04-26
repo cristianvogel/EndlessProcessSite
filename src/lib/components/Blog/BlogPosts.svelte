@@ -3,19 +3,22 @@
 	 * Blog posts layout page
 	 */
 	import { Icon } from '@steeze-ui/svelte-icon';
-	import {  Data2, IntentRequestActive, IntentRequestInactive, JoinInner, Settings } from '@steeze-ui/carbon-icons'
+	import {  Data2, JoinInner, Settings } from '@steeze-ui/carbon-icons'
 	import { CaretSortDown } from '@steeze-ui/carbon-icons';
 	import { singlePost } from '$lib/stores/stores';
 	import { Utils } from '$lib/classes/Utils';
 	import { onMount } from 'svelte';
+	
 
 	const defaultFeaturedImage = '/Default_Avatar.svg';
 	const placeHolderCard = {
 		id: '',
 		title: '∞ ',
-		content: `<div class='info'>Loading...</div>`,
+		content: { sanitisedHTML: `<div class='info'>Loading...</div>` },
 		date: ''
 	}
+
+	
 
 	const placeHolders = new Array(3).fill(placeHolderCard)
 
@@ -27,31 +30,25 @@
 	const gradients = './svg/spectrum-gradient.svg'
 
 	$: cardEnter = false;
-
-	// the single post store is set here and then used in the single post view
-	function handleCardEnter({
-		e,
-		cardIndex,
-		title,
-		content,
-		featuredImageUrl,
-		id,
-		date
-	}: {
+	
+		type BlogPostData =  {
 		e: MouseEvent;
 		cardIndex: string;
 		title: string;
-		content: string;
+		content: {rawHTML: string, sanitisedHTML: string};
 		featuredImageUrl: string;
 		id: string;
 		date: string;
-	}): void {
+	}
+	// the single post store is set here and then used in the single post view
+	function handleCardEnter(blogPostData:BlogPostData): void {
+		const { e, title, content, featuredImageUrl, id, date, cardIndex } = blogPostData
 		cardEnter = true;
 		const card = document.getElementById(cardIndex);
 		if (card) {
 			singlePost.set({
 				title,
-				content: { rawHTML: content, sanitisedHTML: content },
+				content,
 				featuredImageUrl,
 				id,
 				date,
@@ -60,7 +57,7 @@
 		}
 	}
 
-	function handleCardLeave({ e, cardIndex }: { e: MouseEvent; cardIndex: string }): void {
+	function handleCardLeave(): void {
 		cardEnter = false;
 	}
 
@@ -72,6 +69,7 @@
 	onMount(() => {
 		responsive();
 	});
+
 
 	$:placehold = !loaded
 </script>
@@ -105,13 +103,13 @@
 						class="card break-inside-avoid-column {placehold ? 'variant-soft-surface' : 'variant-ghost-surface'} px-0 w-full"
 						id={cardIndex}
 						on:mouseenter={(e) =>
-							handleCardEnter({ e, cardIndex, title, content, featuredImageUrl, id, date })}
-						on:mouseleave={(e) => handleCardLeave({ e, cardIndex })}
+							handleCardEnter({ e, cardIndex, title, content: {rawHTML: content, sanitisedHTML: content}, featuredImageUrl, id, date })}
+						on:mouseleave={(e) => handleCardLeave()}
 					>
 						<header>
 							<span class="text-[0.5rem] pl-2 text-secondary-300">{cardIndex}</span>
 						</header>
-						<a href="/latest/{routeSlug}">
+						<a href="/latest/{routeSlug}" data-sveltekit-preload-data="hover">
 							<section class="p-4 hover:bg-zinc-800 relative">
 								<!-- title  -->
 								<h1 class="text-secondary-300">

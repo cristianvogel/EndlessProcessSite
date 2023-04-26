@@ -5,14 +5,15 @@
 	import { Close, PageFirst } from '@steeze-ui/carbon-icons';
 	import { onDestroy, onMount } from 'svelte';
 	import ImageModal from '$lib/components/UI/ImageModal.svelte';
+	import { preloadData } from '$app/navigation';
 
 	let modalOpen = false;
 	const { content, title, cardIndex, featuredImageUrl } = $singlePost;
 	$:selectedImage = '';
 
-	//  a function that extracts all <img> elements from the content, which is a string of HTML and removes them from the content
-	function extractImages(): { prunedHTML: Document; imageURLs: Array<string> } {
-		const images: Array<string> = [];
+	//  relocate images to the side column
+	function extractImages(): { prunedHTML: Document; imageSources: Array<string> } {
+		const imageSources: Array<string> = [];
 		const parser = new DOMParser();
 		let doc: Document = parser.parseFromString(content.sanitisedHTML, 'text/html');
 		const imgElements = doc.querySelectorAll('img');
@@ -20,19 +21,23 @@
 			img.remove();
 		});
 		imgElements.forEach((img) => {
-			images.push(img.src);
+			imageSources.push(img.src);
 		});
-		return { prunedHTML: doc, imageURLs: images };
+		return { prunedHTML: doc, imageSources };
 	}
 
-	const { prunedHTML, imageURLs } = extractImages();
+	const { prunedHTML, imageSources: imageURLs } = extractImages();
 
 	function activeImage(e:any) {
 		e.target.style.cursor = 'zoom-in';
 		selectedImage = e.target.src;
 	};	
 
+	
 	onMount(() => {
+
+		preloadData('/blog');
+
 		singlePost.update((post) => {
 			post.isOpen = true;
 			return post;
@@ -53,7 +58,7 @@
 
 <div class="flex justify-start md:-mb-20 md:mr-14">
 	<span class="chip variant-soft hover:variant-filled-secondary ml-3 p-0 z-50">
-		<a href='/blog'><Icon src={PageFirst} class="fill-tertiary-400 h-8 w-10 p-0 m-0" /></a>
+		<a href='/blog' ><Icon src={PageFirst} class="fill-tertiary-400 h-8 w-10 p-0 m-0" /></a>
 	</span>
 	<span class="chip variant-soft hover:variant-filled-secondary mr-6 p-0 z-50" on:click on:keydown>
 		<span><Icon src={Close} class="fill-tertiary-400 h-10 w-10 p-0 m-0" /></span>

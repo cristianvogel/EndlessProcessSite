@@ -112,16 +112,14 @@
 				<hr class="h-1 w-2 divider-vertical bg-surface-400" />
 				<span class='text-m'>Posts</span>
 			</a>
-			<a class="logo-item p-2 " href="/">
-				<!-- <Icon src={ProgressBarRound} class="h-5" data-sveltekit-noscroll /> -->
+			<!-- <a class="logo-item p-2 " href="/">
 				<hr class="h-1 w-2 divider-vertical bg-surface-400 " />
 				<span class='text-m'>Music</span>
 			</a>
 			<a class="logo-item p-0 " href="/">
-				<!-- <Icon src={Events} class="h-5" data-sveltekit-noscroll /> -->
 				<hr class="h-1 w-2 divider-vertical bg-surface-400" />
 				<span class='text-m'>Artists</span>
-			</a>
+			</a> -->
 		</div>
 	</svelte:fragment>
 </AppBar>
