@@ -17,7 +17,7 @@
 		date: ''
 	}
 
-	const placeHolders = new Array(5).fill(placeHolderCard)
+	const placeHolders = new Array(3).fill(placeHolderCard)
 
 	export let blogPosts = placeHolders;
 	export let loaded:boolean;
@@ -26,9 +26,7 @@
 	let isTablet: boolean = false;
 	const gradients = './svg/spectrum-gradient.svg'
 
-
 	$: cardEnter = false;
-
 
 	// the single post store is set here and then used in the single post view
 	function handleCardEnter({
@@ -146,17 +144,9 @@
 									class= "h-8 animate-ping"
 								/>
 							{/if}
-							
-						
 						</section>
 					</div>
 				{/each}
 		</ul>
 	</div>
 </main>
-
-<style>
-	.info {
-		background-color: aqua;
-	}
-</style>
