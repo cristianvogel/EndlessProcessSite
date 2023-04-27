@@ -1,45 +1,86 @@
-/**
- * Audio file ingestor
- * Will  fetch target URL from the Playlist store
- * I do this in +layout.ts because I want to make the assets available to the entire app
- * trying to avoid reloading the same assets on page navigation
- */
-
 import { PlaylistMusic } from '$lib/stores/stores';
 import { get } from 'svelte/store';
 import type { LayoutLoad } from './$types';
 import { formatTitleFromGlobalPath } from '$lib/classes/Utils';
+import type { AssetContainers } from '../typeDeclarations';
 
-export type AssetLoadResponse = {
-    title: string,
-    path: string,
-    response: Response
-};
+type TitlesAndPaths = { titles: string[], paths: string[] }
+type Assets = {
+    files: AssetContainers,
+    fetchers: AssetContainers,
+    buffers: AssetContainers
+}
 
-/**
- * @todo: Consolidate into one function
- */
 export const load = (async ({ fetch }) => {
 
-    async function resolver(pathlist: string[]) {
+    let assets: Assets = {
+        files: {
+            music: getPaths(get(PlaylistMusic).audioAssetPaths.music) as TitlesAndPaths,
+            speech: getPaths(get(PlaylistMusic).audioAssetPaths.speech) as TitlesAndPaths
+        },
+        buffers: {
+            music: new Array<ArrayBuffer>(),
+            speech: new Array<ArrayBuffer>()
+        },
+        fetchers: {
+            music: new Array<Promise<Response>>(),
+            speech: new Array<Promise<Response>>()
+        }
+    }
 
-        let result: Array<AssetLoadResponse> = [];
+    assets = {
+        ...assets,
+        fetchers: {
+            music: fetchBuffers('music', assets.files.music.paths),
+            speech: fetchBuffers('speech', assets.files.speech.paths)
+        }
+    }
+
+    function getPaths(pathlist: string[]) {
+        const results = {
+            titles: new Array<string>,
+            paths: new Array<string>,
+        }
         for (let i = 0; i < pathlist.length; i++) {
             const path = pathlist[i];
-            const stopwatch = Date.now();
             const title = formatTitleFromGlobalPath(path);
-            result.push(
-                {
-                    title,
-                    path,
-                    response: await fetch(path)
-                });         
-            console.log('Loading ', title, ' in ', Date.now() - stopwatch, 'ms');       
+            results.titles.push(title);
+            results.paths.push(path);
         }
-        return result;
+        return { titles: results.titles, paths: results.paths }
     }
+
+
+    function fetchBuffers(category: 'music' | 'speech', pathlist: string[]) {
+        for (let i = 0; i < pathlist.length; i++) {
+            const path = pathlist[i];
+            assets.fetchers[category].push(fetch(path))
+        }
+        return assets.fetchers[category]
+    }
+
+    //-----------------Load Out-----------------//
     return {
-        music: resolver(get(PlaylistMusic).audioAssetPaths.music),
-        speech: resolver(get(PlaylistMusic).audioAssetPaths.speech)
-    };
+        music: assets.files.music,
+        musicStreamed: {
+            buffers: Promise.all(assets.fetchers.music).then(async responses => {
+                let final = new Array<ArrayBuffer>()
+                for (let i = 0; i < responses.length; i++) {
+                    final.push(await responses[i].arrayBuffer())
+                }
+                return final
+            }
+            )
+        },
+        speech: assets.files.speech,
+        speechStreamed: {
+            buffers: Promise.all(assets.fetchers.speech).then(async responses => {
+                let final = new Array<ArrayBuffer>()
+                for (let i = 0; i < responses.length; i++) {
+                    final.push(await responses[i].arrayBuffer())
+                }
+                return final
+            })
+        }
+    }
 }) satisfies LayoutLoad

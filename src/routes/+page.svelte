@@ -4,60 +4,90 @@
 	 * Parallel Assets Worker
 	 */
 	import type { LayoutData } from './$types';
+	import { ProgressBar } from '@skeletonlabs/skeleton';
 	import { Audio } from '$lib/classes/Audio';
-	import type { ArrayBufferContainer } from '../typeDeclarations';
-	import { VFS_PATH_PREFIX, PlaylistMusic, MusicCoreLoaded, SpeechCoreLoaded } from '$lib/stores/stores';
+	import { VFS_PATH_PREFIX, PlaylistMusic, SpeechCoreLoaded, MusicCoreLoaded } from '$lib/stores/stores';
 	import { get } from 'svelte/store';
-	import { error } from '@sveltejs/kit';
 	import { VoiceOver } from '$lib/classes/Speech';
-	import type { AssetLoadResponse } from './+layout';
+	import type { AssetCategories, StructuredAssetContainer } from '../typeDeclarations';
+  import { fade, fly } from 'svelte/transition';
 
-	export let data: LayoutData
+	export let data: LayoutData;
+  
+  $:hide = false
+  const hideTimer = setTimeout(() => {
+    hide = true;
+  }, 5000);
 
-	const musicBuffers:AssetLoadResponse[] = data.music;
-	const speechBuffers:AssetLoadResponse[] = data.speech;
-    const prefix = get(VFS_PATH_PREFIX);
+	let structuredContainer: { music: StructuredAssetContainer; speech: StructuredAssetContainer } = {
+		music: undefined,
+		speech: undefined
+	};
+	  const prefix = get(VFS_PATH_PREFIX);
 
-$: if( $MusicCoreLoaded ) {  
-loadAudioBuffers(musicBuffers, 'music');
-}
-
-$: if( $SpeechCoreLoaded ) {
-loadAudioBuffers(speechBuffers, 'speech');
-}
-
-async function loadAudioBuffers(buffers: AssetLoadResponse[], type: 'music' | 'speech') {
-  const promises: Promise<void>[] = buffers.map(async (buffer) => {
-    const { path, response, title } = buffer;
-    if (response.ok) {
-      try {
-        const body = await response.arrayBuffer();
-        const promisingAudioBuffer: ArrayBufferContainer = {
-          header: {
-            title,
-            bytes: body.byteLength,
-            globPath: path,
-            vfsPath: `${prefix}${path}`
-          },
-          body
-        };
-        PlaylistMusic.update(($p) => {
-          $p.titles[type].push(title);
-          return $p;
-        });
-        Audio.updateVFS(promisingAudioBuffer, type === 'music' ? Audio._core : VoiceOver._core);
-      } catch (e) {
-         console.warn( `${e.message}` );
-      }
-    } else {
-      throw error(404, `${type} file load failed. 🔇`);
-    }
-  });
-
-   Promise.all(promises);
-}
-
-
+	 function assignAssets(node: HTMLElement, { buffer, index }) {
+    
+    const category:AssetCategories | string = node.id;
+    const targetStateStore = category === 'music' ? MusicCoreLoaded : SpeechCoreLoaded;  
+    if (category === 'music' || category === 'speech') {
+		const asset = { path: data[category].paths[index], title: data[category].titles[index] };
 	
-
+		PlaylistMusic.update(($p) => {
+      if ($p.titles[category].length >= data[category].titles.length) {
+        return $p
+      }
+			$p.titles[category] = [...$p.titles[category], asset.title];
+			return $p;
+		});
+    // assign
+		structuredContainer[category] = {
+			header: {
+				title: asset.title,
+				bytes: buffer.byteLength,
+				globPath: asset.path,
+				vfsPath: `${prefix}${asset.path}`
+			},
+			body: buffer
+		};
+    // update relevant VFS the first load
+    const targetCore = category === 'music' ? Audio._core : VoiceOver._core; 
+    Audio.updateVFS(structuredContainer[category], targetCore);
+    }
+  }
 </script>
+
+<div class='w-25% absolute top-28 left-5'>
+	{#await data.musicStreamed.buffers}
+		<div class="flex items-center">
+			<ProgressBar height='h-1'/>
+		</div>
+	{:then musicBuffers}
+  {#if !hide}
+  <span class='info'>Music </span>
+		{#each musicBuffers as buffer, index}
+			<ul>
+				<li class="info" id='music' use:assignAssets={{ buffer, index }} in:fly="{{ y: 200, duration: index * 200 }}" out:fade>
+         ╰ {data.music.titles[index]}</li>
+			</ul>
+		{/each}
+    {/if}
+	{/await}
+
+
+  {#await data.speechStreamed.buffers}
+		<div class="flex items-center">
+			<ProgressBar height='h-1'/>
+		</div>
+	{:then speechBuffers}
+  {#if !hide}
+  <span class='info'>Speech </span>
+		{#each speechBuffers as buffer, index}
+			<ul>
+				<li class="info" id='speech' use:assignAssets={{ buffer, index }} in:fly="{{ y: 200, duration: index * 200 }}" out:fade>
+           ╰ {$PlaylistMusic.titles.speech[index]}
+			</ul>
+		{/each}
+    <h3 in:fly="{{ y: 200, duration: 3000 }}"  out:fade>Ready.</h3>
+   {/if}
+	{/await}
+</div>

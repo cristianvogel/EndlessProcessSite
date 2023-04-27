@@ -1,7 +1,4 @@
 <script lang="ts">
-	// @Skeleton: The ordering of these imports is critical to your app working properly
-	// If you have source.organizeImports set to true in VSCode, then it will auto change this ordering
-	// Custom Skeleton theme:
 	import '../theme.postcss';
 	import '@skeletonlabs/skeleton/styles/all.css';
 	import '../app.postcss';

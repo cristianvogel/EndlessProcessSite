@@ -80,8 +80,6 @@ export const PlaylistMusic: Writable<PlaylistContainer> = writable({
 });
 export type DurationsMapElement = { key: string; value: number };
 export const PlaysCount: Writable<number> = writable(0);
-
-
 export const Scrubbing: Writable<boolean> = writable(false);
 
 
