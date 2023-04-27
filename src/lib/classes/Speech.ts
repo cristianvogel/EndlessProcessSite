@@ -32,7 +32,7 @@ export class VoiceCore extends AudioCore {
 			mainCore: null,
 			silentCore: null
 		});
-		this._voiceVolume = 1.25;
+		this._voiceVolume = 1;
 
 		// these below are dynamically set from store subscriptions
 		this._currentVFSPath = '';

@@ -16,7 +16,7 @@
 					  {currentTrack}
 					  {/if}
 					</span>		
-					<span slot='Description'>{isPlaying ? 'taken from the mindblowing new album.' : ''}</span>
+					<span slot='Description'>{isPlaying ? 'out now on all streaming platforms.' : ''}</span>
 				</DescriptionList>
 		{/if}
 		

@@ -59,7 +59,7 @@ function HandlePlaylistChoice(e?:any, name?:string) {
             <Icon src={current === title ? CircleFilled : CircleDash} class="h-4 mt-1"/>
         </span>
     </svelte:fragment>
-	<div class='gradient-text text-xl '> {formatTitleFromGlobalPath(title)}</div>
+	<div class='gradient-text text-md '> {formatTitleFromGlobalPath(title)}</div>
  
 	
 </ListBoxItem>
