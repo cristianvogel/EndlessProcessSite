@@ -1,45 +1,60 @@
-/**
- * Audio file ingestor
- * Will  fetch target URL from the Playlist store
- * I do this in +layout.ts because I want to make the assets available to the entire app
- * trying to avoid reloading the same assets on page navigation
- */
-
 import { PlaylistMusic } from '$lib/stores/stores';
 import { get } from 'svelte/store';
 import type { LayoutLoad } from './$types';
 import { formatTitleFromGlobalPath } from '$lib/classes/Utils';
 
-export type AssetLoadResponse = {
+export type PathInfo = {
     title: string,
-    path: string,
-    response: Response
+    path: string
 };
 
-/**
- * @todo: Consolidate into one function
- */
+let musicFiles: any;
+let speechFiles: any;
+let fetchers = new Array<Promise<any>>
+
 export const load = (async ({ fetch }) => {
 
-    async function resolver(pathlist: string[]) {
+    musicFiles = getPaths(get(PlaylistMusic).audioAssetPaths.music)
+    speechFiles = getPaths(get(PlaylistMusic).audioAssetPaths.speech)
+    fetchers = fetchBuffers(musicFiles.paths)
 
-        let result: Array<AssetLoadResponse> = [];
+    function getPaths(pathlist: string[]) {
+
+        const results = {
+            titles: new Array<string>,
+            paths: new Array<string>,
+        }
+
         for (let i = 0; i < pathlist.length; i++) {
             const path = pathlist[i];
-            const stopwatch = Date.now();
             const title = formatTitleFromGlobalPath(path);
-            result.push(
-                {
-                    title,
-                    path,
-                    response: await fetch(path)
-                });         
-            console.log('Loading ', title, ' in ', Date.now() - stopwatch, 'ms');       
+            results.titles.push(title);
+            results.paths.push(path);
         }
-        return result;
+        return { titles: results.titles, paths: results.paths }
+    }
+
+
+    function fetchBuffers(pathlist: string[]) {
+
+        for (let i = 0; i < pathlist.length; i++) {
+            const path = pathlist[i];
+            fetchers.push(fetch(path))
+        }
+
+        return fetchers
     }
     return {
-        music: resolver(get(PlaylistMusic).audioAssetPaths.music),
-        speech: resolver(get(PlaylistMusic).audioAssetPaths.speech)
-    };
+        music: musicFiles,
+        speech: speechFiles,
+        streamed: {
+            buffers: Promise.all(fetchers).then(async responses => {
+                let final = new Array<ArrayBuffer>()
+                for (let i = 0; i < responses.length; i++) {
+                    final.push(await responses[i].arrayBuffer())
+                }
+                return final
+            })
+        }
+    }
 }) satisfies LayoutLoad

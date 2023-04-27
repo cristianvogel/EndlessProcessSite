@@ -4,60 +4,82 @@
 	 * Parallel Assets Worker
 	 */
 	import type { LayoutData } from './$types';
+  import { ProgressBar } from '@skeletonlabs/skeleton';
 	import { Audio } from '$lib/classes/Audio';
 	import type { ArrayBufferContainer } from '../typeDeclarations';
-	import { VFS_PATH_PREFIX, PlaylistMusic, MusicCoreLoaded, SpeechCoreLoaded } from '$lib/stores/stores';
+	import {VFS_PATH_PREFIX, 
+          PlaylistMusic, 
+          MusicCoreLoaded, 
+          SpeechCoreLoaded } from '$lib/stores/stores';
 	import { get } from 'svelte/store';
-	import { error } from '@sveltejs/kit';
 	import { VoiceOver } from '$lib/classes/Speech';
-	import type { AssetLoadResponse } from './+layout';
+
 
 	export let data: LayoutData
+  let buffer;
+  const prefix = get(VFS_PATH_PREFIX);
 
-	const musicBuffers:AssetLoadResponse[] = data.music;
-	const speechBuffers:AssetLoadResponse[] = data.speech;
-    const prefix = get(VFS_PATH_PREFIX);
+  function update(node: HTMLElement, {buffer, index}) {
 
-$: if( $MusicCoreLoaded ) {  
-loadAudioBuffers(musicBuffers, 'music');
-}
+    const path_music =  data.music.paths[index]
+    const title_music  = data.music.titles[index]
+    const path_speech =  data.speech.paths[index]
+    const title_speech  = data.speech.titles[index]
 
-$: if( $SpeechCoreLoaded ) {
-loadAudioBuffers(speechBuffers, 'speech');
-}
+    PlaylistMusic.update(($p) => {
+              $p.titles.music = data.music.titles;
+              $p.titles.speech = data.speech.titles;
+              return $p;
+            });
 
-async function loadAudioBuffers(buffers: AssetLoadResponse[], type: 'music' | 'speech') {
-  const promises: Promise<void>[] = buffers.map(async (buffer) => {
-    const { path, response, title } = buffer;
-    if (response.ok) {
-      try {
-        const body = await response.arrayBuffer();
-        const promisingAudioBuffer: ArrayBufferContainer = {
+    // music
+    let structuredContainer: ArrayBufferContainer = {
           header: {
-            title,
-            bytes: body.byteLength,
-            globPath: path,
-            vfsPath: `${prefix}${path}`
+            title: title_music,
+            bytes: buffer.byteLength,
+            globPath: data.music.paths[index],
+            vfsPath: `${prefix}${path_music}`
           },
-          body
+          body: buffer
         };
-        PlaylistMusic.update(($p) => {
-          $p.titles[type].push(title);
-          return $p;
-        });
-        Audio.updateVFS(promisingAudioBuffer, type === 'music' ? Audio._core : VoiceOver._core);
-      } catch (e) {
-         console.warn( `${e.message}` );
-      }
-    } else {
-      throw error(404, `${type} file load failed. 🔇`);
-    }
-  });
 
-   Promise.all(promises);
-}
+   Audio.updateVFS(structuredContainer, Audio._core ); 
 
+    // speech
+    structuredContainer = {
+          header: {
+            title: title_speech,
+            bytes: buffer.byteLength,
+            globPath: data.music.paths[index],
+            vfsPath: `${prefix}${path_speech}`
+          },
+          body: buffer
+        };     
 
-	
+   Audio.updateVFS(structuredContainer, VoiceOver._core ); 
+   
+  }
+  
 
 </script>
+<div class='absolute top-28 left-5 w-25%'>
+{#each data.music.paths as path}
+<ul>
+ <li class='info'>{path}</li> 
+</ul>
+{/each}
+
+
+{#await (data.streamed.buffers)}
+ <div class='flex items-center'>
+  <span class='info'>Loading audio</span>
+  <ProgressBar />
+  </div>
+{:then allBuffers} 
+  {#each allBuffers as buffer, index}
+  <ul>
+  <li class='info' use:update={{buffer, index}}>{buffer.byteLength}</li> 
+  </ul>
+  {/each}
+{/await}
+</div>
