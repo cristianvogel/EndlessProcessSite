@@ -2,35 +2,6 @@ import type { DurationsMapElement } from '$lib/stores/stores';
 import type { NodeRepr_t } from '@elemaudio/core';
 import type { Writable } from 'svelte/store';
 
-interface SinglePost {
-	title: string;
-	content: HtmlContent;
-	featuredImageUrl?: Url;
-	id: string;
-	date: string;
-	cardIndex: string;
-	isOpen?: boolean;
-}
-
-type MetersContainer = {
-	MusicAudible?: number,
-	MusicSilent?: number,
-	SpeechAudible?: number,
-	SpeechSilent?: number,
-}
-
-type AudioCoreStatus =
-	| 'suspended'
-	| 'loading'
-	| 'resuming'
-	| 'playing'
-	| 'paused'
-	| 'closed '
-	| 'running'
-	| 'ready'
-	| 'scrubbing'
-	| 'error';
-
 //-════════╡ Music and Speech ╞═══════
 interface PlaylistContainer {
 	currentTrack: {
@@ -53,16 +24,8 @@ interface PlaylistContainer {
 	show: boolean;
 	durations: Map<string, number>;
 }
-
-type HtmlContent = { rawHTML: string; sanitisedHTML: string };
-
-type Url = string;
-// type Post = { title: string; content?: HtmlContent };
-
 type RawFFT = { real: Float32Array; imag: Float32Array };
-
 type StereoSignal = { left: NodeRepr_t; right: NodeRepr_t };
-
 type SamplerOptions = {
 	vfsPath?: string; // defaults to current track
 	trigger?: Signal | number;
@@ -74,7 +37,6 @@ type SamplerOptions = {
 	startOffset?: number;
 	monoSum?: boolean;
 };
-
 type ProgressOptions = {
 	key?: string;
 	totalDurMs?: number;
@@ -82,21 +44,52 @@ type ProgressOptions = {
 	rate?: number;
 	startOffset?: number;
 };
-
 type Signal = NodeRepr_t;
+type MetersContainer = {
+	MusicAudible?: number,
+	MusicSilent?: number,
+	SpeechAudible?: number,
+	SpeechSilent?: number,
+}
+type AudioCoreStatus =
+	| 'suspended'
+	| 'loading'
+	| 'resuming'
+	| 'playing'
+	| 'paused'
+	| 'closed '
+	| 'running'
+	| 'ready'
+	| 'scrubbing'
+	| 'error';
 
-type ArrayBufferContainer = {
+
+//════════╡ Data  ╞═══════
+
+type HtmlContent = { rawHTML: string; sanitisedHTML: string };
+type Url = string;
+type AssetCategories = 'music' | 'speech'
+type AssetContainers = { music: any, speech: any }
+type StructuredAssetContainer = {
 	header: {
 		globPath: string;
 		title?: string;
 		bytes?: number;
 		vfsPath?: string;
 	};
-	body: any;
-};
+	body: ArrayBuffer | AudioBuffer;
+} | undefined;
 
+interface SinglePost {
+	title: string;
+	content: HtmlContent;
+	featuredImageUrl?: Url;
+	id: string;
+	date: string;
+	cardIndex: string;
+	isOpen?: boolean;
+}
 
-type DecodedTrackContainer = { title: string; vfsPath: string; decodedBuffer: AudioBuffer | null };
 
 //════════╡ AudioEngine :: Interfaces ╞═══════
 
@@ -104,7 +97,6 @@ interface detunedSaws {
 	props: { ampMod: number };
 	frequency: Signal | number;
 }
-
 interface stereoOut {
 	props: {};
 	stereoSignal: StereoSignal;

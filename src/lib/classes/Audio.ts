@@ -3,10 +3,8 @@ import type {
 	StereoSignal,
 	AudioCoreStatus,
 	Signal,
-	ArrayBufferContainer,
 	SamplerOptions,
-	DecodedTrackContainer,
-
+	StructuredAssetContainer
 } from '../../typeDeclarations';
 
 import { scrubbingSamplesPlayer, stereoOut, bufferProgress } from '$lib/audio/AudioFunctions';
@@ -291,12 +289,10 @@ export class AudioCore {
 	 */
 
 	async updateVFS(
-		container: ArrayBufferContainer,
+		container: StructuredAssetContainer,
 		core: WebRenderer | null
 	) {
-
-		let vfsDictionaryEntry: any;
-
+		// decoder
 		Audio.decodeRawBuffer(container).then((data) => {
 			let { decodedBuffer: decoded, title } = data;
 			if (!decoded || decoded.length < 16) {
@@ -315,7 +311,7 @@ export class AudioCore {
 			for (let i = 0; i < decoded.numberOfChannels; i++) {
 
 				const vfsKey = get(VFS_PATH_PREFIX) + title + channelExtensionFor(i + 1);
-				vfsDictionaryEntry =
+				const vfsDictionaryEntry =
 				{
 					[vfsKey]: decoded.getChannelData(i)
 				};
@@ -327,7 +323,7 @@ export class AudioCore {
 	/**
 	 * @description Decodes the raw audio buffer into an AudioBuffer, asynchonously with guards
 	 */
-	async decodeRawBuffer(container: ArrayBufferContainer): Promise<DecodedTrackContainer> {
+	async decodeRawBuffer(container: StructuredAssetContainer): Promise<{ title: string, vfsPath: string, decodedBuffer: AudioBuffer }> {
 
 		//const storeDestination = core.
 		const stopwatch = Date.now();
