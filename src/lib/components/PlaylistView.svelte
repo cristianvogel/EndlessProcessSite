@@ -43,7 +43,7 @@ function HandlePlaylistChoice(e?:any, name?:string) {
 </script>
 
  <ListBox> 	
-	<div class='text-xs ml-2 -mt-0.5 pl-0.5 absolute'>{Utils.formatDate(new Date())}</div>
+	<div class='text-xs ml-2 -mt-0.5 pl-0.5 absolute right-5'>{Utils.formatDate(new Date())}</div>
     <h2 class="text-2xl text-secondary-300 font-bold p-2 rounded-lg">
 		Featured Music</h2>
 		
