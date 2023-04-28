@@ -20,6 +20,17 @@ function getPaths(pathlist: string[]) {
         titles: new Array<string>,
         paths: new Array<string>,
     }
+
+    // mobile throttling
+    const isMobile = () => {
+        if (typeof window !== 'undefined') {
+            return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        }
+        console.warn('Unable to detect device type. Assuming desktop.');
+    };
+    console.log(isMobile() ? 'Mobile' : 'Desktop');
+    if (isMobile()) { pathlist = pathlist.slice(0, Math.max(1, Math.round(pathlist.length / 3))) }
+
     for (let i = 0; i < pathlist.length; i++) {
         const path = pathlist[i];
         const title = formatTitleFromGlobalPath(path);
@@ -31,18 +42,6 @@ function getPaths(pathlist: string[]) {
 
 function fetchBuffers({ fetch }, category: AssetCategories, pathlist: string[]) {
 
-    // function to test if user is on mobile device
-    const isMobile = () => {
-        if (typeof window !== 'undefined') {
-            return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-        }
-
-        console.warn('Unable to detect device type. Assuming desktop.');
-    }
-
-    console.log(isMobile() ? 'Mobile' : 'Desktop')
-
-    if (isMobile()) { pathlist = pathlist.slice(0, Math.round(pathlist.length / 2)) }
     for (let i = 0; i < pathlist.length; i++) {
         const path = pathlist[i];
         assets.fetchers[category].push(fetch(path))
