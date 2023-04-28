@@ -5,7 +5,7 @@
 	import { Cube } from '@steeze-ui/carbon-icons';
 	import ElementaryPlayer from '$lib/components/ElementaryPlayer.svelte';
 	import Progress from '$lib/components/Progress.svelte';
-	import { CablesText, CablesIsLoaded, PlaysCount, PlaylistMusic, VFS_PATH_PREFIX } from '$lib/stores/stores';
+	import { CablesText, CablesIsLoaded, PlaysCount, PlaylistMusic, VFS_PATH_PREFIX, SpeechCoreLoaded, MusicCoreLoaded } from '$lib/stores/stores';
 	import { Audio } from '$lib/classes/Audio';
 	import { createEventDispatcher } from 'svelte';
 	import { get } from 'svelte/store';
@@ -14,7 +14,7 @@
 
 	const { audioStatus } = Audio.stores;
 
-	$: audioBuffersReady = Audio.audioBuffersReady;
+	$: audioBuffersReady = $MusicCoreLoaded && $SpeechCoreLoaded;
 
 
 	/**
@@ -112,14 +112,6 @@
 				<hr class="h-1 w-2 divider-vertical bg-surface-400" />
 				<span class='text-m'>Posts</span>
 			</a>
-			<!-- <a class="logo-item p-2 " href="/">
-				<hr class="h-1 w-2 divider-vertical bg-surface-400 " />
-				<span class='text-m'>Music</span>
-			</a>
-			<a class="logo-item p-0 " href="/">
-				<hr class="h-1 w-2 divider-vertical bg-surface-400" />
-				<span class='text-m'>Artists</span>
-			</a> -->
 		</div>
 	</svelte:fragment>
 </AppBar>
