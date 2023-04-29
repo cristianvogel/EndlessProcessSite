@@ -6,11 +6,11 @@
 	import type { LayoutData } from './$types';
 	import { ProgressBar } from '@skeletonlabs/skeleton';
 	import { Audio } from '$lib/classes/Audio';
-	import { VFS_PATH_PREFIX, PlaylistMusic, SpeechCoreLoaded, MusicCoreLoaded } from '$lib/stores/stores';
+	import { VFS_PATH_PREFIX, PlaylistMusic, SpeechCoreLoaded, MusicCoreLoaded, Decoded } from '$lib/stores/stores';
 	import { get } from 'svelte/store';
 	import { VoiceOver } from '$lib/classes/Speech';
 	import type { AssetCategories, StructuredAssetContainer } from '../typeDeclarations';
-  import { fade, fly } from 'svelte/transition';
+  	import { fade, fly } from 'svelte/transition';
 
 	export let data: LayoutData;
   
@@ -52,8 +52,16 @@
     // update relevant VFS the first load
     const targetCore = category === 'music' ? Audio._core : VoiceOver._core; 
     Audio.updateVFS(structuredContainer[category], targetCore);
+
+	// done?
+	if (index >= (data.music.titles.length + data.speech.titles.length)-2) {		
+			Decoded.update(($d) => {
+				$d.done = true;
+				return $d;
+			});
     }
   }
+}
 </script>
 
 <div class='w-25% absolute top-28 left-5'>

@@ -5,6 +5,7 @@
 	import {Audio} from '$lib/classes/Audio';
 	import { singlePost } from '$lib/stores/stores';
 	import TextToSpeech from '$lib/components/Speech/TextToSpeech.svelte';
+
 	const { audioStatus } = Audio.stores
 
 	$: splash =  ( $audioStatus !== 'playing') ? !$singlePost.isOpen : false;
@@ -13,10 +14,8 @@
 </script>
 	
 <div class='absolute info md:top-24 sm:top-30 right-24 '><TextToSpeech/></div>
-
 <div class="container mx-auto my- w-[30%] flex-none" on:mousedown>
 	<div class="space-y-2 text-center">
-		
 		{#if !postView}							
 			<a href="/blog" data-sveltekit-noscroll>
 				<SplashSVG />
