@@ -43,8 +43,11 @@ function getPaths(pathlist: string[]) {
 function fetchBuffers({ fetch }: any, category: AssetCategories, pathlist: string[]) {
 
     for (let i = 0; i < pathlist.length; i++) {
+        const headers = {
+            Range: `bytes=${0}-${44100 * 60}`
+        };
         const path = pathlist[i];
-        assets.fetchers[category].push(fetch(path))
+        assets.fetchers[category].push(fetch(path, { headers }))
     }
     return assets.fetchers[category]
 }

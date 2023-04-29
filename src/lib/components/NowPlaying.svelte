@@ -5,7 +5,7 @@
 	const { audioStatus } = Audio.stores
 
 	$: isPlaying = $audioStatus === 'playing';
-	$: currentTrack = $PlaylistMusic.currentTrack.title.replace('.mp3', '')	
+	$: currentTrack = $PlaylistMusic.currentTrack.title.replace('.mp3' || '.ogg', '')	
 
 </script>
 
@@ -16,7 +16,7 @@
 					  {currentTrack}
 					  {/if}
 					</span>		
-					<span slot='Description'>{isPlaying ? 'out now on all streaming platforms.' : ''}</span>
+					<span slot='Description'>{isPlaying ? '(60 second clip) Full album out now on all streaming platforms.' : ''}</span>
 				</DescriptionList>
 		{/if}
 		
