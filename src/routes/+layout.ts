@@ -40,7 +40,7 @@ function getPaths(pathlist: string[]) {
     return { titles: results.titles, paths: results.paths }
 }
 
-function fetchBuffers({ fetch }, category: AssetCategories, pathlist: string[]) {
+function fetchBuffers({ fetch }: any, category: AssetCategories, pathlist: string[]) {
 
     for (let i = 0; i < pathlist.length; i++) {
         const path = pathlist[i];

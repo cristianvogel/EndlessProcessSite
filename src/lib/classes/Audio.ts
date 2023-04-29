@@ -299,14 +299,6 @@ export class AudioCore {
 				console.warn('Decoding skipped.');
 				return;
 			}
-
-			// update the DurationElement in the playlist container map
-			PlaylistMusic.update(($plist) => {
-				if (!decoded) return $plist;
-				$plist.durations.set(title as string, decoded.duration);
-				return $plist;
-			});
-
 			// adds a channel extension to the path for each channel, the extension starts at 1 (not 0)
 			for (let i = 0; i < decoded.numberOfChannels; i++) {
 
@@ -317,6 +309,12 @@ export class AudioCore {
 				};
 				core?.updateVirtualFileSystem(vfsDictionaryEntry);
 			}
+			// update the DurationElement in the playlist container map
+			PlaylistMusic.update(($plist) => {
+				if (!decoded) return $plist;
+				$plist.durations.set(title as string, decoded.duration);
+				return $plist;
+			});
 		});
 	}
 
@@ -324,9 +322,7 @@ export class AudioCore {
 	 * @description Decodes the raw audio buffer into an AudioBuffer, asynchonously with guards
 	 */
 	async decodeRawBuffer(container: StructuredAssetContainer): Promise<{ title: string, vfsPath: string, decodedBuffer: AudioBuffer }> {
-
-		//const storeDestination = core.
-		const stopwatch = Date.now();
+		//const stopwatch = Date.now();
 		while (!container) await new Promise((resolve) => setTimeout(resolve, 100));
 
 		const { body, header } = container;
@@ -343,19 +339,16 @@ export class AudioCore {
 			decoded = Audio.actx?.createBuffer(1, 1, 44100);
 		} finally {
 			header.bytes = decoded?.getChannelData(0).length || 0;
-			console.log(
-				'Decoded audio with length ',
-				header.bytes,
-				' to ',
-				get(VFS_PATH_PREFIX) + header.title,
-				' in ',
-				Date.now() - stopwatch,
-				'ms'
-			);
-			Decoded.update(($d) => {
-				$d.done = true;
-				return $d;
-			});
+			// console.log(
+			// 	'Decoded audio with length ',
+			// 	header.bytes,
+			// 	' to ',
+			// 	get(VFS_PATH_PREFIX) + header.title,
+			// 	' in ',
+			// 	Date.now() - stopwatch,
+			// 	'ms'
+			// );
+
 		}
 
 		return {

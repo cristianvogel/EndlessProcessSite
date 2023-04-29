@@ -7,3 +7,4 @@ node_modules
 .prettierrc
 .DS_Store
 .env
+src/lib/components/templates/ChunkLoader.svelte

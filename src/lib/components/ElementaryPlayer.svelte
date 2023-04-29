@@ -25,7 +25,7 @@
 
 <svelte:window on:mousedown={forceAudioContextResume} />
 
-{#if ($audioStatus !== 'loading' || 'closed ') && $Decoded.done}
+{#if $Decoded.done}
 	<div class="z-10 flex basis-1/2 flex-row gap-4 ">
 		<button
 			class="basis-1/8 shrink-0 items-center rounded-full bg-transparent p-1"

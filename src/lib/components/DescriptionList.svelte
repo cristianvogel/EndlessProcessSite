@@ -4,7 +4,7 @@
 	export let isPlaying = false;	
 </script>
 
-<dl class="flex-initial list-dl text-sm mr-2 ">
+<dl class="flex-auto list-dl text-sm mr-2 ">
 	<div>
 		   <span class="p-0 -ml-20 -mt-4"><h2 >{isPlaying ? 'Now Playing.' : ''}</h2></span>
 		<span>
