@@ -6,17 +6,21 @@
 	import { onDestroy, onMount } from 'svelte';
 	import ImageModal from '$lib/components/UI/ImageModal.svelte';
 	import { preloadData } from '$app/navigation';
-
+	
 	let modalOpen = false;
 	const { content, title, cardIndex, featuredImageUrl } = $singlePost;
 	$:selectedImage = '';
 
-	//  relocate images to the side column
-	function extractImages(): { prunedHTML: Document; imageSources: Array<string> } {
+	function parseAndRewriteBlogPostHTML(): { prunedHTML: Document; imageSources: Array<string> } {
 		const imageSources: Array<string> = [];
 		const parser = new DOMParser();
 		let doc: Document = parser.parseFromString(content.sanitisedHTML, 'text/html');
 		const imgElements = doc.querySelectorAll('img');
+		doc.querySelectorAll('video').forEach((vid) => {
+			vid.style.maxWidth = '60%';
+			vid.style.borderRadius = '25px';
+			vid.style.margin = 'auto';
+		})
 		doc.querySelectorAll('img').forEach((img) => {
 			img.remove();
 		});
@@ -26,7 +30,7 @@
 		return { prunedHTML: doc, imageSources };
 	}
 
-	const { prunedHTML, imageSources: imageURLs } = extractImages();
+	const { prunedHTML, imageSources: imageURLs } = parseAndRewriteBlogPostHTML();
 
 	function activeImage(e:any) {
 		e.target.style.cursor = 'zoom-in';
@@ -35,9 +39,7 @@
 
 	
 	onMount(() => {
-
 		preloadData('/blog');
-
 		singlePost.update((post) => {
 			post.isOpen = true;
 			return post;
@@ -89,7 +91,7 @@
 			">
 				<ul>
 					{#if featuredImageUrl}
-						<img src={featuredImageUrl} alt="featured artwork" class="w-35 h-22 p-3" 
+						<img src={featuredImageUrl} alt="featured artwork" class="w-35 h-22 p-3 rounded-lg" 
 						on:click={()=>modalOpen = true}
 						on:mouseenter={activeImage}
 						on:focus={activeImage}
@@ -98,7 +100,7 @@
 					{/if}
 		
 					{#each imageURLs as url}
-						<img src={url} alt="featured artwork" class="w-35 h-22 p-3"
+						<img src={url} alt="featured images" class="w-35 h-22 p-3 rounded-lg"
 						on:click={()=>modalOpen = true}
 						on:mouseenter={activeImage}
 						on:focus={activeImage}
@@ -124,4 +126,8 @@
 
 <style>
 	
+	.rewritten-video {
+		width: 60%;
+		margin: auto;
+	}
 </style>
