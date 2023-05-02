@@ -13,9 +13,31 @@
 import { Audio, AudioCore } from '$lib/classes/Audio';
 import { el } from '@elemaudio/core';
 import { channelExtensionFor, clipTo0 } from '$lib/classes/Utils';
-import { detunedSaws, attenuate, progress } from '$lib/audio/composites';
+import { detunedSaws, attenuate, progress, clippedHann, stereoizeSignal } from '$lib/audio/composites';
 import type { StereoSignal, SamplerOptions, ProgressOptions, Signal } from '../../typeDeclarations';
 
+/**════════════════════════════════════════════════
+ * @name window
+ * @description Big window function for fading the track in and out
+ * ════════════════════════════════════════════════
+ */
+
+export function window(index: number): Signal {
+	return clippedHann({ gain: 100 }, index);
+}
+
+/**════════════════════════════════════════════════
+ * @name attenuateStereo
+ * @description Attenuate a stereo signal
+ * ════════════════════════════════════════════════
+ */
+
+export function attenuateStereo(signal: StereoSignal, level: Signal | number): StereoSignal {
+	return {
+		left: attenuate({ level }, signal.left),
+		right: attenuate({ level }, signal.right),
+	}
+}
 
 /**════════════════════════════════════════════════
  * @name bufferProgress
@@ -136,30 +158,6 @@ export function driftingSamplesPlayer(coreClass: AudioCore, props: SamplerOption
 	return { left: left as Signal, right: right as Signal };
 }
 
-
-/**════════════════════════════════════════════════
- * @name stereoOut
- * @description Stereo output
- * ════════════════════════════════════════════════
- */
-
-export function stereoOut(stereoSignal: StereoSignal): StereoSignal {
-
-	return {
-		left: attenuate(
-			{
-				level: Audio.masterVolume as number,
-			},
-			stereoSignal.left
-		),
-		right: attenuate(
-			{
-				level: Audio.masterVolume,
-			},
-			stereoSignal.right
-		)
-	};
-}
 
 /**════════════════════════════════════════════════
  * @name demoSynth

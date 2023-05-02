@@ -18,8 +18,8 @@
 
     let activated: boolean = false;
 
-    $: progress.set(Math.abs(Math.round( 100 * ($OutputMeters.SpeechAudible as number ))))
-    
+    // Tweened progress bar as VU-meter
+    $: progress.set(Math.abs(Math.round( 100 * ($OutputMeters.SpeechAudible as number ))));
     const progress = tweened(0, {
 		duration: 100,
 		easing: bounceInOut
@@ -29,19 +29,15 @@
         if (VoiceOver.status === 'suspended') {
 			VoiceOver.resumeContext();
 		}
-
-        const currentChapter = {
-            title: e.currentTarget.name,
-            vfsPath: get(VFS_PATH_PREFIX) + e.currentTarget.name,
-            progress: 0,
-        }
-
-     	PlaylistMusic.update((p) => {
-			p.currentChapter = currentChapter;
-			return p;
+     	PlaylistMusic.update(($p) => {
+			$p.currentChapter ={...$p.currentChapter, 
+                title: e.currentTarget.name,
+                vfsPath: get(VFS_PATH_PREFIX) + e.currentTarget.name,
+                progress: 0 
+            };
+			return $p;
 		});
-
-        VoiceOver.playFromVFS( activated ? 1 : 0);
+        VoiceOver.playSpeechFromVFS( activated ? 1 : 0);
     }
 
     onMount(() => {     

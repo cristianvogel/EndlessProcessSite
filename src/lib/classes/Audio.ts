@@ -4,23 +4,25 @@ import type {
 	AudioCoreStatus,
 	Signal,
 	SamplerOptions,
-	StructuredAssetContainer
+	StructuredAssetContainer,
+	AssetMetadata
 } from '../../typeDeclarations';
 
-import { scrubbingSamplesPlayer, stereoOut, bufferProgress } from '$lib/audio/AudioFunctions';
-import { channelExtensionFor, clipToRange, processEachChannel } from '$lib/classes/Utils';
+import { scrubbingSamplesPlayer, bufferProgress, attenuateStereo } from '$lib/audio/AudioFunctions';
+import { channelExtensionFor, clipToRange } from '$lib/classes/Utils';
 import {
 	CablesPatch,
 	PlaylistMusic,
-	Decoded,
 	Scrubbing,
 	OutputMeters,
 	MusicCoreLoaded,
-	VFS_PATH_PREFIX
+	VFS_PATH_PREFIX,
+	Decoded
 } from '$lib/stores/stores';
 import WebRenderer from '@elemaudio/web-renderer';
 import type { NodeRepr_t } from '@elemaudio/core';
 import { el } from '@elemaudio/core';
+
 
 
 // todo: set a sample rate constant prop
@@ -33,9 +35,7 @@ export class AudioCore {
 	_audioContext: Writable<AudioContext>;
 	_endNodes: Writable<any>;
 	_masterVolume: Writable<number | Signal>;
-	_currentTrackName: string;
-	_currentVFSPath: string;
-	_currentTrackDurationSeconds: number;
+	_currentMetadata: AssetMetadata | undefined;
 	_scrubbing: boolean;
 	_sidechain: number | Signal;
 	_out: StereoSignal
@@ -44,7 +44,7 @@ export class AudioCore {
 
 	constructor() {
 		this._core = this._silentCore = null;
-		this._masterVolume = writable(0.5); // default master volume
+		this._masterVolume = writable(0.909); // default master volume
 		this._AudioCoreStatus = writable('loading');
 		this._contextIsRunning = writable(false);
 		this._audioContext = writable();
@@ -55,9 +55,7 @@ export class AudioCore {
 		this._out = { left: 0 as unknown as Signal, right: 0 as unknown as Signal };
 
 		// these below are dynamically set from store subscriptions
-		this._currentVFSPath = '';
-		this._currentTrackName = '';
-		this._currentTrackDurationSeconds = 0;
+		this._currentMetadata = { title: '', vfsPath: '', duration: 0, progress: 0 };
 		this._scrubbing = false;
 		this._sidechain = 0
 	}
@@ -67,23 +65,12 @@ export class AudioCore {
 		 * @description
 		*  Subscribers that update the Audio class 's intertnal statem from outside
 		 */
-		PlaylistMusic.subscribe(($p) => (Audio._currentTrackName = $p.currentTrack.title));
-
-		PlaylistMusic.subscribe(
-			($p) => (Audio._currentVFSPath = $p.currentTrack.vfsPath)
-		);
-
-		PlaylistMusic.subscribe(
-			($p) =>
-			(Audio._currentTrackDurationSeconds = $p.currentTrack.duration
-				? $p.currentTrack.duration
-				: 0)
-		);
-
-		Scrubbing.subscribe(($Scrubbing) => {
-			Audio._scrubbing = $Scrubbing;
+		PlaylistMusic.subscribe(($p) => {
+			Audio._currentMetadata = $p.currentTrack;
+		})
+		Scrubbing.subscribe(($scrubbing) => {
+			Audio._scrubbing = $scrubbing;
 		});
-
 		OutputMeters.subscribe(($meters) => {
 			if (!Audio._core) return;
 			Audio._sidechain = el.sm($meters.SpeechAudible as number) as Signal;
@@ -100,17 +87,8 @@ export class AudioCore {
 	 * and store it in the Audio class as Audio.elemEndNode
 	 */
 	async init(ctx?: AudioContext): Promise<void> {
-		/**
-		 * @name SignalComputation
-		 * @info The 'silent core' signal computer harnesses a second 
-		 * WebRenderer instance to compute at audio rate
-		 * and emit event based on results, without the 
-		 * unwanted side effect of outputting DC to speakers 
-		 */
-		Audio._core = new WebRenderer();
-		Audio._silentCore = new WebRenderer();
 
-		// this is the one AudioContext to use throughout
+		// this is the one AudioContext to reference throughout
 		if (ctx) {
 			Audio.actx = ctx;
 			console.log('Passing existing AudioContext');
@@ -119,6 +97,7 @@ export class AudioCore {
 		}
 
 		// Elementary Node : Main Core
+		Audio._core = new WebRenderer();
 		Audio.elemEndNode = await Audio._core
 			.initialize(Audio.actx, {
 				numberOfInputs: 1,
@@ -129,7 +108,14 @@ export class AudioCore {
 				return node;
 			});
 
-		// Elementary Node : Silent Core
+
+		/**
+		 * @info The 'silent core' signal computer creates a second 
+		 * WebRenderer instance to compute at audio rate
+		 * and emit event based on results, without the 
+		 * unwanted side effect of outputting DC to speakers 
+		 */
+		Audio._silentCore = new WebRenderer();
 		Audio.elemSilentNode = await Audio._silentCore
 			.initialize(Audio.actx, {
 				numberOfInputs: 1,
@@ -140,6 +126,7 @@ export class AudioCore {
 				return node;
 			});
 
+		// connect the Main Core only to the hardware output
 		Audio.routeToCables();
 		Audio.connectToDestination(Audio.elemEndNode);
 
@@ -183,6 +170,7 @@ export class AudioCore {
 
 		Audio._silentCore.on('snapshot', function (e) {
 			PlaylistMusic.update(($pl) => {
+				if (!$pl.currentTrack) return $pl;
 				$pl.currentTrack.progress = clipToRange(e.data as number, 0, 1);
 				return $pl;
 			});
@@ -224,9 +212,8 @@ export class AudioCore {
 	render(stereoSignal?: StereoSignal, key?: string): void {
 		if (!Audio._core) return;
 		if (stereoSignal) {
-			Audio._out = stereoOut(stereoSignal);
+			Audio._out = attenuateStereo(stereoSignal, Audio.masterVolume);
 		}
-
 		const stereoComp = {
 			left: el.compress(20, 160, -35, 90, el.in({ channel: 0 }), Audio._out.left),
 			right: el.compress(20, 160, -35, 90, el.in({ channel: 0 }), Audio._out.right)
@@ -301,7 +288,6 @@ export class AudioCore {
 			}
 			// adds a channel extension to the path for each channel, the extension starts at 1 (not 0)
 			for (let i = 0; i < decoded.numberOfChannels; i++) {
-
 				const vfsKey = get(VFS_PATH_PREFIX) + title + channelExtensionFor(i + 1);
 				const vfsDictionaryEntry =
 				{
@@ -312,6 +298,7 @@ export class AudioCore {
 			// update the DurationElement in the playlist container map
 			PlaylistMusic.update(($plist) => {
 				if (!decoded) return $plist;
+				if (!$plist.durations) return $plist;
 				$plist.durations.set(title as string, decoded.duration);
 				return $plist;
 			});
@@ -319,46 +306,29 @@ export class AudioCore {
 	}
 
 	/**
-	 * @description Decodes the raw audio buffer into an AudioBuffer, asynchonously with guards
+	 * @description Decodes the raw audio buffer using AudioContext into an AudioBuffer, asynchonously with guards
 	 */
 	async decodeRawBuffer(container: StructuredAssetContainer): Promise<{ title: string, vfsPath: string, decodedBuffer: AudioBuffer }> {
-		//const stopwatch = Date.now();
 		while (!container) await new Promise((resolve) => setTimeout(resolve, 100));
-
 		const { body, header } = container;
-
 		let decoded: AudioBuffer | null = null;
-		// we need audio context in order to decode the audio data
 		while (!Audio.actx) {
 			await new Promise((resolve) => setTimeout(resolve, 100));
 		}
 		try {
 			decoded = await Audio.actx.decodeAudioData(body as ArrayBuffer);
 		} catch (error) {
-			console.log(new Error('Decoding skipped. Dummy buffer created.'));
+			console.warn('Decoding skipped ', error);
 			decoded = Audio.actx?.createBuffer(1, 1, 44100);
 		} finally {
 			header.bytes = decoded?.getChannelData(0).length || 0;
-			// console.log(
-			// 	'Decoded audio with length ',
-			// 	header.bytes,
-			// 	' to ',
-			// 	get(VFS_PATH_PREFIX) + header.title,
-			// 	' in ',
-			// 	Date.now() - stopwatch,
-			// 	'ms'
-			// );
-
 		}
-
 		return {
 			title: header.title as string,
 			vfsPath: header.vfsPath as string,
 			decodedBuffer: decoded
 		};
 	}
-
-
 
 	/**
 	 * @description: Tries to resume the base AudioContext
@@ -434,6 +404,10 @@ export class AudioCore {
 			masterVolume: Audio._masterVolume
 		};
 	}
+
+	get progress() {
+		return Audio._currentMetadata?.progress || 0;
+	}
 	get sidechain() {
 		return this._sidechain;
 	}
@@ -441,16 +415,16 @@ export class AudioCore {
 		return Audio._scrubbing;
 	}
 	get currentTrackDurationSeconds(): number {
-		return Audio._currentTrackDurationSeconds;
+		return Audio._currentMetadata?.duration || -1;
 	}
 	get currentVFSPath(): string {
-		return Audio._currentVFSPath;
+		return Audio._currentMetadata?.vfsPath || 'no VFS path';
 	}
 	get audioBuffersReady(): boolean {
-		return typeof Audio._currentTrackName === 'string';
+		return get(Decoded).done
 	}
 	get currentTrackTitle(): string {
-		return Audio._currentTrackName;
+		return Audio._currentMetadata?.title || '';
 	}
 	get masterVolume(): number | NodeRepr_t {
 		return get(Audio._masterVolume);
@@ -487,6 +461,10 @@ export class AudioCore {
 	}
 
 	/*---- setters --------------------------------*/
+
+	set progress(newProgress: number) {
+		Audio._currentMetadata = { ...Audio._currentMetadata, progress: newProgress };
+	}
 
 	set masterVolume(normLevel: number | NodeRepr_t) {
 		Audio._masterVolume.update(() => normLevel);

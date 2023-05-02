@@ -1,7 +1,7 @@
 import { PlaylistMusic } from '$lib/stores/stores';
 import { get } from 'svelte/store';
 import type { LayoutLoad } from './$types';
-import { formatTitleFromGlobalPath } from '$lib/classes/Utils';
+import { Utils, Wait, formatTitleFromGlobalPath } from '$lib/classes/Utils';
 import type { AssetCategories } from '../typeDeclarations';
 
 type TitlesAndPaths = { titles: string[], paths: string[] }
@@ -43,21 +43,20 @@ function getPaths(pathlist: string[]) {
 function fetchBuffers({ fetch }: any, category: AssetCategories, pathlist: string[]) {
 
     for (let i = 0; i < pathlist.length; i++) {
-        const headers = {
-            Range: `bytes=${0}-${44100 * 60}`
-        };
         const path = pathlist[i];
-        assets.fetchers[category].push(fetch(path, { headers }))
+        assets.fetchers[category].push(fetch(path, { method: 'GET', Range: `bytes=${0}-${44100 * 60}` }))
+
     }
     return assets.fetchers[category]
 }
 
 export const load = (async ({ fetch }) => {
     categories.forEach((category) => {
-
+        let paths: any = get(PlaylistMusic)
+        paths = getPaths(paths.audioAssetPaths[category]) as TitlesAndPaths
         assets = {
             files: {
-                [category]: getPaths(get(PlaylistMusic).audioAssetPaths[category]) as TitlesAndPaths,
+                [category]: paths,
             },
             buffers: {
                 [category]: new Array<ArrayBuffer>(),

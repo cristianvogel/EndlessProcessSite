@@ -108,7 +108,7 @@ export function formatTitleFromGlobalPath(filePath: string): string {
 
 export const Utils = {
 	generateRandomKey(): string {
-		return Math.random().toString(36);
+		return Math.random().toString(8);
 	},
 
 	formatDate(date: string | Date): string {

@@ -7,7 +7,7 @@
     Don't try and splice the glob path in 🤷🏽
 	Don't have a D.R.Y attack.
 
-	 DEFAULT_GLOB_PATH = '../../../static/audio/mp3/*'  
+	DEFAULT_GLOB_PATH = '../../../static/audio/mp3/*'  
  */
 
 export function getMusicFiles(): string[] {

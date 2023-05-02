@@ -3,26 +3,24 @@ import type { NodeRepr_t } from '@elemaudio/core';
 import type { Writable } from 'svelte/store';
 
 //-════════╡ Music and Speech ╞═══════
+
+
+type AssetMetadata = {
+	title?: string;
+	vfsPath?: string;
+	loaded?: boolean;
+	duration?: number;
+	offset?: number;
+	progress?: number;
+}
+
 interface PlaylistContainer {
-	currentTrack: {
-		title: string;
-		vfsPath: string;
-		loaded?: boolean;
-		duration?: number;
-		offset?: number;
-		progress: number;
-	};
-	currentChapter?: {
-		progress: number;
-		title: string;
-		vfsPath: string;
-		duration?: number;
-		offset?: number;
-	};
-	audioAssetPaths: { music: Array<string>, speech: Array<string> };
-	titles: { music: Array<string>, speech: Array<string> }
-	show: boolean;
-	durations: Map<string, number>;
+	currentTrack?: AssetMetadata;
+	currentChapter?: AssetMetadata;
+	audioAssetPaths?: { music: Array<string>, speech: Array<string> };
+	titles?: { music: Array<string>, speech: Array<string> }
+	show?: boolean;
+	durations?: Map<string, number>;
 }
 type RawFFT = { real: Float32Array; imag: Float32Array };
 type StereoSignal = { left: NodeRepr_t; right: NodeRepr_t };

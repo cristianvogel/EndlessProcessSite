@@ -3,11 +3,15 @@
 	import { Audio } from '$lib/classes/Audio';
 	import { ProgressBar } from '@skeletonlabs/skeleton';
 	import { Scrubbing } from '$lib/stores/stores';
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 
-	$: progress = $PlaylistMusic.currentTrack.progress;
-	$: duration = $PlaylistMusic.currentTrack.duration || 0; // in seconds
 
+	$: progress = $PlaylistMusic.currentTrack?.progress || 0;
+	$: duration = $PlaylistMusic.currentTrack?.duration || 0; // in seconds
+	$: tick().then (() =>{ 
+		Audio.progress = progress as number;
+	});
+		
 	let start: number = 0;
 	let isPhone = false;
 	let isTablet = false;
@@ -27,8 +31,8 @@
 
 	function replay() {
 		$Scrubbing = false;
-		Audio.playWithScrubFromVFS({ trigger: 1, startOffset: start });
-	}
+		Audio.playWithScrubFromVFS({ trigger: 1, startOffset: start })
+		}
 
 	function responsive() {
 		isPhone = window.innerWidth < 640;
@@ -46,9 +50,9 @@
 	<ProgressBar
 		label="Progress Bar"
 		value={progress * duration}
-		height={isPhone ? 'h-[1.5em]' : 'h-[0.5em]'}
+		height={isPhone ? 'h-[1.5em]' : 'h-[1em]'}
 		meter="bg-gradient-to-r from-yellow-600 to-red-600"
-		rounded="rounded-1"
+		rounded="rounded-sm"
 		min={0}
 		max={duration}
 	/>
@@ -61,9 +65,7 @@
 		}}
 		on:mousemove={handleScrub}
 		on:mouseup={replay}
-		on:mouseleave={() => {
-			$Scrubbing = false;
-		}}
+		on:mouseleave={ ()=> $Scrubbing = false }
 	/>
 </div>
 
@@ -77,8 +79,8 @@
 		top: 0;
 		left: 0;
 		width: 100%;
-		height: 1.25em;
+		height: 1.5em;
 		opacity: 0;
-    cursor: grab;
+    	cursor: grab;
 	}
 </style>
