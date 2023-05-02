@@ -8,7 +8,7 @@ import type {
 	AssetMetadata
 } from '../../typeDeclarations';
 
-import { scrubbingSamplesPlayer, bufferProgress, attenuateStereo } from '$lib/audio/AudioFunctions';
+import { scrubbingSamplesPlayer, bufferProgress, attenuateStereo, envelope } from '$lib/audio/AudioFunctions';
 import { channelExtensionFor, clipToRange } from '$lib/classes/Utils';
 import {
 	CablesPatch,
@@ -22,7 +22,6 @@ import {
 import WebRenderer from '@elemaudio/web-renderer';
 import type { NodeRepr_t } from '@elemaudio/core';
 import { el } from '@elemaudio/core';
-
 
 
 // todo: set a sample rate constant prop
@@ -63,7 +62,7 @@ export class AudioCore {
 	subscribeToStores() {
 		/**
 		 * @description
-		*  Subscribers that update the Audio class 's intertnal statem from outside
+		*  Subscribers that update the Audio class 's internal state from outside
 		 */
 		PlaylistMusic.subscribe(($p) => {
 			Audio._currentMetadata = $p.currentTrack;
@@ -75,11 +74,6 @@ export class AudioCore {
 			if (!Audio._core) return;
 			Audio._sidechain = el.sm($meters.SpeechAudible as number) as Signal;
 		});
-	}
-
-	cleanup() {
-		// not sure about this, sometimes causes context to stay suspended forever
-		// Audio.suspend();
 	}
 
 	/**
@@ -171,9 +165,11 @@ export class AudioCore {
 		Audio._silentCore.on('snapshot', function (e) {
 			PlaylistMusic.update(($pl) => {
 				if (!$pl.currentTrack) return $pl;
-				$pl.currentTrack.progress = clipToRange(e.data as number, 0, 1);
+				const progress = clipToRange(e.data as number, 0, 1);
+				$pl.currentTrack = { ...$pl.currentTrack, progress }
 				return $pl;
 			});
+			Audio.render();
 		});
 	}
 
@@ -213,13 +209,15 @@ export class AudioCore {
 		if (!Audio._core) return;
 		if (stereoSignal) {
 			Audio._out = attenuateStereo(stereoSignal, Audio.masterVolume);
-		}
+		} 
 		const stereoComp = {
 			left: el.compress(20, 160, -35, 90, el.in({ channel: 0 }), Audio._out.left),
 			right: el.compress(20, 160, -35, 90, el.in({ channel: 0 }), Audio._out.right)
 		}
+
+		const windowed = attenuateStereo(stereoComp, envelope(Audio.progress));
 		Audio.status = 'playing';
-		Audio._core.render(stereoComp.left, stereoComp.right);
+		Audio._core.render(windowed.left, windowed.right);
 	}
 
 	/**

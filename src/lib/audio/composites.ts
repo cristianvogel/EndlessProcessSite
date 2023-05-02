@@ -176,11 +176,12 @@ export function clippedHann(
  */
 
 function _clipTo01({ props, children }: SignalCompositeArgs): Signal {
+	const input = children[0];
 	const prescale: number | Signal = props.prescale ? props.prescale : one;
-	const input = el.mul(prescale, children[0]) as Signal;
 	const scaleAndOffset = props.fullRangeInput ? fullRangeTo01(input) as Signal : input;
+	const final = el.mul(prescale, scaleAndOffset) as Signal;
 	return resolve(
-		el.min(0, el.max(1, scaleAndOffset))
+		el.max(0, el.min(1, final))
 	)
 }
 

@@ -4,6 +4,7 @@
 	import { ProgressBar } from '@skeletonlabs/skeleton';
 	import { Scrubbing } from '$lib/stores/stores';
 	import { onMount, tick } from 'svelte';
+	import { attenuateStereo, envelope } from '$lib/audio/AudioFunctions';
 
 
 	$: progress = $PlaylistMusic.currentTrack?.progress || 0;

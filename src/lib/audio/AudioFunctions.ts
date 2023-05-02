@@ -17,13 +17,13 @@ import { detunedSaws, attenuate, progress, clippedHann, stereoizeSignal } from '
 import type { StereoSignal, SamplerOptions, ProgressOptions, Signal } from '../../typeDeclarations';
 
 /**════════════════════════════════════════════════
- * @name window
- * @description Big window function for fading the track in and out
+ * @name quickAndDirtyEnvelope
+ * @description Quick and Dirty window function
  * ════════════════════════════════════════════════
  */
 
-export function window(index: number): Signal {
-	return clippedHann({ gain: 100 }, index);
+export function envelope(index: number): Signal {
+	return clippedHann({ gain: 30 }, index);
 }
 
 /**════════════════════════════════════════════════
