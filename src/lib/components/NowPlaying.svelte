@@ -10,14 +10,14 @@
 
 </script>
 
-		{#if Audio.audioBuffersReady  } 
+		{#if Audio.buffersReady  } 
 				<DescriptionList {isPlaying}>
 					 <span slot='Title'>
 					{#if isPlaying}
-					  {currentTrack}
+					  {currentTrack} (excerpt)
 					  {/if}
 					</span>		
-					<span slot='Description'>{isPlaying ? '(short excerpt) Full album out now on all streaming platforms.' : ''}</span>
+					<span slot='Description'>{isPlaying ? 'Full album out now on all streaming platforms.' : ''}</span>
 				</DescriptionList>
 		{/if}
 		

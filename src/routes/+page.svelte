@@ -54,7 +54,7 @@
     Audio.updateVFS(structuredContainer[category], targetCore);
 
 	// done?
-	if (index >= (data.music.titles.length + data.speech.titles.length)-2) {		
+	if (index >= (data.music.titles.length + data.speech.titles.length) - 2) {		
 			Decoded.update(($d) => {
 				$d.done = true;
 				return $d;

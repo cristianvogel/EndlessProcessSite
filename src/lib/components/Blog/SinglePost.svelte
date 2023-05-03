@@ -113,9 +113,8 @@
 				class="prose dark:prose-invert 
               prose-img:rounded-xl
               break-inside-avoid-column
-             md: !prose-2xl
-			 sm: !prose-sm
-			 sm: !leading-tight
+             md:!prose-2xl
+			 sm:!prose-sm
              col-span-2 "
 			>
 				{@html prunedHTML.body.innerHTML}

@@ -440,7 +440,7 @@ export class AudioCore {
 	get currentVFSPath(): string {
 		return Audio._currentMetadata?.vfsPath || 'no VFS path';
 	}
-	get audioBuffersReady(): boolean {
+	get buffersReady(): boolean {
 		return get(Decoded).done
 	}
 	get currentTrackTitle(): string {

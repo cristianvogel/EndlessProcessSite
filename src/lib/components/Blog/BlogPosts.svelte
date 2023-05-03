@@ -18,8 +18,6 @@
 		date: ''
 	}
 
-	
-
 	const placeHolders = new Array(3).fill(placeHolderCard)
 
 	export let blogPosts = placeHolders;
@@ -68,6 +66,7 @@
 
 	onMount(() => {
 		responsive();
+		
 	});
 
 

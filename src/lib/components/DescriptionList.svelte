@@ -4,9 +4,9 @@
 	export let isPlaying = false;	
 </script>
 
-<dl class="flex-auto list-dl text-sm mr-2 ">
-	<div>
-		   <span class="p-0 -ml-20 -mt-4"><h2 >{isPlaying ? 'Now Playing.' : ''}</h2></span>
+<dl class="list-dl text-sm -mt-4">
+	<div class='invisible md:visible'>
+		   <span class="p-0 -ml-[8rem]"><h3 >{isPlaying ? 'Now Playing.' : ''}</h3></span>
 		<span>
 				{#if isPlaying}
 			<dt class="text-left uppercase">

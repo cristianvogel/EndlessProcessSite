@@ -5,17 +5,18 @@
 	import { Cube } from '@steeze-ui/carbon-icons';
 	import ElementaryPlayer from '$lib/components/ElementaryPlayer.svelte';
 	import Progress from '$lib/components/Progress.svelte';
-	import { CablesText, CablesIsLoaded, PlaysCount, PlaylistMusic, VFS_PATH_PREFIX, SpeechCoreLoaded, MusicCoreLoaded } from '$lib/stores/stores';
+	import { CablesIsLoaded, PlaysCount, PlaylistMusic, VFS_PATH_PREFIX, SpeechCoreLoaded, MusicCoreLoaded, Decoded } from '$lib/stores/stores';
 	import { Audio } from '$lib/classes/Audio';
 	import { createEventDispatcher } from 'svelte';
 	import { get } from 'svelte/store';
 	import { handlePlaylistChoice } from '$lib/functions/handlePlaylistChoice';
+	import NowPlaying from './NowPlaying.svelte';
 
 	const dispatch = createEventDispatcher();
 
 	const { audioStatus } = Audio.stores;
 
-	$: audioBuffersReady = $MusicCoreLoaded && $SpeechCoreLoaded;
+	$: audioBuffersReady = $Decoded.done;
 
 
 	/**
@@ -40,7 +41,7 @@
 	 * what happens when the user presses the Play/Pause button
 	 */
 	function playPauseLogic() {
-		if (!Audio.audioBuffersReady) {
+		if (!Audio.buffersReady) {
 			return;
 		}
 		// initialise first track data if this is the first play
@@ -82,6 +83,7 @@
 	gridColumns="grid-cols-3"
 	slotTrail="place-content-end"
 	slotLead="mb-0 h-10"
+	slotDefault="justify-center"
 	regionRowHeadline="indent-10"
 >
 	<svelte:fragment slot="lead" >
@@ -98,13 +100,10 @@
 		
 
 	</svelte:fragment>
-		<!-- legend -->
-		<div class="flex flex-wrap gradient-text place-content-center">
-			<div class='basis-1/2 text-2xl leading-6 '>
-				<a href="/">{$CablesText[0]}{$CablesText[1]}</a>
-			</div>	
-		</div>
-	<!-- Persistent progress bar -->
+		{#if audioBuffersReady && $CablesIsLoaded}
+		<NowPlaying />	
+		{/if}
+	<!--  progress bar -->
 	<svelte:fragment slot="headline">
 		{#if audioBuffersReady && $CablesIsLoaded}
 		<span transition:fade>
@@ -114,7 +113,7 @@
 		</svelte:fragment>
 
 
-	<!-- Persistent nav buttons -->
+	<!--  nav buttons -->
 	<svelte:fragment slot="trail">
 		<div class="flex justify-end flex-wrap">
 			<a class="logo-item p-2" href="/blog" data-sveltekit-noscroll>

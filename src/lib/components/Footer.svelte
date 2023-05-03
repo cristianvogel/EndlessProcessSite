@@ -18,7 +18,7 @@
 		</div>
 		<div class='col-start-1 col-span-2 place-self-start '>
 			<a  href='mailto:cristian@endless-process.net'>
-				:: Julia Decay © 2023 
+				:: NeverEngineLabs © 2023 
 			</a>
 		</div>
 	{#if !isMobile}
