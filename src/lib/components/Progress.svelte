@@ -3,8 +3,9 @@
 	import { Audio } from '$lib/classes/Audio';
 	import { ProgressBar } from '@skeletonlabs/skeleton';
 	import { Scrubbing } from '$lib/stores/stores';
-	import { onMount, tick } from 'svelte';
-	import { attenuateStereo, hannEnvelope } from '$lib/audio/AudioFunctions';
+	import { onMount, tick, createEventDispatcher } from 'svelte';
+
+	const dispatch = createEventDispatcher();
 
 
 	$: progress = $PlaylistMusic.currentTrack?.progress || 0;
@@ -12,7 +13,13 @@
 	$: tick().then (() =>{ 
 		Audio.progress = progress as number;
 	});
+
+	$: if (progress >= 0.99) {
+		$Scrubbing = false;
+		dispatch('cueNext', $PlaylistMusic.currentTrack?.title);
+	}
 		
+	
 	let start: number = 0;
 	let isPhone = false;
 	let isTablet = false;

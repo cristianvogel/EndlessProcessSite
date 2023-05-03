@@ -26,7 +26,7 @@ export class VoiceCore extends AudioCore {
 		this._core = null as unknown as WebRenderer;
 		this._voiceCoreStatus = writable('loading');
 		this._endNodes = writable({ mainCore: null, silentCore: null });
-		this._voiceVolume = 1;
+		this._voiceVolume = 0.8;
 		// below gets updated from store subscription
 		this._currentMetadata = { title: '', vfsPath: '', duration: 0 };
 	}

@@ -1,12 +1,13 @@
 <script lang="ts">
-// todo: improve using approach on https://www.skeleton.dev/utilities/popups
+/**
+ @todo: improve with https://www.skeleton.dev/utilities/popups
+ */
 import { ListBox, ListBoxItem } from '@skeletonlabs/skeleton';
 import { Icon } from '@steeze-ui/svelte-icon';
 import  {CircleDash, CircleFilled} from '@steeze-ui/carbon-icons';
 import {Audio} from '$lib/classes/Audio';
-import { PlaylistMusic, VFS_PATH_PREFIX } from "$lib/stores/stores";
-	import { get } from 'svelte/store';
-	import { Utils, formatTitleFromGlobalPath } from '$lib/classes/Utils';
+import { Utils, formatTitleFromGlobalPath } from '$lib/classes/Utils';
+import { handlePlaylistChoice } from '$lib/functions/handlePlaylistChoice';
 
 export let tracklisting:Array<string>;
 
@@ -16,29 +17,6 @@ const dividerClass = 'my-12 h-0.5 border-t-0 bg-primary-800 opacity-100 dark:opa
 
 $: current = Audio.currentTrackTitle;
 
-
-function HandlePlaylistChoice(e?:any, name?:string) {
-		// needs to simulate event with a passed `name` value for programmatic track selection
-		if (!e && name) { 
-			e={currentTarget:{name}}; 
-		};
-
-		const currentTrack = {
-			title: e.currentTarget.name,
-			vfsPath: get(VFS_PATH_PREFIX) + e.currentTarget.name,
-			progress: 0,
-			duration: $PlaylistMusic.durations.get(e.currentTarget.name),
-		}
-		
-		PlaylistMusic.update((ct) => {
-			ct.currentTrack = currentTrack;
-			return ct;
-		});
-
-		$PlaylistMusic.show = false;
-		Audio.playWithScrub( { trigger: 0, startOffset: 0 });
-		Audio.playWithScrub( { trigger: 1, startOffset: 0 });
-	}
 
 </script>
 
@@ -50,7 +28,7 @@ function HandlePlaylistChoice(e?:any, name?:string) {
     <hr class={dividerClass} />	
  {#each tracklisting  as title,i}
 	<ListBoxItem 
-    on:click={HandlePlaylistChoice}
+    on:click={handlePlaylistChoice}
     bind:group={valueSingle} 
     name={title} 
     value={i}>

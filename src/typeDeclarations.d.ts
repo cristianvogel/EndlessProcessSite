@@ -18,9 +18,9 @@ interface PlaylistContainer {
 	currentTrack?: AssetMetadata;
 	currentChapter?: AssetMetadata;
 	audioAssetPaths?: { music: Array<string>, speech: Array<string> };
-	titles?: { music: Array<string>, speech: Array<string> }
+	titles: { music: Array<string>, speech?: Array<string> }
 	show?: boolean;
-	durations?: Map<string, number>;
+	durations: Map<string, number>;
 }
 type RawFFT = { real: Float32Array; imag: Float32Array };
 type Signal = NodeRepr_t;

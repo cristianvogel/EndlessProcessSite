@@ -5,18 +5,11 @@ import type { SinglePost, RawFFT, PlaylistContainer, MetersContainer } from '../
 import { getMusicFiles, getSpeechFiles } from '$lib/classes/Files';
 
 //---- UX / State related -------------------
-export const LoadingSomething: Writable<{ state: boolean; count: number }> = writable({
-	state: false,
-	count: 0
-});
-
 export const Decoded: Writable<{ done: boolean; progress?: number }> = writable({
 	done: false,
 });
-
 export const MusicCoreLoaded: Writable<boolean> = writable(false);
 export const SpeechCoreLoaded: Writable<boolean> = writable(false);
-
 
 //---- Blog related -------------------
 // Todo: Implement sanitiser for the content

@@ -9,6 +9,7 @@
 	import { Audio } from '$lib/classes/Audio';
 	import { createEventDispatcher } from 'svelte';
 	import { get } from 'svelte/store';
+	import { handlePlaylistChoice } from '$lib/functions/handlePlaylistChoice';
 
 	const dispatch = createEventDispatcher();
 
@@ -44,18 +45,18 @@
 		}
 		// initialise first track data if this is the first play
 		if ($PlaysCount === 0) { 
-			const firstTitle = $PlaylistMusic.titles.music[0]
+			const firstTitle = $PlaylistMusic.titles?.music[0]
 			$PlaylistMusic.currentTrack = {
 										title: firstTitle, 
 										vfsPath: get(VFS_PATH_PREFIX) + firstTitle, 
-										duration: $PlaylistMusic.durations.get(firstTitle), 
+										duration: $PlaylistMusic.durations?.get(firstTitle as string), 
 										progress: 0,
 										offset: 0
 									}
 								$PlaysCount += 1; // todo: A modal prompting to buy the music after a number of plays ?
 								}
 
-								console.log('Cued track:', $PlaylistMusic.currentTrack.title)
+								console.log('Cued track:', $PlaylistMusic.currentTrack?.title)
 
 		if ($audioStatus === 'playing') {
 			Audio.pause();
@@ -64,6 +65,15 @@
 			Audio.unmute();
 		}
 	}
+
+	function handleCueNext(e: CustomEvent<any>): void {
+		const playlist = $PlaylistMusic.titles.music
+		const end = playlist.length
+		const nextIndex = (playlist.indexOf(e.detail) + 1) % end
+		console.log('Next track:', playlist[nextIndex])
+		handlePlaylistChoice(undefined, playlist[nextIndex])
+	}
+
 </script>
 
 
@@ -98,7 +108,7 @@
 	<svelte:fragment slot="headline">
 		{#if audioBuffersReady && $CablesIsLoaded}
 		<span transition:fade>
-				<Progress/>
+				<Progress on:cueNext={handleCueNext}/>
 		</span>
 		{/if}
 		</svelte:fragment>
