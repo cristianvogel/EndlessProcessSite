@@ -8,7 +8,7 @@ import type {
 	AssetMetadata
 } from '../../typeDeclarations';
 
-import { scrubbingSamplesPlayer, bufferProgress, attenuateStereo } from '$lib/audio/AudioFunctions';
+import { scrubbingSamplesPlayer, bufferProgress, attenuateStereo, hannEnvelope } from '$lib/audio/AudioFunctions';
 import { channelExtensionFor, clipToRange } from '$lib/classes/Utils';
 import {
 	CablesPatch,
@@ -22,8 +22,6 @@ import {
 import WebRenderer from '@elemaudio/web-renderer';
 import type { NodeRepr_t } from '@elemaudio/core';
 import { el } from '@elemaudio/core';
-
-
 
 // todo: set a sample rate constant prop
 
@@ -63,7 +61,7 @@ export class AudioCore {
 	subscribeToStores() {
 		/**
 		 * @description
-		*  Subscribers that update the Audio class 's intertnal statem from outside
+		*  Subscribers that update the Audio class 's internal state from outside
 		 */
 		PlaylistMusic.subscribe(($p) => {
 			Audio._currentMetadata = $p.currentTrack;
@@ -75,11 +73,6 @@ export class AudioCore {
 			if (!Audio._core) return;
 			Audio._sidechain = el.sm($meters.SpeechAudible as number) as Signal;
 		});
-	}
-
-	cleanup() {
-		// not sure about this, sometimes causes context to stay suspended forever
-		// Audio.suspend();
 	}
 
 	/**
@@ -171,9 +164,12 @@ export class AudioCore {
 		Audio._silentCore.on('snapshot', function (e) {
 			PlaylistMusic.update(($pl) => {
 				if (!$pl.currentTrack) return $pl;
-				$pl.currentTrack.progress = clipToRange(e.data as number, 0, 1);
+				const progress = clipToRange(e.data as number, 0, 1);
+				$pl.currentTrack = { ...$pl.currentTrack, progress }
 				return $pl;
 			});
+			// use snapshot event to update the progress of the windowing envelope
+			Audio.updateOutputLevelWith(hannEnvelope(Audio.progress));
 		});
 	}
 
@@ -207,19 +203,31 @@ export class AudioCore {
 	};
 
 	/**
+	 * Rendering WebAudio graph
+	 * 
+	 */
+	updateOutputLevelWith(node: Signal): void {
+		Audio.render(undefined, node);
+	};
+
+	/**
 	* @description Wraps the Elementary core Render function
 	 */
-	render(stereoSignal?: StereoSignal, key?: string): void {
+	render(stereoSignal?: StereoSignal, attenuator?: Signal | number): void {
 		if (!Audio._core) return;
 		if (stereoSignal) {
-			Audio._out = attenuateStereo(stereoSignal, Audio.masterVolume);
-		}
-		const stereoComp = {
+			Audio._out = stereoSignal;
+		} 
+		const duckingCompressor = {
 			left: el.compress(20, 160, -35, 90, el.in({ channel: 0 }), Audio._out.left),
 			right: el.compress(20, 160, -35, 90, el.in({ channel: 0 }), Audio._out.right)
 		}
+		let master = attenuator ? attenuateStereo(duckingCompressor, attenuator) : duckingCompressor;
+		master = attenuateStereo(master, Audio.masterVolume)
+		const result = Audio._core.render(master.left, master.right);
 		Audio.status = 'playing';
-		Audio._core.render(stereoComp.left, stereoComp.right);
+		//console.log('Render graph ፨ ', result);
+
 	}
 
 	/**
@@ -233,28 +241,40 @@ export class AudioCore {
 	/**
 	 * @description: Plays samples from a VFS path, with scrubbing
 	 */
-	playWithScrubFromVFS(props: SamplerOptions) {
+	playWithScrub(props: SamplerOptions) {
 		Audio.render(scrubbingSamplesPlayer(props));
-		Audio.progressBar({
+		Audio.playProgressBar(props);
+	}
+
+	playProgressBar(props: SamplerOptions) {
+		Audio.renderBufferProgress({
+			key: Audio.currentTrackTitle,
 			run: props.trigger as number,
-			startOffset: props.startOffset || 0
+			startOffset: props.startOffset || 0,
+			totalDurMs: props.durationMs || Audio.currentTrackDurationSeconds * 1000
 		});
 	}
 
 	/**
-	 * @description: Render the progress counter composite and its callback sideeffect
+	 * @description: Renders the progress counter composite and its callback sideeffect
 	 */
-	progressBar(props: { run: number; startOffset: number }) {
-		let { run = 1, startOffset: startOffsetMs = 0 } = props;
-		let rate = 10;
-		const totalDurMs = Audio.currentTrackDurationSeconds * 1000;
+	renderBufferProgress(props: { run: number, startOffset: number, key?: string, totalDurMs: number }) {
+
+		let {
+			run = 1,
+			startOffset = 0,
+			key,
+			totalDurMs,
+		} = props;
+
+
 		Audio.controlRender(
 			bufferProgress({
-				key: Audio.currentTrackDurationSeconds + '_progBar',
+				key,
 				totalDurMs,
 				run,
-				rate,
-				startOffset: startOffsetMs
+				updateInterval: 10,
+				startOffset
 			})
 		);
 	}
@@ -354,7 +374,7 @@ export class AudioCore {
 			Audio.resumeContext();
 		}
 		// gate the current track
-		Audio.playWithScrubFromVFS({
+		Audio.playWithScrub({
 			vfsPath: Audio.currentVFSPath,
 			trigger: 1
 		});
@@ -368,7 +388,7 @@ export class AudioCore {
 	pause(pauseCables: boolean = false): void {
 		// release gate on the current track
 
-		Audio.playWithScrubFromVFS({
+		Audio.playWithScrub({
 			vfsPath: Audio.currentVFSPath,
 			trigger: 0
 		});

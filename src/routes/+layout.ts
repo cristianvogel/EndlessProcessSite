@@ -42,10 +42,18 @@ function getPaths(pathlist: string[]) {
 
 function fetchBuffers({ fetch }: any, category: AssetCategories, pathlist: string[]) {
 
+    // actually, this is not sample rate related, but kbps! 
+    // not sure how to get that info from the file at this point
+    // the speech is 64kbps but the music is 320 vbr
+
+    const excerptDuration = 44100 * 60
+
+    const headers = category === 'music' ? {
+        Range: `bytes=0-${excerptDuration}`
+    } : {};
     for (let i = 0; i < pathlist.length; i++) {
         const path = pathlist[i];
-        assets.fetchers[category].push(fetch(path, { method: 'GET', Range: `bytes=${0}-${44100 * 60}` }))
-
+        assets.fetchers[category].push(fetch(path, { headers }))
     }
     return assets.fetchers[category]
 }

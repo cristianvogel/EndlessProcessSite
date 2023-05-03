@@ -23,11 +23,13 @@ interface PlaylistContainer {
 	durations?: Map<string, number>;
 }
 type RawFFT = { real: Float32Array; imag: Float32Array };
+type Signal = NodeRepr_t;
 type StereoSignal = { left: NodeRepr_t; right: NodeRepr_t };
 type SamplerOptions = {
 	vfsPath?: string; // defaults to current track
 	trigger?: Signal | number;
 	rate?: Signal | number;
+	durationMs?: number;
 	drift?: Signal | number;
 	loop?: boolean;
 	loopStart?: number;
@@ -39,10 +41,10 @@ type ProgressOptions = {
 	key?: string;
 	totalDurMs?: number;
 	run: Signal | number;
-	rate?: number;
+	updateInterval?: number;
 	startOffset?: number;
 };
-type Signal = NodeRepr_t;
+
 type MetersContainer = {
 	MusicAudible?: number,
 	MusicSilent?: number,

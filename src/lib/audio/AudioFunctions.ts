@@ -13,29 +13,33 @@
 import { Audio, AudioCore } from '$lib/classes/Audio';
 import { el } from '@elemaudio/core';
 import { channelExtensionFor, clipTo0 } from '$lib/classes/Utils';
-import { detunedSaws, attenuate, progress, clippedHann, stereoizeSignal } from '$lib/audio/composites';
+import { attenuate, progress, clippedHann } from '$lib/audio/El Funktions';
 import type { StereoSignal, SamplerOptions, ProgressOptions, Signal } from '../../typeDeclarations';
 
 /**════════════════════════════════════════════════
- * @name window
- * @description Big window function for fading the track in and out
+ * @name hannEnvelope
+ * @description Quick and Dirty window function
+ * @param index : number :: index into the window [0-1]
  * ════════════════════════════════════════════════
  */
 
-export function window(index: number): Signal {
-	return clippedHann({ gain: 100 }, index);
+export function hannEnvelope(index: number): Signal {
+	return clippedHann({ gain: 30, index });
 }
 
 /**════════════════════════════════════════════════
  * @name attenuateStereo
  * @description Attenuate a stereo signal
+ * @param signal : StereoSignal :: stereo signal to be attenuated
+ * @param level : Signal | number :: mono signal to attenuate both channels
+ * @param key : string :: optional key for the level signal
  * ════════════════════════════════════════════════
  */
 
-export function attenuateStereo(signal: StereoSignal, level: Signal | number): StereoSignal {
+export function attenuateStereo(signal: StereoSignal, level: Signal | number, key: string = 'level'): StereoSignal {
 	return {
-		left: attenuate({ level }, signal.left),
-		right: attenuate({ level }, signal.right),
+		left: attenuate({ key, level }, signal.left),
+		right: attenuate({ key, level }, signal.right),
 	}
 }
 

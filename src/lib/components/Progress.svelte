@@ -4,6 +4,7 @@
 	import { ProgressBar } from '@skeletonlabs/skeleton';
 	import { Scrubbing } from '$lib/stores/stores';
 	import { onMount, tick } from 'svelte';
+	import { attenuateStereo, hannEnvelope } from '$lib/audio/AudioFunctions';
 
 
 	$: progress = $PlaylistMusic.currentTrack?.progress || 0;
@@ -23,7 +24,7 @@
 		const x = clientX - left;
 		const percent = x / width;
 		start = Math.round(percent * duration * 1000); // to ms
-		Audio.playWithScrubFromVFS({
+		Audio.playWithScrub({
 			trigger: 0,
 			startOffset: start
 		});
@@ -31,7 +32,7 @@
 
 	function replay() {
 		$Scrubbing = false;
-		Audio.playWithScrubFromVFS({ trigger: 1, startOffset: start })
+		Audio.playWithScrub({ trigger: 1, startOffset: start })
 		}
 
 	function responsive() {
