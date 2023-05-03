@@ -36,8 +36,8 @@ function HandlePlaylistChoice(e?:any, name?:string) {
 		});
 
 		$PlaylistMusic.show = false;
-		Audio.playWithScrubFromVFS( { trigger: 0, startOffset: 0 });
-		Audio.playWithScrubFromVFS( { trigger: 1, startOffset: 0 });
+		Audio.playWithScrub( { trigger: 0, startOffset: 0 });
+		Audio.playWithScrub( { trigger: 1, startOffset: 0 });
 	}
 
 </script>
