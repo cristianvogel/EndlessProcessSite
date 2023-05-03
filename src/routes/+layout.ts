@@ -51,12 +51,9 @@ function fetchBuffers({ fetch }: any, category: AssetCategories, pathlist: strin
     const headers = category === 'music' ? {
         Range: `bytes=0-${excerptDuration}`
     } : {};
-
-
     for (let i = 0; i < pathlist.length; i++) {
         const path = pathlist[i];
         assets.fetchers[category].push(fetch(path, { headers }))
-
     }
     return assets.fetchers[category]
 }
