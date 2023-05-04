@@ -8,11 +8,11 @@ import { OutputMeters, PlaylistMusic, SpeechCoreLoaded } from '$lib/stores/store
 import { attenuateStereo, driftingSamplesPlayer } from '$lib/audio/AudioFunctions';
 
 
-// ════════╡ Voice ╞═══════
+// ════════╡ Voice WebRenderer Core ╞═══════
 // todo: add a way to set the voice's position in the audio file
 // todo: add a way to set the voice's start offset in the audio file
 // 🚨 this is still a demo/test and not a full implementation
-// todo: update redundant class member properties
+
 
 export class VoiceCore extends AudioCore {
 	_core: WebRenderer;
@@ -26,7 +26,8 @@ export class VoiceCore extends AudioCore {
 		this._core = null as unknown as WebRenderer;
 		this._voiceCoreStatus = writable('loading');
 		this._endNodes = writable({ mainCore: null, silentCore: null });
-		this._voiceVolume = 0.8;
+		this._voiceVolume = 0.727;
+
 		// below gets updated from store subscription
 		this._currentMetadata = { title: '', vfsPath: '', duration: 0 };
 	}
@@ -37,14 +38,17 @@ export class VoiceCore extends AudioCore {
 		});
 	}
 
+	/**
+	 * @name init
+	 * @description Initialise the main WebRenderer instances handling the Speech 
+	 * asynchronously and store in VoiceCore class as this._endNodes
+	 */
 	override async init(): Promise<void> {
 		VoiceOver._core = new WebRenderer();
-
 		while (!super.actx) {
-			console.log('Waiting for first WebRenderer instance to load...');
-			await new Promise((resolve) => setTimeout(resolve, 100));
+			//console.log('Waiting for first WebRenderer instance to load...');
+			await new Promise((resolve) => setTimeout(resolve, 50));
 		}
-
 		VoiceOver.voiceEndNode = await VoiceOver._core
 			.initialize(super.actx, {
 				numberOfInputs: 0,
@@ -54,11 +58,9 @@ export class VoiceCore extends AudioCore {
 			.then((node) => {
 				return node;
 			});
-
 		VoiceOver._core.on('error', function (e) {
 			console.error('🔇 ', e);
 		});
-
 		VoiceOver._core.on('meter', function (e) {
 			OutputMeters.update(($o) => {
 				const absMax = Math.max(e.max, Math.abs(e.min));
@@ -66,18 +68,31 @@ export class VoiceCore extends AudioCore {
 				return $o;
 			})
 		})
-
 		VoiceOver._core.on('load', () => {
 			VoiceOver.subscribeToStores()
 			SpeechCoreLoaded.set(true);
 			VoiceOver.status = 'ready';
-			console.log('Voice Core loaded  🎤');
-		});
+			//console.log('Voice Core loaded  🎤');
+			VoiceOver.patch();
+		});	
+	}
 
+	/**
+	 * @name patch
+	 * @description 
+	 * connects the VoiceOver core to the hardware output
+	 * and also to the main WebRenderer instance handling the music.
+	 * Which of course has already loaded cleanly, right?
+	 */
+	private patch() {
 		super.connectToDestination(VoiceOver.voiceEndNode);
 		super.connectToMain(VoiceOver.voiceEndNode);
 	}
 
+
+	/**
+	 * @name playSpeechFromVFS
+	 */
 	playSpeechFromVFS(gate: Number = 1): void {
 		const { vfsPath } = VoiceOver._currentMetadata;
 		const test = driftingSamplesPlayer(VoiceOver,
@@ -89,18 +104,26 @@ export class VoiceCore extends AudioCore {
 				monoSum: true,
 			});
 		console.log('🎤 -> ', vfsPath);
-		VoiceOver.render(test);
+		VoiceOver.master(test);
 	}
 
-	override render(stereoSignal: StereoSignal, key?: string): void {
-		// do I need a key here??
+	/**
+	 * @name render
+	 * @description renders a stereo signal via the voice core
+	 * This render has a side effect of firing a meter update on VoiceOver._core
+	 * It's output routes to the parent core, appearing as sidechain signal 
+	 * at el.in({channel: 0}) at super.render()
+	 */
+	override master(stereoSignal: StereoSignal, attenuator?: Signal | number, key?: string): void {
 		if (!VoiceOver._core) return;
+		if (!attenuator) attenuator = VoiceOver._voiceVolume;
 		VoiceOver.status = 'playing';
-		let final = attenuateStereo(stereoSignal, VoiceOver.voiceVolume);
+		let final = attenuateStereo(stereoSignal, attenuator);
 		VoiceOver._core.render(
 			el.meter(final.left),
 			final.right)
 	}
+
 
 	/*---- getters --------------------------------*/
 

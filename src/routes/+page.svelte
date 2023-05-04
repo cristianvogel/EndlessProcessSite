@@ -15,10 +15,12 @@
 	export let data: LayoutData;
   
   $:hide = false
+  
   const hideTimer = setTimeout(() => {
     hide = true;
-  }, 5000);
-
+	$Decoded.done = true
+  }, 3000);
+  
 	let structuredContainer: { music: StructuredAssetContainer; speech: StructuredAssetContainer } = {
 		music: undefined,
 		speech: undefined
@@ -52,24 +54,18 @@
     // update relevant VFS the first load
     const targetCore = category === 'music' ? Audio._core : VoiceOver._core; 
     Audio.updateVFS(structuredContainer[category], targetCore);
-
-	// done?
-	if (index >= (data.music.titles.length + data.speech.titles.length) - 2) {		
-			Decoded.update(($d) => {
-				$d.done = true;
-				return $d;
-			});
-    }
   }
 }
 </script>
 
+{#if !$Decoded.done}
 <div class='w-25% absolute top-28 left-5'>
 	{#await data.musicStreamed.buffers}
 		<div class="flex items-center">
 			<ProgressBar height='h-1'/>
-		</div>
+		</div>	
 	{:then musicBuffers}
+	
   {#if !hide}
   <span class='info'>Music </span>
 		{#each musicBuffers as buffer, index}
@@ -95,7 +91,8 @@
            ╰ {$PlaylistMusic.titles.speech[index]}
 			</ul>
 		{/each}
-    <h3 in:fly="{{ y: 200, duration: 3000 }}"  out:fade>Ready.</h3>
+    <h3 in:fly="{{ y: 200, duration: 3000 }}" out:fade>Ready.</h3>
    {/if}
-	{/await}
+ {/await}
 </div>
+{/if}

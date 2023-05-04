@@ -23,6 +23,8 @@ import WebRenderer from '@elemaudio/web-renderer';
 import type { NodeRepr_t } from '@elemaudio/core';
 import { el } from '@elemaudio/core';
 
+
+// ════════╡ Music WebRenderer Core ╞═══════
 // todo: set a sample rate constant prop
 
 export class AudioCore {
@@ -36,9 +38,7 @@ export class AudioCore {
 	_currentMetadata: AssetMetadata | undefined;
 	_scrubbing: boolean;
 	_sidechain: number | Signal;
-	_out: StereoSignal
-
-
+	_outputBuss: StereoSignal
 
 	constructor() {
 		this._core = this._silentCore = null;
@@ -50,7 +50,7 @@ export class AudioCore {
 			mainCore: null,
 			silentCore: null
 		});
-		this._out = { left: 0 as unknown as Signal, right: 0 as unknown as Signal };
+		this._outputBuss = { left: 0 as unknown as Signal, right: 0 as unknown as Signal };
 
 		// these below are dynamically set from store subscriptions
 		this._currentMetadata = { title: '', vfsPath: '', duration: 0, progress: 0 };
@@ -58,11 +58,12 @@ export class AudioCore {
 		this._sidechain = 0
 	}
 
+	/**
+	 * @description
+	*  Subscribers that update the Audio class 's internal state from outside
+	 */
 	subscribeToStores() {
-		/**
-		 * @description
-		*  Subscribers that update the Audio class 's internal state from outside
-		 */
+
 		PlaylistMusic.subscribe(($p) => {
 			Audio._currentMetadata = $p.currentTrack;
 		})
@@ -76,8 +77,8 @@ export class AudioCore {
 	}
 
 	/**
-	 * @description Initialise the Elementary audio engine asynchronously
-	 * and store it in the Audio class as Audio.elemEndNode
+	 * @description Initialise the main WebRenderer instances handling the music 
+	 *  and store in AudioCore class as this._endNodes
 	 */
 	async init(ctx?: AudioContext): Promise<void> {
 
@@ -174,18 +175,25 @@ export class AudioCore {
 	}
 
 	/**
-	 * @description Connect a node to the BaseAudioContext destination
+	 * @name connectToDestination
+	 * @description Connect a node to the BaseAudioContext hardware destination
 	  */
 	connectToDestination(node: AudioNode) {
 		node.connect(Audio.actx.destination);
 	}
 
+	/**
+	 * @name connectToMain
+	 * @description connect a node to the input of the AudioCore WebRenderer 
+	 * which handles the music playback
+	 */
 	connectToMain(node: AudioNode) {
 		node.connect(Audio.elemEndNode);
 	}
 
 	/**
-	 *  @description Routing the Elementary graph into the Cables.gl visualiser
+	 * @name routeToCables
+	 * @description Routing the AudioCore WebRenderer into the Cables.gl visualiser
 	 */
 	routeToCables() {
 		const cablesSend = new GainNode(Audio.actx, { gain: 10 }); // boost the send into Cables visualiser, never heard
@@ -203,35 +211,47 @@ export class AudioCore {
 	};
 
 	/**
-	 * Rendering WebAudio graph
-	 * 
+	 * @name updateOutputLevelWith
+	 * @description a useful Elem render call which will scale
+	 * the main output level with the passed node. Useful for 
+	 * premaster level, fades etc.
 	 */
 	updateOutputLevelWith(node: Signal): void {
-		Audio.render(undefined, node);
+		Audio.master(undefined, node);
 	};
 
 	/**
-	* @description Wraps the Elementary core Render function
-	 */
-	render(stereoSignal?: StereoSignal, attenuator?: Signal | number): void {
+	* @name master
+	* @description Master channel render.
+    * Includes a stereo compressor, which is ducked by the Speech signal 
+	* arriving at el.in({channel:0})
+    * @param stereoSignal optional stereo signal to render through the Master. 
+	* If passed, it is stored in the Audio._out buss updating whatever was patched before.
+	* @param attenuator optional attenuator signal which will smoothly scale the signal just
+	* before final output, which is hard coded to be smooth scaled by the overall master volume. 
+	*/
+	master(stereoSignal?: StereoSignal, attenuator?: Signal | number): void {
 		if (!Audio._core) return;
 		if (stereoSignal) {
-			Audio._out = stereoSignal;
+			Audio._outputBuss = stereoSignal;
 		} 
 		const duckingCompressor = {
-			left: el.compress(20, 160, -35, 90, el.in({ channel: 0 }), Audio._out.left),
-			right: el.compress(20, 160, -35, 90, el.in({ channel: 0 }), Audio._out.right)
+			left: el.compress(20, 160, -35, 90, el.in({ channel: 0 }), Audio._outputBuss.left),
+			right: el.compress(20, 160, -35, 90, el.in({ channel: 0 }), Audio._outputBuss.right)
 		}
 		let master = attenuator ? attenuateStereo(duckingCompressor, attenuator) : duckingCompressor;
 		master = attenuateStereo(master, Audio.masterVolume)
 		const result = Audio._core.render(master.left, master.right);
 		Audio.status = 'playing';
 		//console.log('Render graph ፨ ', result);
-
 	}
 
 	/**
-	 * @description silent render of a control signal, for handling a signal with a side effect like the progress counter composite, which emits an event _and_ an audiorate signal
+	 * @name controlRender
+	 * @description silent render of a control signal using the secondary 'silent core' WebRenderer,
+	 * for rendering a signal with a side effect. For example the play progress counter, 
+	 * which emits an event _and_ an audiorate signal, which we don't want to hear as it will likely 
+	 * cause DC offset.
 	 */
 	controlRender(controlSignal: Signal): void {
 		if (!Audio._silentCore || !controlSignal) return;
@@ -239,13 +259,18 @@ export class AudioCore {
 	}
 
 	/**
+	 * @name playWithScrub
 	 * @description: Plays samples from a VFS path, with scrubbing
 	 */
 	playWithScrub(props: SamplerOptions) {
-		Audio.render(scrubbingSamplesPlayer(props));
+		Audio.master(scrubbingSamplesPlayer(props));
 		Audio.playProgressBar(props);
 	}
 
+	/**
+	 * @name playProgressBar
+	 * @description todo
+	 */
 	playProgressBar(props: SamplerOptions) {
 		Audio.renderBufferProgress({
 			key: Audio.currentTrackTitle,
@@ -256,17 +281,16 @@ export class AudioCore {
 	}
 
 	/**
-	 * @description: Renders the progress counter composite and its callback sideeffect
+	 * @name renderBufferProgress
+	 * @description: Renders the progress counter and its callback side effect
 	 */
 	renderBufferProgress(props: { run: number, startOffset: number, key?: string, totalDurMs: number }) {
-
 		let {
 			run = 1,
 			startOffset = 0,
 			key,
 			totalDurMs,
 		} = props;
-
 
 		Audio.controlRender(
 			bufferProgress({
@@ -279,13 +303,11 @@ export class AudioCore {
 		);
 	}
 
-
-
 	/**
+	 * @name updateVFS
 	 * @description Elementary Audio WebRenderer uses a virtual file system to reference audio files.
 	 * https://www.elementary.audio/docs/packages/web-renderer#virtual-file-system
 	 * Update the virtual file system using data loaded from a load() function.
-	 *
 	 * @param container
 	 * header and body ArrayBufferContainer - will be decoded to audio buffer for VFS use
 	 * @param playlistStore
@@ -326,14 +348,16 @@ export class AudioCore {
 	}
 
 	/**
-	 * @description Decodes the raw audio buffer using AudioContext into an AudioBuffer, asynchonously with guards
+	 * @name decodeRawBuffer
+	 * @description Decodes a raw array buffer using AudioContext into an AudioBuffer, 
+	 * asynchonously with guards.
 	 */
 	async decodeRawBuffer(container: StructuredAssetContainer): Promise<{ title: string, vfsPath: string, decodedBuffer: AudioBuffer }> {
 		while (!container) await new Promise((resolve) => setTimeout(resolve, 100));
 		const { body, header } = container;
 		let decoded: AudioBuffer | null = null;
 		while (!Audio.actx) {
-			await new Promise((resolve) => setTimeout(resolve, 100));
+			await new Promise((resolve) => setTimeout(resolve, 50));
 		}
 		try {
 			decoded = await Audio.actx.decodeAudioData(body as ArrayBuffer);
@@ -351,7 +375,8 @@ export class AudioCore {
 	}
 
 	/**
-	 * @description: Tries to resume the base AudioContext
+	 * @name resumeContext
+	 * @description Tries to resume the base AudioContext
 	 * this should only be called once, after a user interaction
 	 */
 	resumeContext(): void {
@@ -366,7 +391,8 @@ export class AudioCore {
 	}
 
 	/**
-	 * Unmute aka 'Play'
+	 * @name unmute aka 'Play'
+	 * @description Main way the music starts playing, from a user interaction.
 	 */
 	unmute(): void {
 		// try to resume the context if it's suspended
@@ -381,8 +407,8 @@ export class AudioCore {
 	}
 
 	/**
-	 * @description
-	 * Stop sounding but keep the audio context running
+	 * @name pause
+	 * @description Stop sounding but keep the audio context running
 	 * , send a Mute message to Cables patch
 	 */
 	pause(pauseCables: boolean = false): void {
@@ -400,17 +426,6 @@ export class AudioCore {
 	// todo: pause or resume Cables patch
 	pauseCables(state: 'pause' | 'resume'): void { }
 
-	suspend(): void {
-		Audio.actx.suspend().then(() => {
-			console.log('🔇 audiocontext suspended');
-		});
-	}
-
-	suspendAfterMs(ms: number = 100): void {
-		new Promise((res) => setTimeout(res, ms)).then(() => {
-			Audio.suspend();
-		});
-	}
 
 	/*---- getters  --------------------------------*/
 	get stores() {
@@ -485,15 +500,12 @@ export class AudioCore {
 	set progress(newProgress: number) {
 		Audio._currentMetadata = { ...Audio._currentMetadata, progress: newProgress };
 	}
-
 	set masterVolume(normLevel: number | NodeRepr_t) {
 		Audio._masterVolume.update(() => normLevel);
 	}
-
 	set actx(newCtx: AudioContext) {
 		Audio._audioContext.update(() => newCtx);
 	}
-
 	set status(newStatus: AudioCoreStatus) {
 		Audio._AudioCoreStatus.update(() => newStatus);
 	}
@@ -503,7 +515,6 @@ export class AudioCore {
 			return n;
 		});
 	}
-
 	set elemEndNode(node: AudioNode) {
 		Audio._endNodes.update((n) => {
 			n.mainCore = node;

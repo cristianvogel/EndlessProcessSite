@@ -37,6 +37,7 @@
 	}
 
 	/**
+	 * @name playPauseLogic
 	 * @description ----------------------------------------------
 	 * what happens when the user presses the Play/Pause button
 	 */
@@ -67,6 +68,11 @@
 		}
 	}
 
+	/**
+	 * @name handleCueNext
+	 * @description auto-cue functionality
+	 * 
+	*/
 	function handleCueNext(e: CustomEvent<any>): void {
 		const playlist = $PlaylistMusic.titles.music
 		const end = playlist.length
