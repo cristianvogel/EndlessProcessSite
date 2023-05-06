@@ -11,6 +11,7 @@
 	import { get } from 'svelte/store';
 	import { handlePlaylistChoice } from '$lib/functions/handlePlaylistChoice';
 	import NowPlaying from './NowPlaying.svelte';
+	import TextToSpeech from './Speech/TextToSpeech.svelte';
 
 	const dispatch = createEventDispatcher();
 
@@ -121,7 +122,11 @@
 
 	<!--  nav buttons -->
 	<svelte:fragment slot="trail">
+		<div class='absolute info md:top-24 sm:top-30 right-20 '>
+			<TextToSpeech/>
+		</div>
 		<div class="flex justify-end flex-wrap">
+
 			<a class="logo-item p-2" href="/blog" data-sveltekit-noscroll>
 				<!-- <Icon src={ChartMarimekko} class="h-4" /> -->
 				<hr class="h-1 w-2 divider-vertical bg-surface-400" />
