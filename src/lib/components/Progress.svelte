@@ -65,7 +65,7 @@
 		/>
 	</div>
 	{:else}
-	<div in:fade>
+	<div class='-mt-2' in:fade>
 		<ProgressBar
 			label="Progress Bar"
 			value={ Math.fround(progress * durationSecs) }

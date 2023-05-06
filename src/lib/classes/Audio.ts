@@ -86,7 +86,7 @@ export class AudioCore {
 		// this is the one AudioContext to reference throughout
 		if (ctx) {
 			Audio.actx = ctx;
-			console.log('Passing existing AudioContext');
+			console.log('Passing existing AudioContext', ctx);
 			ContextSampleRate.set(Audio.actx.sampleRate)
 		} else {
 			console.log('No context!');
@@ -243,7 +243,7 @@ export class AudioCore {
 		let master = attenuator ? attenuateStereo(duckingCompressor, attenuator) : duckingCompressor;
 		master = attenuateStereo(master, Audio.masterVolume)
 		const result = Audio._core.render(master.left, master.right);
-		Audio.status = 'playing';
+
 		//console.log('Render graph ፨ ', result);
 	}
 
@@ -400,10 +400,11 @@ export class AudioCore {
 		if (Audio.status === 'suspended') {
 			Audio.resumeContext();
 		}
-		// gate the current track
+		Audio.status = 'playing';
 		Audio.playWithScrub({
 			vfsPath: Audio.currentVFSPath,
-			trigger: 1
+			trigger: 1,
+			durationMs: Audio.currentTrackDurationSeconds * 1000
 		});
 	}
 
@@ -417,7 +418,8 @@ export class AudioCore {
 
 		Audio.playWithScrub({
 			vfsPath: Audio.currentVFSPath,
-			trigger: 0
+			trigger: 0,
+			durationMs: Audio.currentTrackDurationSeconds * 1000
 		});
 
 		Audio.status = 'paused';

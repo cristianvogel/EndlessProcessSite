@@ -30,11 +30,11 @@ type SamplerOptions = {
 	trigger?: Signal | number;
 	rate?: Signal | number;
 	durationMs: number;
+	startOffset?: number;
 	drift?: Signal | number;
 	loop?: boolean;
 	loopStart?: number;
 	loopEnd?: number;
-	startOffset?: number;
 	monoSum?: boolean;
 };
 type ProgressOptions = {

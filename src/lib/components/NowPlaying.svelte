@@ -11,7 +11,7 @@
 
 </script>
 
-		{#if Audio.buffersReady && isPlaying } 
+		{#if isPlaying } 
 				<DescriptionList {isPlaying} >
 					 <span slot='Title' in:fade>
 					  {currentTrack} (excerpt)				
@@ -20,6 +20,3 @@
 				</DescriptionList>
 		{/if}
 		
-
-
-
