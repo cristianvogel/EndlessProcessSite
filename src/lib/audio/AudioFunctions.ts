@@ -13,8 +13,15 @@
 import { Audio, AudioCore } from '$lib/classes/Audio';
 import { el } from '@elemaudio/core';
 import { channelExtensionFor, clipTo0 } from '$lib/classes/Utils';
-import { attenuate, progress, clippedHann } from '$lib/audio/El Funktions';
+import { attenuate, clippedHann, progress } from '$lib/audio/El Funktions';
 import type { StereoSignal, SamplerOptions, ProgressOptions, Signal } from '../../typeDeclarations';
+import { ContextSampleRate, Scrubbing } from '$lib/stores/stores';
+import { get } from 'svelte/store';
+
+
+const SR = get(ContextSampleRate);
+let $scrubbing = false;
+Scrubbing.subscribe(($s) => $scrubbing = $s);
 
 /**════════════════════════════════════════════════
  * @name hannEnvelope
@@ -70,10 +77,10 @@ export function meter(signal: StereoSignal, gain: number = 20): Signal {
  */
 
 export function scrubbingSamplesPlayer(props: SamplerOptions): StereoSignal {
-	let { trigger = 1, rate = 1, startOffset = 0 } = props;
-	let selectTriggerSignal = Audio.scrubbing ? 0 : 1;
-	startOffset = clipTo0(startOffset);
 
+	let { trigger = 1, rate = 1, startOffset = 0, durationMs = 0 } = props;
+	let selectTriggerSignal = $scrubbing ? 0 : 1;
+	const startOffsetSamps: number = Math.round(startOffset * durationMs * (SR / 1000));
 	const scrubRate = el.sm(el.latch(el.train(50), el.rand()));
 	const scrub: Signal = el.train(el.mul(50, scrubRate)) as Signal;
 
@@ -86,7 +93,7 @@ export function scrubbingSamplesPlayer(props: SamplerOptions): StereoSignal {
 			key: kl,
 			path,
 			mode: 'gate',
-			startOffset: startOffset * 44.1
+			startOffset: startOffsetSamps
 		},
 		el.select(selectTriggerSignal, el.const({ key: kl + 't', value: trigger as number }), scrub),
 		rate
@@ -98,7 +105,7 @@ export function scrubbingSamplesPlayer(props: SamplerOptions): StereoSignal {
 			key: kr,
 			path,
 			mode: 'gate',
-			startOffset: startOffset * 44.1
+			startOffset: startOffsetSamps
 		},
 		el.select(selectTriggerSignal, el.const({ key: kl + 't', value: trigger as number }), scrub),
 		rate
@@ -160,31 +167,6 @@ export function driftingSamplesPlayer(coreClass: AudioCore, props: SamplerOption
 
 	if (monoSum) { left = el.add(el.mul(0.5, left), el.mul(0.5, right)); right = left; }
 	return { left: left as Signal, right: right as Signal };
-}
-
-
-/**════════════════════════════════════════════════
- * @name demoSynth
- * @description Demo synth with two dualSaws in stereo
- * uses detunedSaws interface
- * ════════════════════════════════════════════════
- */
-
-export function demoSynth(): StereoSignal {
-	return {
-		left: detunedSaws(
-			{
-				ampMod: el.cycle(1 / 3)
-			},
-			el.const({ key: 'L1', value: 60 })
-		),
-		right: detunedSaws(
-			{
-				ampMod: el.cycle(0.5)
-			},
-			el.const({ key: 'R1', value: 62 })
-		)
-	};
 }
 
 /**════════════════════════════════════════════════

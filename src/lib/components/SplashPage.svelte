@@ -17,7 +17,6 @@
 
 </script>
 	
-<div class='absolute info md:top-24 sm:top-30 right-24 '><TextToSpeech/></div>
 <div class="container mx-auto w-[30%] flex-none" on:mousedown>
 	<div class="space-y-2 -my-5 text-center">
 		{#if !postView}							

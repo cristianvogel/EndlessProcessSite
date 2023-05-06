@@ -8,7 +8,7 @@
 	<div class='invisible md:visible'>
 		   <span class="p-0 -ml-[8rem]"><h3 >{isPlaying ? 'Now Playing.' : ''}</h3></span>
 		<span>
-				{#if isPlaying}
+			{#if isPlaying}
 			<dt class="text-left uppercase">
 			<span class="badge align-middle">
 				<Icon src={Cube} class="h-4 rotate-180 "/>

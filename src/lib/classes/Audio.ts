@@ -9,7 +9,7 @@ import type {
 } from '../../typeDeclarations';
 
 import { scrubbingSamplesPlayer, bufferProgress, attenuateStereo, hannEnvelope } from '$lib/audio/AudioFunctions';
-import { channelExtensionFor, clipToRange } from '$lib/classes/Utils';
+import { channelExtensionFor } from '$lib/classes/Utils';
 import {
 	CablesPatch,
 	PlaylistMusic,
@@ -17,7 +17,8 @@ import {
 	OutputMeters,
 	MusicCoreLoaded,
 	VFS_PATH_PREFIX,
-	Decoded
+	Decoded,
+	ContextSampleRate
 } from '$lib/stores/stores';
 import WebRenderer from '@elemaudio/web-renderer';
 import type { NodeRepr_t } from '@elemaudio/core';
@@ -86,6 +87,7 @@ export class AudioCore {
 		if (ctx) {
 			Audio.actx = ctx;
 			console.log('Passing existing AudioContext');
+			ContextSampleRate.set(Audio.actx.sampleRate)
 		} else {
 			console.log('No context!');
 		}
@@ -164,9 +166,8 @@ export class AudioCore {
 
 		Audio._silentCore.on('snapshot', function (e) {
 			PlaylistMusic.update(($pl) => {
-				if (!$pl.currentTrack) return $pl;
-				const progress = clipToRange(e.data as number, 0, 1);
-				$pl.currentTrack = { ...$pl.currentTrack, progress }
+				if (!$pl.currentTrack || !e.data) return $pl;
+				$pl.currentTrack.progress = e.data as number;
 				return $pl;
 			});
 			// use snapshot event to update the progress of the windowing envelope
@@ -498,6 +499,7 @@ export class AudioCore {
 	/*---- setters --------------------------------*/
 
 	set progress(newProgress: number) {
+		if (!newProgress) return;
 		Audio._currentMetadata = { ...Audio._currentMetadata, progress: newProgress };
 	}
 	set masterVolume(normLevel: number | NodeRepr_t) {

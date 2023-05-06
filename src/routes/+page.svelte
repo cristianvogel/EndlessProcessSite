@@ -14,12 +14,12 @@
 
 	export let data: LayoutData;
   
-  $:hide = false
-  
-  const hideTimer = setTimeout(() => {
-    hide = true;
-	$Decoded.done = true
-  }, 3000);
+	$:hide = false
+	
+	const hideTimer = setTimeout(() => {
+		hide = true;
+		$Decoded.done = true
+	}, 3000);
   
 	let structuredContainer: { music: StructuredAssetContainer; speech: StructuredAssetContainer } = {
 		music: undefined,

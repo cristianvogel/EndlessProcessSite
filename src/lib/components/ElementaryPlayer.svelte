@@ -4,6 +4,8 @@
 	import { PauseOutline, PlayOutline, QueryQueue } from '@steeze-ui/carbon-icons';
 	import { Decoded, PlaylistMusic } from '$lib/stores/stores';
 	import PlaylistView from './PlaylistView.svelte';
+	import { onMount } from 'svelte';
+	import { onDestroy } from 'svelte';
 
 	const { audioStatus } = Audio.stores;
 
@@ -21,6 +23,16 @@
 			clickListenerRegistered = true;
 		}
 	}
+
+	onMount(() => {
+		Audio.actx.suspend();
+		forceAudioContextResume();
+	});
+
+	onDestroy(() => {
+		Audio.actx.close();
+	});
+
 </script>
 
 <svelte:window on:mousedown={forceAudioContextResume} />

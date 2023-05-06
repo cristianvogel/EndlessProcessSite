@@ -2,6 +2,7 @@
 	import {PlaylistMusic} from '$lib/stores/stores';
 	import {Audio} from '$lib/classes/Audio';
 	import DescriptionList from './DescriptionList.svelte';
+	import { fade } from 'svelte/transition';
 	const { audioStatus } = Audio.stores
 
 	$: isPlaying = $audioStatus === 'playing';
@@ -10,14 +11,12 @@
 
 </script>
 
-		{#if Audio.buffersReady  } 
-				<DescriptionList {isPlaying}>
-					 <span slot='Title'>
-					{#if isPlaying}
-					  {currentTrack} (excerpt)
-					  {/if}
+		{#if Audio.buffersReady && isPlaying } 
+				<DescriptionList {isPlaying} >
+					 <span slot='Title' in:fade>
+					  {currentTrack} (excerpt)				
 					</span>		
-					<span slot='Description'>{isPlaying ? 'Full album out now on all streaming platforms.' : ''}</span>
+					<span slot='Description' in:fade>{isPlaying ? 'Full album out now on all streaming platforms.' : ''}</span>
 				</DescriptionList>
 		{/if}
 		

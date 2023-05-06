@@ -31,6 +31,7 @@ export const CablesText: Writable<Array<string>> = writable(['Endless', 'Process
 
 //---- Audio related -------------------
 
+export const ContextSampleRate: Writable<number> = writable(44100);
 export const OutputMeters: Writable<MetersContainer> = writable(
 	{
 		MusicAudible: 0,

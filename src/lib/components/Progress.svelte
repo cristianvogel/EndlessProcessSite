@@ -3,26 +3,25 @@
 	import { Audio } from '$lib/classes/Audio';
 	import { ProgressBar } from '@skeletonlabs/skeleton';
 	import { Scrubbing } from '$lib/stores/stores';
-	import { onMount, tick, createEventDispatcher } from 'svelte';
+	import { onMount, createEventDispatcher } from 'svelte';
+	import { fade } from 'svelte/transition';
 
 	const dispatch = createEventDispatcher();
 
-
-	$: progress = $PlaylistMusic.currentTrack?.progress || 0;
-	$: duration = $PlaylistMusic.currentTrack?.duration || 0; // in seconds
-	$: tick().then (() =>{ 
-		Audio.progress = progress as number;
-	});
-
-	$: if (progress >= 0.99) {
-		$Scrubbing = false;
+	$: progress = Math.fround($PlaylistMusic.currentTrack?.progress as number) ;
+	$: durationSecs = $PlaylistMusic.currentTrack?.duration || 0; // in seconds
+	$: samplerParams = ( command: 'start' | 'stop' ) => { return {
+			trigger: command === 'start' ? 1 : 0,
+			startOffset,
+			durationMs: durationSecs * 1000
+		}}
+	$: if (progress >= 0.99 && !$Scrubbing) {
 		dispatch('cueNext', $PlaylistMusic.currentTrack?.title);
 	}
 		
-	
-	let start: number = 0;
 	let isPhone = false;
 	let isTablet = false;
+	let startOffset = 0;
 
 	function handleScrub(e: any) {
 		if (!$Scrubbing) return;
@@ -30,16 +29,13 @@
 		const { left, width } = target.getBoundingClientRect();
 		const x = clientX - left;
 		const percent = x / width;
-		start = Math.round(percent * duration * 1000); // to ms
-		Audio.playWithScrub({
-			trigger: 0,
-			startOffset: start
-		});
+		startOffset = percent
+		Audio.playWithScrub( {...samplerParams('stop'), startOffset} );
 	}
 
 	function replay() {
 		$Scrubbing = false;
-		Audio.playWithScrub({ trigger: 1, startOffset: start })
+		Audio.playWithScrub( {...samplerParams('start'), startOffset})
 		}
 
 	function responsive() {
@@ -55,15 +51,32 @@
 <svelte:window on:resize={responsive} />
 
 <div id="parent">
-	<ProgressBar
-		label="Progress Bar"
-		value={progress * duration}
-		height={isPhone ? 'h-[1.5em]' : 'h-[1em]'}
-		meter="bg-gradient-to-r from-yellow-600 to-red-600"
-		rounded="rounded-sm"
-		min={0}
-		max={duration}
-	/>
+
+	{#if !$Scrubbing }	
+	<div in:fade >
+		<ProgressBar
+			label="Progress Bar"
+			value={ Math.fround(progress * durationSecs) }
+			height={  'h-[1em]'}
+			meter="bg-gradient-to-r from-yellow-600 to-red-600"
+			rounded="rounded-sm"
+			min={0}
+			max={durationSecs}
+		/>
+	</div>
+	{:else}
+	<div in:fade>
+		<ProgressBar
+			label="Progress Bar"
+			value={ Math.fround(progress * durationSecs) }
+			height={ 'h-[2em]'}
+			meter="bg-gradient-to-r from-yellow-600 to-red-600"
+			rounded="rounded-sm"
+			min={0}
+			max={durationSecs}
+		/>
+	</div>
+	{/if}
 	<!-- svelte-ignore a11y-click-events-have-key-events -->
 	<div
 		id="invisible-div"
@@ -72,8 +85,8 @@
 			handleScrub(e);
 		}}
 		on:mousemove={handleScrub}
-		on:mouseup={replay}
-		on:mouseleave={ ()=> $Scrubbing = false }
+		on:mouseup={ ()=> {if ( $Scrubbing ) replay()} }
+		on:mouseleave={ ()=>{ if ($Scrubbing)  replay()} }
 	/>
 </div>
 
@@ -87,7 +100,7 @@
 		top: 0;
 		left: 0;
 		width: 100%;
-		height: 1.5em;
+		height: 2em;
 		opacity: 0;
     	cursor: grab;
 	}

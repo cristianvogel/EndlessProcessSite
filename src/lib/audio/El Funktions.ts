@@ -9,15 +9,17 @@ import { el, resolve, isNode } from '@elemaudio/core';
 import type { Signal, StereoSignal } from '../../typeDeclarations';
 
 /**
- * @name constants
+ * @name SignalConstants
  * @description Useful signal constants for normalised system
  */
-const one: Signal = el.const({ key: 'one', value: 1 });
-const negativeOne: Signal = el.const({ key: 'minusOne', value: -1 });
-const zero: Signal = el.const({ key: 'zero', value: 0 });
-const half: Signal = el.const({ key: 'half', value: 0.5 });
-const negativeHalf: Signal = el.const({ key: 'minusHalf', value: -0.5 });
-const halfSR: Signal = el.mul(0.5, el.sr());
+export const SignalConstants = {
+	one: el.const({ key: 'one', value: 1 }),
+	negativeOne: el.const({ key: 'minusOne', value: -1 }),
+	zero: el.const({ key: 'zero', value: 0 }),
+	half: el.const({ key: 'half', value: 0.5 }),
+	negativeHalf: el.const({ key: 'minusHalf', value: -0.5 }),
+	halfSR: el.mul(0.5, el.sr())
+}
 
 /** 
  * ╠══════════════════════════════════════════╣
@@ -95,7 +97,7 @@ export function attenuate(
  * @description 
  * Implements a parametised counter as an audio 
  * rate signal, with the side effect of emitting
- * a snapshot of a normalised progress value 
+ * a snapshot of normalised progress value 
  * emitted at a specified rate. This is an audio 
  * rate control signal, therefore it will also 
  * emit DC when rendered. One strategy is to render 
@@ -112,6 +114,8 @@ export function attenuate(
  * @param startOffset [ number ] :: start offset in milliseconds
  * ╠══════════════════════════════════════════╣
  */
+
+
 export function progress(props: {
 	key?: string;
 	totalDurMs?: number;
@@ -121,21 +125,22 @@ export function progress(props: {
 }): Signal {
 
 	let { run,
-		totalDurMs = 1000,
-		rate = 10,
-		startOffset = 0,
+		totalDurMs = 1,
+		rate = 1000,
+		startOffset,
 		key = 'progress'
 	} = props;
+	const durationSec = 0.001 * totalDurMs
+	const freqHz = 1 / durationSec
+	run = isNode(run) ? run : resolve(el.const({ key: key + '_run', value: (run as number || startOffset as number) }));
+	let pausingRateSignal = el.mul(run, el.const({ key: key + '_rate', value: freqHz }))
+	const reset = pausingRateSignal
 
-	run = isNode(run) ? run : resolve(el.const({ key: key + '_run', value: run as number }));
+	let progress = el.add(el.phasor(pausingRateSignal, reset), el.sm(numberToConstant('startOffset', startOffset as number)));
+	let trig = el.train(el.mul(rate, run))
 
-	let progress = el.add(
-		el.counter({ key: key + '_count' }, run),
-		el.ms2samps(startOffset)
-	);
-	let normProgress = el.div({ key: key + '_div' }, progress, el.ms2samps(totalDurMs));
 	return (
-		el.snapshot({ key, name: 'progress' }, el.train(rate ? el.mul(rate, run) : run), normProgress)
+		el.snapshot({ key, name: 'progress' }, trig, progress)
 	);
 }
 
@@ -155,7 +160,7 @@ export function clippedHann(
 		index: Signal | number,
 	}
 ): Signal {
-	let { key = 'clippedHann', gain = one, index } = props;
+	let { key = 'clippedHann', gain = SignalConstants.one, index } = props;
 	index = isNode(index) ? index : resolve(numberToConstant(key, index as unknown as number))
 	return resolve(
 		clipTo01(
@@ -179,7 +184,7 @@ export function clipTo01(
 	},
 	input: Signal): Signal {
 
-	const { prescale = one, fullRangeInput = false } = props;
+	const { prescale = SignalConstants.one, fullRangeInput = false } = props;
 	const positiveRange = fullRangeInput ? fullRangeTo01(input) as Signal : input;
 	const final = el.mul(prescale, positiveRange) as Signal;
 	return resolve(
@@ -196,7 +201,7 @@ export function clipTo01(
  */
 export function fullRangeTo01(input: Signal): Signal {
 	return resolve(
-		el.add(half, el.mul(half, input))
+		el.add(SignalConstants.half, el.mul(SignalConstants.half, input))
 	)
 }
 
