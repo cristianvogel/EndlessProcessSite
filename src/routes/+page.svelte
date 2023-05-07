@@ -6,7 +6,7 @@
 	import type { LayoutData } from './$types';
 	import { ProgressBar } from '@skeletonlabs/skeleton';
 	import { Audio } from '$lib/classes/Audio';
-	import { VFS_PATH_PREFIX, PlaylistMusic, SpeechCoreLoaded, MusicCoreLoaded, Decoded } from '$lib/stores/stores';
+	import { VFS_PATH_PREFIX, PlaylistMusic, Decoded } from '$lib/stores/stores';
 	import { get } from 'svelte/store';
 	import { VoiceOver } from '$lib/classes/Speech';
 	import type { AssetCategories, StructuredAssetContainer } from '../typeDeclarations';
@@ -30,14 +30,13 @@
 	 function assignAssets(node: HTMLElement, { buffer, index }) {
     
     const category:AssetCategories | string = node.id;
-    const targetStateStore = category === 'music' ? MusicCoreLoaded : SpeechCoreLoaded;  
     if (category === 'music' || category === 'speech') {
 		const asset = { path: data[category].paths[index], title: data[category].titles[index] };
 	
 		PlaylistMusic.update(($p) => {
-      if ($p.titles[category].length >= data[category].titles.length) {
-        return $p
-      }
+			if ($p.titles[category].length >= data[category].titles.length) {
+				return $p
+			}
 			$p.titles[category] = [...$p.titles[category], asset.title];
 			return $p;
 		});
@@ -67,7 +66,7 @@
 	{:then musicBuffers}
 	
   {#if !hide}
-  <span class='info'>Music </span>
+  <span class='info'>Music</span>
 		{#each musicBuffers as buffer, index}
 			<ul>
 				<li class="info" id='music' use:assignAssets={{ buffer, index }} in:fly="{{ y: 200, duration: index * 200 }}" out:fade>

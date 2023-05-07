@@ -1,7 +1,7 @@
-import { PlaylistMusic } from '$lib/stores/stores';
+import { ContextSampleRate, PlaylistMusic } from '$lib/stores/stores';
 import { get } from 'svelte/store';
 import type { LayoutLoad } from './$types';
-import { Utils, Wait, formatTitleFromGlobalPath } from '$lib/classes/Utils';
+import { formatTitleFromGlobalPath } from '$lib/classes/Utils';
 import type { AssetCategories } from '../typeDeclarations';
 
 type TitlesAndPaths = { titles: string[], paths: string[] }
@@ -46,7 +46,7 @@ function fetchBuffers({ fetch }: any, category: AssetCategories, pathlist: strin
     // not sure how to get that info from the file at this point
     // the speech is 64kbps but the music is 320 vbr
 
-    const excerptDuration = 44100 * 60
+    const excerptDuration = get(ContextSampleRate) * 60
 
     const headers = category === 'music' ? {
         Range: `bytes=0-${excerptDuration}`
@@ -83,10 +83,10 @@ export const load = (async ({ fetch }) => {
             ...loadOut,
             [category]: assets.files[category],
             [category + 'Streamed']: {
-                buffers: Promise.all(assets.fetchers[category]).then(async responses => {
+                buffers: Promise.allSettled(assets.fetchers[category]).then(async responses => {
                     let final = new Array<ArrayBuffer>()
                     for (let i = 0; i < responses.length; i++) {
-                        final.push(await responses[i].arrayBuffer())
+                        final.push(await responses[i].value.arrayBuffer())
                     }
                     return final
                 })

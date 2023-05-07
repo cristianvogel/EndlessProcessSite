@@ -19,7 +19,7 @@
         class="absolute top-0 right-0 m-2 text-tertiary-500 hover:text-tertiary-800"
         on:click={onClose}
       >
-        <svg class="w-6 h-6 fill-current" viewBox="0 0 20 20">
+        <svg class="w-6 h-6 fill-secondary-500 animate-pulse" viewBox="0 0 20 20">
           <path
             fill-rule="evenodd"
             d="M11.414 10l4.293-4.293a1 1 0 0 0-1.414-1.414L10 8.586 5.707 4.293a1 1 0 1 0-1.414 1.414L8.586 10l-4.293 4.293a1 1 0 1 0 1.414 1.414L10 11.414l4.293 4.293a1 1 0 1 0 1.414-1.414L11.414 10z"

@@ -3,11 +3,17 @@
 	import { Audio } from '$lib/classes/Audio';
 	import { ProgressBar } from '@skeletonlabs/skeleton';
 	import { Scrubbing } from '$lib/stores/stores';
-	import { onMount, createEventDispatcher } from 'svelte';
+	import { createEventDispatcher } from 'svelte';
 	import { fade } from 'svelte/transition';
 
 	const dispatch = createEventDispatcher();
+		
+	let innerWidth:number;
+	let isPhone,isTablet = false;
+	let startOffset = 0;
 
+	$: isPhone = innerWidth < 400;
+	$: isTablet = innerWidth < 1024;
 	$: progress = Math.fround($PlaylistMusic.currentTrack?.progress as number) ;
 	$: durationSecs = $PlaylistMusic.currentTrack?.duration || 0; // in seconds
 	$: samplerParams = ( command: 'start' | 'stop' ) => { return {
@@ -18,10 +24,6 @@
 	$: if (progress >= 0.99 && !$Scrubbing) {
 		dispatch('cueNext', $PlaylistMusic.currentTrack?.title);
 	}
-		
-	let isPhone = false;
-	let isTablet = false;
-	let startOffset = 0;
 
 	function handleScrub(e: any) {
 		if (!$Scrubbing) return;
@@ -38,17 +40,10 @@
 		Audio.playWithScrub( {...samplerParams('start'), startOffset})
 		}
 
-	function responsive() {
-		isPhone = window.innerWidth < 640;
-		isTablet = window.innerWidth < 1024;
-	}
 
-	onMount(() => {
-		responsive();
-	});
 </script>
 
-<svelte:window on:resize={responsive} />
+<svelte:window bind:innerWidth/>
 
 <div id="parent">
 
@@ -79,14 +74,16 @@
 	{/if}
 	<!-- svelte-ignore a11y-click-events-have-key-events -->
 	<div
+		
 		id="invisible-div"
-		on:mousedown={(e) => {
+		on:mousedown|preventDefault|stopPropagation={(e) => {
 			$Scrubbing = true;
 			handleScrub(e);
 		}}
-		on:mousemove={handleScrub}
+		on:mousemove|preventDefault={handleScrub}
 		on:mouseup={ ()=> {if ( $Scrubbing ) replay()} }
 		on:mouseleave={ ()=>{ if ($Scrubbing)  replay()} }
+		
 	/>
 </div>
 

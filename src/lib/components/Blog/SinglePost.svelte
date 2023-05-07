@@ -8,6 +8,8 @@
 	import { preloadData } from '$app/navigation';
 	
 	let modalOpen = false;
+	let isPhone: boolean = false;
+
 	const { content, title, cardIndex, featuredImageUrl } = $singlePost;
 	$:selectedImage = '';
 
@@ -17,7 +19,7 @@
 		let doc: Document = parser.parseFromString(content.sanitisedHTML, 'text/html');
 		const imgElements = doc.querySelectorAll('img');
 		doc.querySelectorAll('video').forEach((vid) => {
-			vid.style.maxWidth = '60%';
+			vid.style.maxWidth = isPhone ? '90%' : '60%';
 			vid.style.borderRadius = '25px';
 			vid.style.margin = 'auto';
 		})
@@ -37,6 +39,11 @@
 		selectedImage = e.target.src;
 	};	
 
+	function responsive() {
+			isPhone = window.innerWidth < 640;
+			
+	}
+
 	
 	onMount(() => {
 		preloadData('/blog');
@@ -44,6 +51,7 @@
 			post.isOpen = true;
 			return post;
 		});
+		responsive();
 	});
 
 	onDestroy(() => {
@@ -66,7 +74,6 @@
 		<span><Icon src={Close} class="fill-tertiary-400 h-10 w-10 p-0 m-0" /></span>
 	</span>
 </div>
-<!-- <div class="m-0 p-6 bg-gradient-to-br from-transparent to-surface-800 m-3"> -->
 	<div class="card variant-soft-surface md:m-20 sm:m-1">
 	<div class="bg-transparent p-3 text-tertiary-400 opacity-80">
 		<h6 class="subheading">{cardIndex}</h6>
@@ -77,11 +84,21 @@
 	   <ImageModal imageUrl={selectedImage} altText={title} onClose={()=>modalOpen = false} />
 	{/if}
 	
-
-
-	<section class="grid grid-cols-3 p-1 divide-x-2 divide-tertiary-800 ">
+	<section class="grid md:grid-cols-3 sm:grid-cols-2 p-1 md:divide-x-2 md:divide-tertiary-800 ">
 		{#if prunedHTML}
-			<div class="
+	
+			<article
+				class="prose dark:prose-invert 
+              prose-img:rounded-xl
+              break-inside-avoid-column
+             md:!prose-2xl
+			 sm:!prose-sm
+             md:col-span-2
+			 sm:col-span-1"
+			>
+				{@html prunedHTML.body.innerHTML}
+			</article>
+					<div class="
 			col-span-1 
 			p-3 rounded-lg 
 			text-tertiary-400 
@@ -109,16 +126,6 @@
 					{/each}
 				</ul>
 			</div>
-			<article
-				class="prose dark:prose-invert 
-              prose-img:rounded-xl
-              break-inside-avoid-column
-             md:!prose-2xl
-			 sm:!prose-sm
-             col-span-2 "
-			>
-				{@html prunedHTML.body.innerHTML}
-			</article>
 		{/if}
 	</section>
 </div>
