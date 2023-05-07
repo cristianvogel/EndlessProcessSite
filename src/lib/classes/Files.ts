@@ -14,19 +14,10 @@
 
 export function getMusicFiles(): string[] {
 	let filePaths: string[] = [];
-	let files
-	if (process.env.NODE_ENV !== 'development') {
-		files = import.meta.glob('./audiofiles/music/*', {
+	let files = import.meta.glob('../../../src/audiofiles/music/*', {
 			eager: true,
 			import: 'default'
-		 })
-	} else {
-		files = import.meta.glob('../../../static/audiofiles/music/*', {
-			eager: true,
-			import: 'default'
-		})
-	}
-
+	})
 	filePaths = Object.values(files).map((file) => {
 		return file as string;
 	});
@@ -35,18 +26,10 @@ export function getMusicFiles(): string[] {
 
 export function getSpeechFiles(): string[] {
 	let filePaths: string[] = [];
-	let files
-	if (process.env.NODE_ENV !== 'development') {
-		files = import.meta.glob('./audiofiles/speech/*', {
+	let files = import.meta.glob('../../../src/audiofiles/speech/*', {
 			eager: true,
 			import: 'default'
-		 })
-	} else {
-		files = import.meta.glob('../../../static/audiofiles/speech/*', {
-			eager: true,
-			import: 'default'
-		})
-	};
+	})
 
 	filePaths = Object.values(files).map((file) => {
 		return file as string;
