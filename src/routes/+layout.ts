@@ -29,7 +29,7 @@ function getPaths(pathlist: string[]) {
         console.warn('Unable to detect device type. Assuming desktop.');
     };
     console.log(isMobile() ? 'Mobile' : 'Desktop');
-    if (isMobile()) { pathlist = pathlist.slice(0, Math.max(1, Math.round(pathlist.length / 3))) }
+    if (isMobile()) { pathlist = pathlist.slice(0, Math.max(1, Math.round(pathlist.length / 2))) }
 
     for (let i = 0; i < pathlist.length; i++) {
         const path = pathlist[i];
@@ -83,10 +83,10 @@ export const load = (async ({ fetch }) => {
             ...loadOut,
             [category]: assets.files[category],
             [category + 'Streamed']: {
-                buffers: Promise.allSettled(assets.fetchers[category]).then(async responses => {
+                buffers: Promise.all(assets.fetchers[category]).then(async responses => {
                     let final = new Array<ArrayBuffer>()
                     for (let i = 0; i < responses.length; i++) {
-                        final.push(await responses[i].value.arrayBuffer())
+                        final.push(await responses[i].arrayBuffer())
                     }
                     return final
                 })
