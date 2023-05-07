@@ -36,6 +36,7 @@
 	}
 
 	function replay() {
+		if (!$Scrubbing) return;
 		$Scrubbing = false;
 		Audio.playWithScrub( {...samplerParams('start'), startOffset})
 		}
@@ -80,9 +81,15 @@
 			$Scrubbing = true;
 			handleScrub(e);
 		}}
+		on:touchstart|preventDefault|stopPropagation={(e) => {
+			$Scrubbing = true;
+			handleScrub(e);
+		}}
+		on:touchmove|preventDefault={handleScrub}
+		on:touchend={replay}
 		on:mousemove|preventDefault={handleScrub}
-		on:mouseup={ ()=> {if ( $Scrubbing ) replay()} }
-		on:mouseleave={ ()=>{ if ($Scrubbing)  replay()} }
+		on:mouseup={replay}
+		on:mouseleave={replay}
 		
 	/>
 </div>
