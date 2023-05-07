@@ -10,13 +10,22 @@
 	DEFAULT_GLOB_PATH = '../../../static/audio/mp3/*'  
  */
 
+
+
 export function getMusicFiles(): string[] {
 	let filePaths: string[] = [];
-
-	const files = import.meta.glob('../../../static/audiofiles/music/*', {
-		eager: true,
-		import: 'default'
-	});
+	let files
+	if (process.env.NODE_ENV !== 'development') {
+		files = import.meta.glob('./audiofiles/music/*', {
+			eager: true,
+			import: 'default'
+		 })
+	} else {
+		files = import.meta.glob('../../../static/audiofiles/music/*', {
+			eager: true,
+			import: 'default'
+		})
+	}
 
 	filePaths = Object.values(files).map((file) => {
 		return file as string;
@@ -26,11 +35,18 @@ export function getMusicFiles(): string[] {
 
 export function getSpeechFiles(): string[] {
 	let filePaths: string[] = [];
-
-	const files = import.meta.glob('../../../static/audiofiles/speech/*', {
-		eager: true,
-		import: 'default'
-	});
+	let files
+	if (process.env.NODE_ENV !== 'development') {
+		files = import.meta.glob('./audiofiles/speech/*', {
+			eager: true,
+			import: 'default'
+		 })
+	} else {
+		files = import.meta.glob('../../../static/audiofiles/speech/*', {
+			eager: true,
+			import: 'default'
+		})
+	};
 
 	filePaths = Object.values(files).map((file) => {
 		return file as string;

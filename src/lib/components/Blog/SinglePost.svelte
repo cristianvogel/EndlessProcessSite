@@ -23,6 +23,7 @@
 			vid.style.borderRadius = '25px';
 			vid.style.margin = 'auto';
 		})
+		
 		doc.querySelectorAll('img').forEach((img) => {
 			img.remove();
 		});
@@ -60,11 +61,8 @@
 			return post;
 		});
 	});
-
-
+		
 </script>
-
-
 
 <div class="flex justify-start md:-mb-20 md:mr-14">
 	<span class="chip variant-soft hover:variant-filled-secondary ml-3 p-0 z-50">
@@ -86,7 +84,6 @@
 	
 	<section class="grid md:grid-cols-3 sm:grid-cols-2 p-1 md:divide-x-2 md:divide-tertiary-800 ">
 		{#if prunedHTML}
-	
 			<article
 				class="prose dark:prose-invert 
               prose-img:rounded-xl
@@ -117,12 +114,14 @@
 					{/if}
 		
 					{#each imageURLs as url}
-						<img src={url} alt="featured images" class="w-35 h-22 p-3 rounded-lg"
+					<svelte:element 
+						this= 'img'
+						src={url} alt="featured images" class="w-35 h-22 p-3 rounded-lg"
 						on:click={()=>modalOpen = true}
 						on:mouseenter={activeImage}
 						on:focus={activeImage}
 						on:keypress={activeImage} 
-						/>
+					/>
 					{/each}
 				</ul>
 			</div>
@@ -131,9 +130,5 @@
 </div>
 
 <style>
-	
-	.rewritten-video {
-		width: 60%;
-		margin: auto;
-	}
+
 </style>

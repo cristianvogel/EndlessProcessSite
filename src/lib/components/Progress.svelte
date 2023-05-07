@@ -89,7 +89,7 @@
 		on:touchend={replay}
 		on:mousemove|preventDefault={handleScrub}
 		on:mouseup={replay}
-		on:mouseleave={replay}
+		on:mouseleave={replay}  
 		
 	/>
 </div>
