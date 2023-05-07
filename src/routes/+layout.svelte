@@ -22,8 +22,8 @@
 		}, 100);
 	}
 
-	function spinFX() {
-			// todo: more exagerrated spin effect
+	function canvasFX() {
+			// todo: more exagerrated user triggered effect
 			// sent into Cables page
 	}
 
@@ -33,11 +33,11 @@
 	class="h-full p-1 bg-gradient-to-br from-slate-500 to-stone-800" 
 -->
 
-<AppShell class=" p-1 bg-transparent" on:scroll={cablesScroller}>
+<AppShell class="p-1 bg-transparent" on:scroll={cablesScroller}>
 	
 	<!--  Appbar in Skeleton header slot -->
 	<svelte:fragment slot="header">
-		<EndProcAppBar on:playlistChanged={spinFX}/>
+		<EndProcAppBar on:playlistChanged={canvasFX}/>
 	</svelte:fragment>
 
 	<!-- Cables canvas in Skeleton header slot -->
