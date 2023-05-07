@@ -5,8 +5,7 @@
 	 */
 	import type { LayoutData } from './$types';
 	import { ProgressBar } from '@skeletonlabs/skeleton';
-	import { Audio } from '$lib/classes/Audio';
-	import { VFS_PATH_PREFIX, PlaylistMusic, Decoded } from '$lib/stores/stores';
+	import { VFS_PATH_PREFIX, PlaylistMusic, Decoded, VFS_Entries_Music, VFS_Entries_Speech } from '$lib/stores/stores';
 	import { get } from 'svelte/store';
 	import { VoiceOver } from '$lib/classes/Speech';
 	import type { AssetCategories, StructuredAssetContainer } from '../typeDeclarations';
@@ -19,7 +18,7 @@
 	const hideTimer = setTimeout(() => {
 		hide = true;
 		$Decoded.done = true
-	}, 3000);
+	}, 5000);
   
 	let structuredContainer: { music: StructuredAssetContainer; speech: StructuredAssetContainer } = {
 		music: undefined,
@@ -27,71 +26,97 @@
 	};
 	  const prefix = get(VFS_PATH_PREFIX);
 
-	 function assignAssets(node: HTMLElement, { buffer, index }) {
-    
-    const category:AssetCategories | string = node.id;
-    if (category === 'music' || category === 'speech') {
-		const asset = { path: data[category].paths[index], title: data[category].titles[index] };
-	
-		PlaylistMusic.update(($p) => {
-			if ($p.titles[category].length >= data[category].titles.length) {
-				return $p
-			}
-			$p.titles[category] = [...$p.titles[category], asset.title];
-			return $p;
-		});
-    // assign
-		structuredContainer[category] = {
-			header: {
-				title: asset.title,
-				bytes: buffer.byteLength,
-				globPath: asset.path,
-				vfsPath: `${prefix}${asset.path}`
-			},
-			body: buffer
-		};
-    // update relevant VFS the first load
-    const targetCore = category === 'music' ? Audio._core : VoiceOver._core; 
-    Audio.updateVFS(structuredContainer[category], targetCore);
-  }
+ function assignAssets(node: HTMLElement, params: { buffer: ArrayBuffer; index: number }) {
+		const { buffer, index } = params;
+		const category:AssetCategories | string = node.id;
+		if (category === 'music' || category === 'speech') {
+			const asset = { path: data[category].paths[index], title: data[category].titles[index] };
+			PlaylistMusic.update(($p) => {
+				if ($p.titles[category].length >= data[category].titles.length) {
+					return $p
+				}
+				$p.titles[category] = [...$p.titles[category], asset.title];
+				return $p;
+			});
+			
+			structuredContainer[category] = {
+				header: {
+					title: asset.title,
+					bytes: buffer.byteLength,
+					globPath: asset.path,
+					vfsPath: `${prefix}${asset.path}`
+				},
+				body: buffer
+			};
+		// add the VFS entry to the dictionery for later assignment
+		// when we are absolutely sure the Elementary core is ready
+		if (category === 'music') {
+			VFS_Entries_Music.update(($v) => {
+				$v = [...$v, structuredContainer['music']];
+				return $v;
+			});
+		} else {
+			VFS_Entries_Speech.update(($v) => {
+				$v = [...$v, structuredContainer['speech']];
+				return $v;
+			});
+		}
+	}
 }
 </script>
 
 {#if !$Decoded.done}
-<div class='w-25% absolute top-28 left-5'>
-	{#await data.musicStreamed.buffers}
-		<div class="flex items-center">
-			<ProgressBar height='h-1'/>
-		</div>	
-	{:then musicBuffers}
+<div class='fileinfo' in:fade>
+	<ul>
+	{#each data.musicStreamed.buffers as promising, index}
+	   {#await Promise.resolve(promising)}
+			<li class="text-md text-secondary-300" in:fly="{{ y: 200, duration: index * 100 }}">
+					{'▁▂▃▄▅▆▇█'[index%8]}
+			</li> 	
+		{:then musicData}
+			{#await musicData.arrayBuffer()}
+				<li class="text-sm text-secondary-600" in:fly="{{ y: 200, duration: index * 100 }}" out:fade>
+					{'▁▂▃▄▅▆▇█'[index%8]}
+				</li>
+			{:then arrayBuffer }	
+					<li class="info" id='music' use:assignAssets={{buffer: arrayBuffer, index }} 
+					in:fly="{{ x: -200, duration: index * 200 }}" out:fade>
+					╰ {data.music.titles[index]}
+					</li>
+			{/await}
+		{/await}
+	{/each}
 	
-  {#if !hide}
-  <span class='info'>Music</span>
-		{#each musicBuffers as buffer, index}
-			<ul>
-				<li class="info" id='music' use:assignAssets={{ buffer, index }} in:fly="{{ y: 200, duration: index * 200 }}" out:fade>
-         ╰ {data.music.titles[index]}</li>
-			</ul>
-		{/each}
-    {/if}
-	{/await}
-
-
-  {#await data.speechStreamed.buffers}
-		<div class="flex items-center">
-			<ProgressBar height='h-1'/>
-		</div>
-	{:then speechBuffers}
-  {#if !hide}
-  <span class='info'>Speech </span>
-		{#each speechBuffers as buffer, index}
-			<ul>
-				<li class="info" id='speech' use:assignAssets={{ buffer, index }} in:fly="{{ y: 200, duration: index * 200 }}" out:fade>
-           ╰ {$PlaylistMusic.titles.speech[index]}
-			</ul>
-		{/each}
-    <h3 in:fly="{{ y: 200, duration: 3000 }}" out:fade>Ready.</h3>
-   {/if}
- {/await}
+{#each data.speechStreamed.buffers as promising, index }
+	  {#await Promise.resolve(promising)}
+			<li class="text-sm text-secondary-600">
+					{'▁▂▃▄▅▆▇█'[index%8]}
+			</li>	
+		{:then speechData}
+			{#await speechData.arrayBuffer()}
+			<span class="info" out:fade>╭</span>
+			{:then arrayBuffer }	
+			
+					<li class="info" id='speech' use:assignAssets={{buffer: arrayBuffer, index }} 
+					in:fly="{{ x: -200, duration: index * 200 }}" out:fade>
+					╰ {data.speech.titles[index]}
+					</li>
+			
+			{/await}
+			 <h3 in:fly="{{ y: 200, duration: 3000 }}" out:fade>Ready.</h3>
+		{/await}
+{/each}
+ 
+</ul>
 </div>
+
 {/if}
+
+
+<style>
+	.fileinfo {
+		position: absolute;
+		left: 1rem;
+		top: 10rem;
+	}
+</style>

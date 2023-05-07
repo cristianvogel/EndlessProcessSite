@@ -87,6 +87,7 @@
 
 <AppBar
 	background="endproc-card-bg"
+	border="-mb-2"
 	gridColumns="grid-cols-3"
 	slotTrail="place-content-end"
 	slotLead="mb-0 h-10"
@@ -95,14 +96,11 @@
 >
 	<svelte:fragment slot="lead" >
 
-	
 		<!-- Persistent Audio controls  -->
 		{#if audioBuffersReady && $CablesIsLoaded}
 			<ElementaryPlayer on:click={handleAudioControls} />
 		{:else}
-			<div class="absolute top-6" transition:fade>
-				<Icon src={Cube} class="h-10 animate-spin" data-sveltekit-noscroll />
-			</div>
+			<span class='text-lg text-secondary-600' data-sveltekit-noscroll>Loading...</span>
 		{/if}	
 		
 

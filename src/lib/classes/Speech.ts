@@ -4,7 +4,7 @@ import WebRenderer from '@elemaudio/web-renderer';
 import { writable, type Writable } from 'svelte/store';
 import { AudioCore } from '$lib/classes/Audio';
 import { el } from '@elemaudio/core';
-import { OutputMeters, PlaylistMusic, SpeechCoreLoaded } from '$lib/stores/stores';
+import { OutputMeters, PlaylistMusic, SpeechCoreLoaded, VFS_Entries_Speech } from '$lib/stores/stores';
 import { attenuateStereo, driftingSamplesPlayer } from '$lib/audio/AudioFunctions';
 
 
@@ -70,9 +70,15 @@ export class VoiceCore extends AudioCore {
 		})
 		VoiceOver._core.on('load', () => {
 			VoiceOver.subscribeToStores()
+			// now we are sure Elementary is ready
+			// update the VFS from the store
+			const vfs = get(VFS_Entries_Speech);
+			vfs.forEach(entry => {
+				VoiceOver.updateVFS(entry, VoiceOver._core as WebRenderer);
+			});
 			SpeechCoreLoaded.set(true);
 			VoiceOver.status = 'ready';
-			//console.log('Voice Core loaded  🎤');
+			console.log('Voice Core loaded  🎤');
 			VoiceOver.patch();
 		});	
 	}
@@ -94,7 +100,7 @@ export class VoiceCore extends AudioCore {
 	 * @name playSpeechFromVFS
 	 */
 	playSpeechFromVFS(gate: Number = 1): void {
-		const { vfsPath } = VoiceOver._currentMetadata;
+		const { vfsPath, duration = 1000 } = VoiceOver._currentMetadata;
 		const test = driftingSamplesPlayer(VoiceOver,
 			{
 				vfsPath,
@@ -102,6 +108,7 @@ export class VoiceCore extends AudioCore {
 				rate: 0.901,
 				drift: 1.0e-3,
 				monoSum: true,
+				durationMs: duration
 			});
 		console.log('🎤 -> ', vfsPath);
 		VoiceOver.master(test);

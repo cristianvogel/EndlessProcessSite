@@ -9,7 +9,7 @@ import type {
 } from '../../typeDeclarations';
 
 import { scrubbingSamplesPlayer, bufferProgress, attenuateStereo, hannEnvelope } from '$lib/audio/AudioFunctions';
-import { channelExtensionFor } from '$lib/classes/Utils';
+import { Wait, channelExtensionFor } from '$lib/classes/Utils';
 import {
 	CablesPatch,
 	PlaylistMusic,
@@ -18,7 +18,8 @@ import {
 	MusicCoreLoaded,
 	VFS_PATH_PREFIX,
 	Decoded,
-	ContextSampleRate
+	ContextSampleRate,
+	VFS_Entries_Music
 } from '$lib/stores/stores';
 import WebRenderer from '@elemaudio/web-renderer';
 import type { NodeRepr_t } from '@elemaudio/core';
@@ -29,8 +30,8 @@ import { el } from '@elemaudio/core';
 // todo: set a sample rate constant prop
 
 export class AudioCore {
-	_core: WebRenderer | null;
-	_silentCore: WebRenderer | null;
+	_core: WebRenderer;
+	_silentCore: WebRenderer;
 	_AudioCoreStatus: Writable<AudioCoreStatus>;
 	_contextIsRunning: Writable<boolean>;
 	_audioContext: Writable<AudioContext>;
@@ -42,7 +43,7 @@ export class AudioCore {
 	_outputBuss: StereoSignal
 
 	constructor() {
-		this._core = this._silentCore = null;
+		this._core = this._silentCore = null as unknown as WebRenderer;;
 		this._masterVolume = writable(0.909); // default master volume
 		this._AudioCoreStatus = writable('loading');
 		this._contextIsRunning = writable(false);
@@ -131,13 +132,22 @@ export class AudioCore {
 		Audio.actx.addEventListener('statechange', Audio.stateChangeHandler);
 
 		Audio._core.on('load', () => {
-			MusicCoreLoaded.set(true)
+
 			// Subscribe to Svelte stores outside of component
 			Audio.subscribeToStores();
-			console.log('Main core loaded 🔊');
+
+			// now we are sure Elementary is ready
+			// update the VFS from the store
+			const vfs = get(VFS_Entries_Music);
+			vfs.forEach(entry => {
+				Audio.updateVFS(entry, Audio._core as WebRenderer);
+			});
+
+			console.log('Main core loaded 🔊 - ', vfs.length, ' tracks');
 		});
 
 		Audio._silentCore.on('load', () => {
+			MusicCoreLoaded.set(true)
 			console.log('Silent core loaded');
 		});
 
@@ -320,7 +330,7 @@ export class AudioCore {
 
 	async updateVFS(
 		container: StructuredAssetContainer,
-		core: WebRenderer | null
+		core: WebRenderer
 	) {
 		// decoder
 		Audio.decodeRawBuffer(container).then((data) => {
@@ -336,7 +346,7 @@ export class AudioCore {
 				{
 					[vfsKey]: decoded.getChannelData(i)
 				};
-				core?.updateVirtualFileSystem(vfsDictionaryEntry);
+				core.updateVirtualFileSystem(vfsDictionaryEntry);
 			}
 			// update the DurationElement in the playlist container map
 			PlaylistMusic.update(($plist) => {

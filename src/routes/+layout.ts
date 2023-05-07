@@ -14,50 +14,9 @@ type Assets = {
 let assets: Assets
 let loadOut: any
 const categories: AssetCategories[] = ['music', 'speech']
+let final = new Array<ArrayBuffer>()
 
-function getPaths(pathlist: string[]) {
-    const results = {
-        titles: new Array<string>,
-        paths: new Array<string>,
-    }
-
-    // mobile throttling
-    const isMobile = () => {
-        if (typeof window !== 'undefined') {
-            return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-        }
-        console.warn('Unable to detect device type. Assuming desktop.');
-    };
-    console.log(isMobile() ? 'Mobile' : 'Desktop');
-    if (isMobile()) { pathlist = pathlist.slice(0, Math.max(1, Math.round(pathlist.length / 2))) }
-
-    for (let i = 0; i < pathlist.length; i++) {
-        const path = pathlist[i];
-        const title = formatTitleFromGlobalPath(path);
-        results.titles.push(title);
-        results.paths.push(path);
-    }
-    return { titles: results.titles, paths: results.paths }
-}
-
-function fetchBuffers({ fetch }: any, category: AssetCategories, pathlist: string[]) {
-
-    // actually, this is not sample rate related, but kbps! 
-    // not sure how to get that info from the file at this point
-    // the speech is 64kbps but the music is 320 vbr
-
-    const excerptDuration = get(ContextSampleRate) * 60
-
-    const headers = category === 'music' ? {
-        Range: `bytes=0-${excerptDuration}`
-    } : {};
-    for (let i = 0; i < pathlist.length; i++) {
-        const path = pathlist[i];
-        assets.fetchers[category].push(fetch(path, { headers }))
-    }
-    return assets.fetchers[category]
-}
-
+//-----------------Load Out-----------------//
 export const load = (async ({ fetch }) => {
     categories.forEach((category) => {
         let paths: any = get(PlaylistMusic)
@@ -83,19 +42,53 @@ export const load = (async ({ fetch }) => {
             ...loadOut,
             [category]: assets.files[category],
             [category + 'Streamed']: {
-                buffers: Promise.all(assets.fetchers[category]).then(async responses => {
-                    let final = new Array<ArrayBuffer>()
-                    for (let i = 0; i < responses.length; i++) {
-                        final.push(await responses[i].arrayBuffer())
-                    }
-                    return final
-                })
+                buffers: assets.fetchers[category]
             }
         }
     });
-
-    //-----------------Load Out-----------------//
     return loadOut
-
 }) satisfies LayoutLoad
 
+
+//-----------------Hoisted Helpers-----------------//
+function getPaths(pathlist: string[]) {
+    const results = {
+        titles: new Array<string>,
+        paths: new Array<string>,
+    }
+    console.log(isMobile() ? 'Mobile browser, loading less music' : 'Desktop');
+    if (isMobile()) { pathlist = pathlist.slice(0, Math.max(1, Math.round(pathlist.length / 2))) }
+    for (let i = 0; i < pathlist.length; i++) {
+        const path = pathlist[i];
+        const title = formatTitleFromGlobalPath(path);
+        results.titles.push(title);
+        results.paths.push(path);
+    }
+    return { titles: results.titles, paths: results.paths }
+}
+
+function fetchBuffers({ fetch }: any, category: AssetCategories, pathlist: string[]) {
+    // actually, the excerptDuration calc is not SR related, but kbps...
+    // the speech is 64kbps but the music is 320 vbr
+    const excerptDuration = get(ContextSampleRate) * 60
+    const clippingConditions =
+    {
+        mobile: (category === 'music' && isMobile()),
+        playExcerpt: (category === 'music'),
+        playFull: false
+    }
+    const headers = clippingConditions.playExcerpt ? {
+        Range: `bytes=0-${excerptDuration}`
+    } : {};
+    for (let i = 0; i < pathlist.length; i++) {
+        const path = pathlist[i];
+        assets.fetchers[category].push(fetch(path, { headers }))
+    }
+    return assets.fetchers[category]
+}
+// mobile throttling
+const isMobile = () => {
+    if (typeof window !== 'undefined') {
+        return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    }
+};

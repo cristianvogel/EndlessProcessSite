@@ -8,6 +8,7 @@
 	import PageFooter from '$lib/components/Footer.svelte';
 	import CanvasBody from '$lib/components/CanvasBody.svelte';
 
+
 	$: spin = false;
 
 	/**
@@ -33,7 +34,11 @@
 	class="h-full p-1 bg-gradient-to-br from-slate-500 to-stone-800" 
 -->
 
-<AppShell class="p-1 bg-transparent" on:scroll={cablesScroller}>
+<AppShell class="p-1 bg-transparent" 
+	on:scroll={cablesScroller}
+	slotHeader='bg-black fixed w-full z-50'
+	regionPage='mt-[5.5rem]'
+	>
 	
 	<!--  Appbar in Skeleton header slot -->
 	<svelte:fragment slot="header">
