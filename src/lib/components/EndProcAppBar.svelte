@@ -88,11 +88,11 @@
 <AppBar
 	background="endproc-card-bg"
 	border="-mb-2"
-	gridColumns="grid-cols-3"
+	gridColumns="grid-cols-3 grid-rows-1 grid-flow-col"
 	slotTrail="place-content-end"
-	slotLead="mb-0 h-10"
+	slotLead="grid grid-cols-2 grid-rows-1 gap-2"
 	slotDefault="justify-center"
-	regionRowHeadline="indent-10"
+	regionRowHeadline="indent-10 z-10"
 >
 	<svelte:fragment slot="lead" >
 
@@ -100,7 +100,7 @@
 		{#if audioBuffersReady && $CablesIsLoaded}
 			<ElementaryPlayer on:click={handleAudioControls} />
 		{:else}
-			<span class='text-lg text-secondary-600' data-sveltekit-noscroll>Loading...</span>
+			<span class='text-lg text-secondary-600 animate-pulse' data-sveltekit-noscroll>Loading.</span>
 		{/if}	
 		
 

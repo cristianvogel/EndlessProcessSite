@@ -19,8 +19,13 @@ $: current = Audio.currentTrackTitle;
 
 
 </script>
-
- <ListBox> 	
+	
+<div class="absolute card z-50 top-20
+md:left-20 sm:left-0 
+text-sm text-primary-200   
+p-2 w-25% 
+md:variant-filled-surface overflow-auto" >
+ <ListBox > 	
 	<div class='text-xs ml-2 -mt-0.5 pl-0.5 absolute right-5'>{Utils.formatDate(new Date())}</div>
     <h2 class="text-2xl text-secondary-300 font-bold p-2 rounded-lg">
 		Featured Music</h2>
@@ -34,7 +39,7 @@ $: current = Audio.currentTrackTitle;
     value={i}>
     <svelte:fragment slot='lead'>
         <span class="text-tertiary-400">
-            <Icon src={current === title ? CircleFilled : CircleDash} class="h-4 mt-1"/>
+            <Icon src={current === title ? CircleFilled : CircleDash} class="h-4 mt-1 w-2"/>
         </span>
     </svelte:fragment>
 	<div class='gradient-text text-md '> {formatTitleFromGlobalPath(title)}</div>
@@ -45,3 +50,4 @@ $: current = Audio.currentTrackTitle;
 
 {/each}
 </ListBox>
+</div>

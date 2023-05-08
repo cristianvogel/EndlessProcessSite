@@ -1,4 +1,10 @@
 <script lang="ts">
+
+	/**
+	* @todo fallback styling in case of no Canvas... 
+	* class="h-full p-1 bg-gradient-to-br from-slate-500 to-stone-800" 
+	**/
+
 	import '../theme.postcss';
 	import '@skeletonlabs/skeleton/styles/all.css';
 	import '../app.postcss';
@@ -7,14 +13,16 @@
 	import SplashPage from '$lib/components/SplashPage.svelte';
 	import PageFooter from '$lib/components/Footer.svelte';
 	import CanvasBody from '$lib/components/CanvasBody.svelte';
+	import { ForceAudioContextResume } from '$lib/stores/stores';
 
 
 	$: spin = false;
 
 	/**
-	 * @description ----------------------------------------------
-	 * a special interactive effect for the Cables canvas
-	 * triggers a spin animation via store subscription on page scrolling
+	 * @name cablesScroller
+	 * @description
+	 * a cool interactive effect for the Cables canvas
+	 * triggers a spin animation on page scrolling
 	*/
 	function cablesScroller() {
 		spin = true;
@@ -24,22 +32,16 @@
 	}
 
 	function canvasFX() {
-			// todo: more exagerrated user triggered effect
+			// todo: more exagerrated user triggered FX
 			// sent into Cables page
 	}
 
 </script>
 
-<!-- todo: fallback styling in case of no Canvas... 
-	class="h-full p-1 bg-gradient-to-br from-slate-500 to-stone-800" 
--->
 
-<AppShell class="p-1 bg-transparent" 
-	on:scroll={cablesScroller}
-	slotHeader='bg-black fixed w-full z-50'
-	regionPage='mt-[5.5rem]'
-	>
-	
+<svelte:window on:mousedown={$ForceAudioContextResume} />
+
+<AppShell class="p-1 bg-transparent" on:scroll={cablesScroller}>
 	<!--  Appbar in Skeleton header slot -->
 	<svelte:fragment slot="header">
 		<EndProcAppBar on:playlistChanged={canvasFX}/>
@@ -58,3 +60,5 @@
 	</svelte:fragment>
 
 </AppShell>
+
+

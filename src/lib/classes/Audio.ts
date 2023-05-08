@@ -19,7 +19,8 @@ import {
 	VFS_PATH_PREFIX,
 	Decoded,
 	ContextSampleRate,
-	VFS_Entries_Music
+	VFS_Entries_Music,
+	ForceAudioContextResume
 } from '$lib/stores/stores';
 import WebRenderer from '@elemaudio/web-renderer';
 import type { NodeRepr_t } from '@elemaudio/core';
@@ -144,6 +145,7 @@ export class AudioCore {
 			});
 
 			console.log('Main core loaded 🔊 - ', vfs.length, ' tracks');
+			ForceAudioContextResume.update(($f) => { $f = Audio.resumeContext; return $f });
 		});
 
 		Audio._silentCore.on('load', () => {
@@ -391,7 +393,6 @@ export class AudioCore {
 	 * this should only be called once, after a user interaction
 	 */
 	resumeContext(): void {
-		if (Audio.status === 'resuming') return;
 		if (Audio.actx.state === 'suspended') {
 			Audio.status = 'resuming';
 			Audio.actx.resume().then(() => {
