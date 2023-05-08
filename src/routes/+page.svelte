@@ -71,7 +71,7 @@
 	{#each data.musicStreamed.buffers as promising, index}
 	   {#await Promise.resolve(promising)}
 			<li class="text-md text-secondary-300" in:fly="{{ y: 200, duration: index * 100 }}">
-					{'▁▂▃▄▅▆▇█'[index%8]}
+					{'┄┉┈━┅─┿╂'[index%8]}
 			</li> 	
 		{:then musicData}
 			{#await musicData.arrayBuffer()}
