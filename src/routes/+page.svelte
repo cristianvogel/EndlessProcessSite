@@ -95,7 +95,7 @@
 		{#await fetch(edge.node.mediaItemUrl, 
 			{
 				method:'GET', 
-				headers: {'Content-Type': 'audio/*', 'Range': `bytes=${44100*10}-${44100*60}` }
+				headers: {'Content-Type': 'audio/*' }
 			}
 		)}
 		<li><span class='h2'>Edge {index} of {sum}.</span></li>

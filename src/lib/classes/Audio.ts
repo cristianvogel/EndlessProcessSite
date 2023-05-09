@@ -31,7 +31,6 @@ import { el } from '@elemaudio/core';
 // todo: set a sample rate constant prop
 
 export class AudioCore {
-	_el: typeof el;
 	_core: WebRenderer;
 	_silentCore: WebRenderer;
 	_AudioCoreStatus: Writable<AudioCoreStatus>;
@@ -46,7 +45,6 @@ export class AudioCore {
 	_assetsReady: boolean;
 
 	constructor() {
-		this._el = el;
 		this._core = this._silentCore = null as unknown as WebRenderer;;
 		this._masterVolume = writable(0.909); // default master volume
 		this._AudioCoreStatus = writable('loading');
@@ -330,9 +328,6 @@ export class AudioCore {
 		container: StructuredAssetContainer,
 		core: WebRenderer
 	) {
-		while (!Audio._assetsReady) {
-			console.log('Waiting for assets to load...');
-		}
 		// decoder
 		Audio.decodeRawBuffer(container).then((data) => {
 			let { decodedBuffer: decoded, title } = data;
