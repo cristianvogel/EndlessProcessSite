@@ -70,6 +70,15 @@ type HtmlContent = { rawHTML: string; sanitisedHTML: string };
 type Url = string;
 type AssetCategories = 'music' | 'speech'
 type AssetContainers = { music: any, speech: any }
+type AudioAssetMetadata = {
+	category: AssetCategories
+	mediaItemUrl: string;
+	fileSize: number;
+	title: string;
+	caption: string;
+	format?: string;
+	buffer?: AudioBuffer | ArrayBuffer | undefined
+}
 type StructuredAssetContainer = {
 	header: {
 		globPath: string;
@@ -77,7 +86,7 @@ type StructuredAssetContainer = {
 		bytes?: number;
 		vfsPath?: string;
 	};
-	body: ArrayBuffer | AudioBuffer;
+	body: ArrayBuffer | AudioBuffer | undefined;
 } | undefined;
 
 interface SinglePost {

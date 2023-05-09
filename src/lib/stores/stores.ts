@@ -10,6 +10,7 @@ export const Decoded: Writable<{ done: boolean; progress?: number }> = writable(
 });
 export const MusicCoreLoaded: Writable<boolean> = writable(false);
 export const SpeechCoreLoaded: Writable<boolean> = writable(false);
+export const AssetsReady: Writable<boolean> = writable(false);
 
 //---- Blog related -------------------
 // Todo: Implement sanitiser for the content

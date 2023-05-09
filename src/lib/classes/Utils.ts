@@ -75,7 +75,7 @@ export const Wait = {
 	},
 
 	forTrue: async function (variable: boolean | null, interval = 100, maxAttempts = 50): Promise<void> {
-		console.log('waiting for true...');
+		console.log('waiting for true...', variable);
 		let attempts = 0;
 		await new Promise<void>((resolve, reject) => {
 			const timer = setInterval(() => {

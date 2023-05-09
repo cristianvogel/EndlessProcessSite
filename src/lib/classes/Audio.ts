@@ -9,7 +9,7 @@ import type {
 } from '../../typeDeclarations';
 
 import { scrubbingSamplesPlayer, bufferProgress, attenuateStereo, hannEnvelope } from '$lib/audio/AudioFunctions';
-import { Wait, channelExtensionFor } from '$lib/classes/Utils';
+import { Wait, channelExtensionFor, sleep } from '$lib/classes/Utils';
 import {
 	CablesPatch,
 	PlaylistMusic,
@@ -20,7 +20,8 @@ import {
 	Decoded,
 	ContextSampleRate,
 	VFS_Entries_Music,
-	ForceAudioContextResume
+	ForceAudioContextResume,
+	AssetsReady
 } from '$lib/stores/stores';
 import WebRenderer from '@elemaudio/web-renderer';
 import type { NodeRepr_t } from '@elemaudio/core';
@@ -42,6 +43,7 @@ export class AudioCore {
 	_scrubbing: boolean;
 	_sidechain: number | Signal;
 	_outputBuss: StereoSignal
+	_assetsReady: boolean;
 
 	constructor() {
 		this._core = this._silentCore = null as unknown as WebRenderer;;
@@ -58,6 +60,7 @@ export class AudioCore {
 		// these below are dynamically set from store subscriptions
 		this._currentMetadata = { title: '', vfsPath: '', duration: 0, progress: 0 };
 		this._scrubbing = false;
+		this._assetsReady = false;
 		this._sidechain = 0
 	}
 
@@ -67,9 +70,14 @@ export class AudioCore {
 	 */
 	subscribeToStores() {
 
+		AssetsReady.subscribe(($ready) => {
+			if ($ready) {
+				Audio._assetsReady = $ready;
+			}
+		});
 		PlaylistMusic.subscribe(($p) => {
 			Audio._currentMetadata = $p.currentTrack;
-		})
+		});
 		Scrubbing.subscribe(($scrubbing) => {
 			Audio._scrubbing = $scrubbing;
 		});
@@ -139,13 +147,15 @@ export class AudioCore {
 
 			// now we are sure Elementary is ready
 			// update the VFS from the store
-			const vfs = get(VFS_Entries_Music);
-			vfs.forEach(entry => {
-				Audio.updateVFS(entry, Audio._core as WebRenderer);
-			});
+			Wait.forTrue(Audio._assetsReady).then(() => {
+				const vfs = get(VFS_Entries_Music);
+				vfs.forEach(entry => {
+					Audio.updateVFS(entry, Audio._core as WebRenderer);
+				});
+				console.log('Main core loaded 🔊 - ', vfs.length, ' tracks');
 
-			console.log('Main core loaded 🔊 - ', vfs.length, ' tracks');
-			ForceAudioContextResume.update(($f) => { $f = Audio.resumeContext; return $f });
+				ForceAudioContextResume.update(($f) => { $f = Audio.resumeContext; return $f });
+			});
 		});
 
 		Audio._silentCore.on('load', () => {
