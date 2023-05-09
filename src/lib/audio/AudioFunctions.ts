@@ -107,7 +107,7 @@ export function scrubbingSamplesPlayer(props: SamplerOptions): StereoSignal {
 			mode: 'gate',
 			startOffset: startOffsetSamps
 		},
-		el.select(selectTriggerSignal, el.const({ key: kl + 't', value: trigger as number }), scrub),
+		el.select(selectTriggerSignal, el.const({ key: kr + 't', value: trigger as number }), scrub),
 		rate
 	);
 	return { left: left, right: right };

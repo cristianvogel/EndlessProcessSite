@@ -4,9 +4,9 @@
 	 * Parallel Assets Worker
 	 */
 	import type { PageData } from './$types';
-	import { VFS_PATH_PREFIX, PlaylistMusic, Decoded, VFS_Entries_Music, VFS_Entries_Speech, AssetsReady } from '$lib/stores/stores';
+	import { VFS_PATH_PREFIX, PlaylistMusic, Decoded, VFS_Entries_Music, VFS_Entries_Speech, MusicAssetsReady } from '$lib/stores/stores';
 	import { get } from 'svelte/store';
-	import { VoiceOver } from '$lib/classes/Speech';
+	import { Audio } from '$lib/classes/Audio';
 	import type { AssetCategories, AudioAssetMetadata, StructuredAssetContainer } from '../typeDeclarations';
   	import { fade, fly } from 'svelte/transition';
 	import { ProgressBar } from '@skeletonlabs/skeleton';
@@ -14,11 +14,17 @@
 	export let data: PageData;
 
 	$:hide = false
+	$:if ($MusicAssetsReady) {
+		console.log('assets ready')
+				const vfs = get(VFS_Entries_Music);
+				vfs.forEach(entry => {
+					Audio.updateVFS(entry, Audio._core);
+				})}
 	
 	const hideTimer = setTimeout(() => {
 		hide = true;
 		$Decoded.done = true
-	}, 8 * 1.0e3);
+	}, 3 * 1.0e3);
   
 	let structuredContainer: { music: StructuredAssetContainer; speech: StructuredAssetContainer } = {
 		music: undefined,
@@ -49,25 +55,25 @@
 				body: buffer || undefined,
 			};
 		// add the VFS entry to the dictionary for later assignment
-		// when we are absolutely sure the Elementary core is ready
+		// when we are absolutely sure the everything is ready
 		if (category === 'music') {
 			VFS_Entries_Music.update(($v) => {
 				console.log( 'storing =-> ',structuredContainer['music'] )
 				$v = [...$v, structuredContainer['music']];
 				return $v;
 			});
-		} else {
-			VFS_Entries_Speech.update(($v) => {
-				$v = [...$v, structuredContainer['speech']];
-				return $v;
-			});
-		}
-		if (index >= sum) { 
-			AssetsReady.update(($ok) => {
-				$ok = true;
-				return $ok
-			})
-		}
+		} 
+		$MusicAssetsReady = get(VFS_Entries_Music).length === sum;
+		/**
+		* @todo get Speech working again
+		**/	
+		// else {
+		// 	VFS_Entries_Speech.update(($v) => {
+		// 		$v = [...$v, structuredContainer['speech']];
+		// 		return $v;
+		// 	});
+		// }
+	
 	}
 }
 	function stripTags(inputHTML: string): string | null {
@@ -86,8 +92,13 @@
 	{@const sum = responseObject.data.mediaItems.edges.length}
 	<div out:fade><h3>Fetching Endproc Playlist</h3></div>
     {#each responseObject.data.mediaItems.edges as edge, index}
-		{#await fetch(edge.node.mediaItemUrl, {method:'GET', headers: { 'Content-Type': 'audio/*'}})}
-		<li><span class='h2'>Payload ×{sum}.</span></li>
+		{#await fetch(edge.node.mediaItemUrl, 
+			{
+				method:'GET', 
+				headers: {'Content-Type': 'audio/*', 'Range': `bytes=${44100*10}-${44100*60}` }
+			}
+		)}
+		<li><span class='h2'>Edge {index} of {sum}.</span></li>
 		{:then responseObject}
 			{#await responseObject.arrayBuffer()}
 			<span class='h3' out:fade>Loading Audio. <ProgressBar height='h-1'/></span> 

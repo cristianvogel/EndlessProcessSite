@@ -4,8 +4,9 @@ import WebRenderer from '@elemaudio/web-renderer';
 import { writable, type Writable } from 'svelte/store';
 import { AudioCore } from '$lib/classes/Audio';
 import { el } from '@elemaudio/core';
-import { OutputMeters, PlaylistMusic, SpeechCoreLoaded, VFS_Entries_Speech } from '$lib/stores/stores';
+import { MusicAssetsReady, OutputMeters, PlaylistMusic, SpeechCoreLoaded, VFS_Entries_Speech } from '$lib/stores/stores';
 import { attenuateStereo, driftingSamplesPlayer } from '$lib/audio/AudioFunctions';
+import { Wait } from './Utils';
 
 
 // ════════╡ Voice WebRenderer Core ╞═══════
@@ -44,12 +45,12 @@ export class VoiceCore extends AudioCore {
 	 * asynchronously and store in VoiceCore class as this._endNodes
 	 */
 	override async init(): Promise<void> {
-		VoiceOver._core = new WebRenderer();
+		this._core = new WebRenderer();
 		while (!super.actx) {
-			//console.log('Waiting for first WebRenderer instance to load...');
+			console.log('Waiting for first WebRenderer instance to load...');
 			await new Promise((resolve) => setTimeout(resolve, 50));
 		}
-		VoiceOver.voiceEndNode = await VoiceOver._core
+		this.voiceEndNode = await this._core
 			.initialize(super.actx, {
 				numberOfInputs: 0,
 				numberOfOutputs: 1,
@@ -72,14 +73,16 @@ export class VoiceCore extends AudioCore {
 			VoiceOver.subscribeToStores()
 			// now we are sure Elementary is ready
 			// update the VFS from the store
-			const vfs = get(VFS_Entries_Speech);
-			vfs.forEach(entry => {
-				VoiceOver.updateVFS(entry, VoiceOver._core as WebRenderer);
+			Wait.forTrue(VoiceOver._assetsReady).then(() => {
+				const vfs = get(VFS_Entries_Speech);
+				vfs.forEach(entry => {
+					VoiceOver.updateVFS(entry, VoiceOver._core as WebRenderer);
+				});
+				SpeechCoreLoaded.set(true);
+				VoiceOver.status = 'ready';
+				console.log('Voice Core loaded  🎤');
+				VoiceOver.patch();
 			});
-			SpeechCoreLoaded.set(true);
-			VoiceOver.status = 'ready';
-			console.log('Voice Core loaded  🎤');
-			VoiceOver.patch();
 		});	
 	}
 
@@ -115,7 +118,7 @@ export class VoiceCore extends AudioCore {
 	}
 
 	/**
-	 * @name render
+	 * @name master
 	 * @description renders a stereo signal via the voice core
 	 * This render has a side effect of firing a meter update on VoiceOver._core
 	 * It's output routes to the parent core, appearing as sidechain signal 

@@ -17,7 +17,7 @@ type AssetMetadata = {
 interface PlaylistContainer {
 	currentTrack?: AssetMetadata;
 	currentChapter?: AssetMetadata;
-	audioAssetPaths?: { music: Array<string>, speech: Array<string> };
+	audioAssetPaths?: { music: Array<string> | undefined, speech: Array<string> };
 	titles: { music: Array<string>, speech: Array<string> }
 	show?: boolean;
 	durations: Map<string, number>;

@@ -9,7 +9,7 @@ import type {
 } from '../../typeDeclarations';
 
 import { scrubbingSamplesPlayer, bufferProgress, attenuateStereo, hannEnvelope } from '$lib/audio/AudioFunctions';
-import { Wait, channelExtensionFor, sleep } from '$lib/classes/Utils';
+import { channelExtensionFor } from '$lib/classes/Utils';
 import {
 	CablesPatch,
 	PlaylistMusic,
@@ -19,9 +19,8 @@ import {
 	VFS_PATH_PREFIX,
 	Decoded,
 	ContextSampleRate,
-	VFS_Entries_Music,
 	ForceAudioContextResume,
-	AssetsReady
+	MusicAssetsReady
 } from '$lib/stores/stores';
 import WebRenderer from '@elemaudio/web-renderer';
 import type { NodeRepr_t } from '@elemaudio/core';
@@ -32,6 +31,7 @@ import { el } from '@elemaudio/core';
 // todo: set a sample rate constant prop
 
 export class AudioCore {
+	_el: typeof el;
 	_core: WebRenderer;
 	_silentCore: WebRenderer;
 	_AudioCoreStatus: Writable<AudioCoreStatus>;
@@ -46,6 +46,7 @@ export class AudioCore {
 	_assetsReady: boolean;
 
 	constructor() {
+		this._el = el;
 		this._core = this._silentCore = null as unknown as WebRenderer;;
 		this._masterVolume = writable(0.909); // default master volume
 		this._AudioCoreStatus = writable('loading');
@@ -70,10 +71,8 @@ export class AudioCore {
 	 */
 	subscribeToStores() {
 
-		AssetsReady.subscribe(($ready) => {
-			if ($ready) {
-				Audio._assetsReady = $ready;
-			}
+		MusicAssetsReady.subscribe(($ready) => {
+			Audio._assetsReady = $ready;
 		});
 		PlaylistMusic.subscribe(($p) => {
 			Audio._currentMetadata = $p.currentTrack;
@@ -141,21 +140,10 @@ export class AudioCore {
 		Audio.actx.addEventListener('statechange', Audio.stateChangeHandler);
 
 		Audio._core.on('load', () => {
-
-			// Subscribe to Svelte stores outside of component
 			Audio.subscribeToStores();
-
 			// now we are sure Elementary is ready
-			// update the VFS from the store
-			Wait.forTrue(Audio._assetsReady).then(() => {
-				const vfs = get(VFS_Entries_Music);
-				vfs.forEach(entry => {
-					Audio.updateVFS(entry, Audio._core as WebRenderer);
-				});
-				console.log('Main core loaded 🔊 - ', vfs.length, ' tracks');
-
-				ForceAudioContextResume.update(($f) => { $f = Audio.resumeContext; return $f });
-			});
+			ForceAudioContextResume.update(($f) => { $f = Audio.resumeContext; return $f });
+			console.log('Main core loaded 🔊')
 		});
 
 		Audio._silentCore.on('load', () => {
@@ -165,12 +153,10 @@ export class AudioCore {
 
 		Audio._core.on('error', function (e) {
 			console.error('🔇 ', e);
-			//Audio.cleanup();
 		});
 
 		Audio._silentCore.on('error', function (e) {
 			console.error('🔇 ', e);
-			//Audio.cleanup();
 		});
 
 		Audio._core.on('fft', function (e) {
@@ -344,6 +330,9 @@ export class AudioCore {
 		container: StructuredAssetContainer,
 		core: WebRenderer
 	) {
+		while (!Audio._assetsReady) {
+			console.log('Waiting for assets to load...');
+		}
 		// decoder
 		Audio.decodeRawBuffer(container).then((data) => {
 			let { decodedBuffer: decoded, title } = data;
@@ -351,7 +340,7 @@ export class AudioCore {
 				console.warn('Decoding skipped.');
 				return;
 			}
-			// adds a channel extension to the path for each channel, the extension starts at 1 (not 0)
+			// adds a channel extension, starts at 1 (not 0)
 			for (let i = 0; i < decoded.numberOfChannels; i++) {
 				const vfsKey = get(VFS_PATH_PREFIX) + title + channelExtensionFor(i + 1);
 				const vfsDictionaryEntry =
