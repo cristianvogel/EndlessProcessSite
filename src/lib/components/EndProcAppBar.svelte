@@ -2,10 +2,10 @@
 	import { fade } from 'svelte/transition';
 	import { AppBar } from '@skeletonlabs/skeleton';
 	import { Icon } from '@steeze-ui/svelte-icon';
-	import { Cube } from '@steeze-ui/carbon-icons';
+	import { ChartRadial, Cube } from '@steeze-ui/carbon-icons';
 	import ElementaryPlayer from '$lib/components/ElementaryPlayer.svelte';
 	import Progress from '$lib/components/Progress.svelte';
-	import { CablesIsLoaded, PlaysCount, PlaylistMusic, VFS_PATH_PREFIX, SpeechCoreLoaded, MusicCoreLoaded, Decoded } from '$lib/stores/stores';
+	import { CablesIsLoaded, PlaysCount, PlaylistMusic, VFS_PATH_PREFIX, Decoded } from '$lib/stores/stores';
 	import { Audio } from '$lib/classes/Audio';
 	import { createEventDispatcher } from 'svelte';
 	import { get } from 'svelte/store';
@@ -18,7 +18,7 @@
 	const { audioStatus } = Audio.stores;
 
 	$: audioBuffersReady = $Decoded.done;
-
+	$: isPlaying = $audioStatus === 'playing';
 
 	/**
 	 * @description ----------------------------------------------
@@ -89,9 +89,11 @@
 	background="endproc-card-bg"
 	border="-mb-2"
 	gridColumns="grid-cols-3 grid-rows-1 grid-flow-col"
-	slotTrail="place-content-end"
-	slotLead="grid grid-cols-2 grid-rows-1 gap-2"
-	slotDefault="justify-center"
+
+	slotLead="grid md:grid-cols-4 sm:grid-cols-2 grid-rows-1 gap-2"
+	slotDefault="grid grid-cols-1 grid-rows-1 grid-flow-col pt-2.5"
+	slotTrail="grid grid-cols-1"
+
 	regionRowHeadline="indent-10 z-10"
 >
 	<svelte:fragment slot="lead" >
@@ -100,14 +102,16 @@
 		{#if audioBuffersReady && $CablesIsLoaded}
 			<ElementaryPlayer on:click={handleAudioControls} />
 		{:else}
-			<span class='text-lg text-secondary-600 animate-pulse' data-sveltekit-noscroll>Loading.</span>
+			<span class='text-lg text-secondary-600 animate-spin -pl-20' data-sveltekit-noscroll>
+				<Icon src={ChartRadial} class="h-10" />
+			</span>
 		{/if}	
 		
 
 	</svelte:fragment>
-		{#if audioBuffersReady && $CablesIsLoaded}
-		<NowPlaying />	
-		{/if}
+
+	<NowPlaying show={ audioBuffersReady && $CablesIsLoaded && isPlaying} />	
+
 	<!--  progress bar -->
 	<svelte:fragment slot="headline">
 		{#if audioBuffersReady && $CablesIsLoaded}
@@ -123,11 +127,10 @@
 		<div class='absolute info md:top-24 sm:top-30 right-20 '>
 			<TextToSpeech/>
 		</div>
-		<div class="flex justify-end flex-wrap">
-
-			<a class="logo-item p-2" href="/blog" data-sveltekit-noscroll>
-				<!-- <Icon src={ChartMarimekko} class="h-4" /> -->
-				<hr class="h-1 w-2 divider-vertical bg-surface-400" />
+		<div class="place-content-end col-start-2 
+		border-2 border-surface-700 rounded-lg
+		w-full">
+			<a class="logo-item p-1 mx-5" href="/blog" data-sveltekit-noscroll>
 				<span class='text-m'>Posts</span>
 			</a>
 		</div>

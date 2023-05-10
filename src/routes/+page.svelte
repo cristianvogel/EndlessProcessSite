@@ -99,8 +99,7 @@
 }
 </script>
 
-{#if !hide}
-
+{#if !hide && !$Decoded.done}
 
 <ul><div class='fileinfo' in:fade>
 	{#await (data.streamedMetaData.metadata)}

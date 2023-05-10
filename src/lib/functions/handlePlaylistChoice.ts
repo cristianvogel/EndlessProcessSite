@@ -27,7 +27,7 @@ export function handlePlaylistChoice(e?: any, name?: string) {
         return $pl;
     });
 
-
+    Audio.status = 'playing';
     Audio.playWithScrub({ trigger: 0, startOffset: 0 });
     Audio.playWithScrub({ trigger: 1, startOffset: 0 });
 }

@@ -29,7 +29,7 @@ type SamplerOptions = {
 	vfsPath?: string; // defaults to current track
 	trigger?: Signal | number;
 	rate?: Signal | number;
-	durationMs: number;
+	durationMs?: number;
 	startOffset?: number;
 	drift?: Signal | number;
 	loop?: boolean;

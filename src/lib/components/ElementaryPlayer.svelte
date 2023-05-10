@@ -20,12 +20,10 @@
 </script>
 
 {#if $Decoded.done}
-	<div class="z-50 col-span-1 row-span-1 ">
-		<button
-			class="shrink-0 items-center rounded-full bg-transparent p-1"
+	<div class="z-50 col-span-1 row-span-1 order-1 ">
+		<button class="shrink-0"
 			id="transport"
-			on:click
-		>
+			on:click>
 			<Icon
 				src={isPlaying ? PauseOutline : PlayOutline}
 				class={isPlaying ? 'h-8 fill-secondary-200' : 'h-8 animate-pulse fill-secondary-300'}
@@ -33,13 +31,13 @@
 			/>
 		</button>
 	</div>
-	<div class="z-50 col-span-1 row-span-1 justify-self-start">
+	<div class="z-50 col-span-1 row-span-1 order-2">
 		<button
-			class="shrink-0 items-center rounded-full bg-transparent p-2"
+			class="shrink-0"
 			id="playlist"
 			on:click
 		>
-			<Icon src={QueryQueue} class="h-8 rotate-180 fill-secondary-300" data-sveltekit-noscroll />
+			<Icon src={QueryQueue} class="h-8 rotate-180 fill-secondary-300 " data-sveltekit-noscroll />
 		</button>
 	</div>
 		{#if $PlaylistMusic.show}
