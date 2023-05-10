@@ -363,9 +363,9 @@ export class AudioCore {
 		while (!container) await new Promise((resolve) => setTimeout(resolve, 100));
 		const { body, header } = container;
 		let decoded: AudioBuffer | null = null;
-		while (!Audio.actx) {
-			await new Promise((resolve) => setTimeout(resolve, 50));
-		}
+		// while (!Audio.actx) {
+		// 	await new Promise((resolve) => setTimeout(resolve, 50));
+		// }
 		try {
 			decoded = await Audio.actx.decodeAudioData(body as ArrayBuffer);
 		} catch (error) {

@@ -1,4 +1,7 @@
 
+/**
+* @name Media Asset PageLoad
+**/
 
 import type { PageLoad } from './$types';
 

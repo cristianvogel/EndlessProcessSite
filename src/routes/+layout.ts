@@ -1,4 +1,8 @@
 
+/**
+* @name Blog Assets LayouLoad
+**/
+
 import type { LayoutLoad } from './$types';
 
 export const prerender = false;

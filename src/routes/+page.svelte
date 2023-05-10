@@ -10,22 +10,35 @@
 	import type { AssetCategories, AudioAssetMetadata, StructuredAssetContainer } from '../typeDeclarations';
   	import { fade, fly } from 'svelte/transition';
 	import { ProgressBar } from '@skeletonlabs/skeleton';
+	import { tick } from 'svelte';
 
+	
 	export let data: PageData;
+	let assetsCollectionSize:number;
+	let hideTimer
+	
 
-	$:hide = false
-	$:if ($MusicAssetsReady) {
-		console.log('assets ready')
-				const vfs = get(VFS_Entries_Music);
+	$:hide = false;
+	$:assetsCollectionSize = 0;
+	$:ready = false;
+	$:tick().then( () => {ready = (assetsCollectionSize > 0) ? ($VFS_Entries_Music.length > assetsCollectionSize-1) : false}  )
+	$:if (!ready) {
+				
+				const vfs:Array<StructuredAssetContainer> = $VFS_Entries_Music;		    	
 				vfs.forEach(entry => {
+					console.log( 'VFS updated with ▶︎ ',entry?.header.title )
 					Audio.updateVFS(entry, Audio._core);
 				})}
-	
-	const hideTimer = setTimeout(() => {
+	$: if (ready) { 
+		$Decoded.done = true;  
+		hideTimer = setTimeout(() => {
 		hide = true;
-		$Decoded.done = true
-	}, 3 * 1.0e3);
-  
+	}, 3 * 1.0e3 )
+}
+	
+	
+ 
+
 	let structuredContainer: { music: StructuredAssetContainer; speech: StructuredAssetContainer } = {
 		music: undefined,
 		speech: undefined
@@ -34,9 +47,10 @@
 
  function assignAssets(element: HTMLElement, params: { assetContainer: AudioAssetMetadata; index: number; sum: number }) {
 
+		
 		const { assetContainer, index, sum } = params;
 		const { mediaItemUrl, title, caption, fileSize, buffer } = assetContainer;
-
+		assetsCollectionSize = sum
 		const category:AssetCategories | string = element.id || assetContainer.category || 'other';
 		if (category === 'music' || category === 'speech') {
 		
@@ -54,8 +68,7 @@
 				},
 				body: buffer || undefined,
 			};
-		// add the VFS entry to the dictionary for later assignment
-		// when we are absolutely sure the everything is ready
+		// add the VFS entry to the dictionary for later assignment when we are absolutely sure the everything is ready
 		if (category === 'music') {
 			VFS_Entries_Music.update(($v) => {
 				console.log( 'storing =-> ',structuredContainer['music'] )
@@ -63,7 +76,9 @@
 				return $v;
 			});
 		} 
-		$MusicAssetsReady = get(VFS_Entries_Music).length === sum;
+		
+		
+
 		/**
 		* @todo get Speech working again
 		**/	
@@ -84,13 +99,16 @@
 }
 </script>
 
-{#if !$Decoded.done}
+{#if !hide}
+
+
 <ul><div class='fileinfo' in:fade>
 	{#await (data.streamedMetaData.metadata)}
 	<div in:fade><h2>Initialising.</h2></div>
 	{:then responseObject}
-	{@const sum = responseObject.data.mediaItems.edges.length}
-	<div out:fade><h3>Fetching Endproc Playlist</h3></div>
+	{@const sum = assetsCollectionSize = responseObject.data.mediaItems.edges.length}
+	<div out:fade><h3>{ready ?" Ready." : "Fetching Endproc Playlist."}</h3></div>
+	<ProgressBar value={$VFS_Entries_Music.length}  max={sum} />
     {#each responseObject.data.mediaItems.edges as edge, index}
 		{#await fetch(edge.node.mediaItemUrl, 
 			{
@@ -100,35 +118,38 @@
 		)}
 		<li><span class='h2'>Edge {index} of {sum}.</span></li>
 		{:then responseObject}
+
 			{#await responseObject.arrayBuffer()}
 			<span class='h3' out:fade>Loading Audio. <ProgressBar height='h-1'/></span> 
 			{:then buffer}
 				{@const loadedArrayBuffer = buffer}
 				<span class='h4'>{buffer.byteLength}</span>
 				{@const caption = stripTags( edge.node.caption )}
-				<li class= 'info' id= 'music'
-				use:assignAssets={{assetContainer: {...edge.node, category: 'music', buffer: loadedArrayBuffer}, index, sum }}
+				<li class= 'info' id= 'music' use:assignAssets={{assetContainer: {...edge.node, category: 'music', buffer: loadedArrayBuffer}, index, sum }}
 					in:fly="{{ x: -200, duration: index * 200 }}" 
 					out:fade>
 					{`${edge.node.title} ${edge.node.fileSize} bytes`}<br/>
 					╰{ @html (caption? caption : 'no detail') } <br/>
 					{`╰ ${edge.node.mediaItemUrl}`}<br/>
 				</li>	
+			{:catch error} 
+			<span class='h4'>error1: {error}</span>
 			{/await}
+	
 		{/await}
 	{/each}
+			{:catch error} 
+			<span class='h4'>error2: {error}</span>
 	{/await}
 	</div>
 </ul>
 {/if}
 
-
-
 <style>
 	.fileinfo {
 		position: absolute;
 		left: 1rem;
-		top: 10rem;
+		bottom: 16rem;
 	}
 </style>
 
