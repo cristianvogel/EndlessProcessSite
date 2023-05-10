@@ -4,24 +4,34 @@
 	 * Parallel Assets Worker
 	 */
 	import type { PageData } from './$types';
-	import { VFS_PATH_PREFIX, PlaylistMusic, Decoded, VFS_Entries_Music, VFS_Entries_Speech, MusicAssetsReady } from '$lib/stores/stores';
+	import { VFS_PATH_PREFIX, PlaylistMusic, Decoded, VFS_Entries_Music} from '$lib/stores/stores';
 	import { get } from 'svelte/store';
 	import { Audio } from '$lib/classes/Audio';
 	import type { AssetCategories, AudioAssetMetadata, StructuredAssetContainer } from '../typeDeclarations';
   	import { fade, fly } from 'svelte/transition';
 	import { ProgressBar } from '@skeletonlabs/skeleton';
 	import { tick } from 'svelte';
+	import { Timer } from "@steeze-ui/carbon-icons";
+	import { Icon } from "@steeze-ui/svelte-icon";
 
 	
 	export let data: PageData;
 	let assetsCollectionSize:number;
-	let hideTimer
+	let hideTimer:NodeJS.Timeout;
+	let ticker:number
 	
 
 	$:hide = false;
 	$:assetsCollectionSize = 0;
 	$:ready = false;
-	$:tick().then( () => {ready = (assetsCollectionSize > 0) ? ($VFS_Entries_Music.length > assetsCollectionSize-1) : false}  )
+	$:ticker = 0;
+	const tickerTimer = setInterval(() => {
+		ticker++;
+	}, 100)
+	$:tick().then( () => {
+		ready = (assetsCollectionSize > 0) ? ($VFS_Entries_Music.length > assetsCollectionSize-1) : false;
+		
+	})
 	$:if (!ready) {
 				
 				const vfs:Array<StructuredAssetContainer> = $VFS_Entries_Music;		    	
@@ -30,15 +40,13 @@
 					Audio.updateVFS(entry, Audio._core);
 				})}
 	$: if (ready) { 
+		clearInterval(tickerTimer);
 		$Decoded.done = true;  
 		hideTimer = setTimeout(() => {
 		hide = true;
 	}, 3 * 1.0e3 )
 }
 	
-	
- 
-
 	let structuredContainer: { music: StructuredAssetContainer; speech: StructuredAssetContainer } = {
 		music: undefined,
 		speech: undefined
@@ -99,14 +107,14 @@
 }
 </script>
 
-{#if !hide && !$Decoded.done}
-
+{#if (!hide && !$Decoded.done)}
+<span class='info'><Icon src={Timer} class='h-1'/>{ticker *  100} ms</span>
 <ul><div class='fileinfo' in:fade>
 	{#await (data.streamedMetaData.metadata)}
 	<div in:fade><h2>Initialising.</h2></div>
 	{:then responseObject}
 	{@const sum = assetsCollectionSize = responseObject.data.mediaItems.edges.length}
-	<div out:fade><h3>{ready ?" Ready." : "Fetching Endproc Playlist."}</h3></div>
+	<div out:fade><h3>{ready ?" Ready." : "Fetching Endproc Playlist."} </div>
 	<ProgressBar value={$VFS_Entries_Music.length}  max={sum} />
     {#each responseObject.data.mediaItems.edges as edge, index}
 		{#await fetch(edge.node.mediaItemUrl, 
@@ -119,7 +127,7 @@
 		{:then responseObject}
 
 			{#await responseObject.arrayBuffer()}
-			<span class='h3' out:fade>Loading Audio. <ProgressBar height='h-1'/></span> 
+			<span class='h3' out:fade>▉</span> 
 			{:then buffer}
 				{@const loadedArrayBuffer = buffer}
 				<span class='h4'>{buffer.byteLength}</span>
