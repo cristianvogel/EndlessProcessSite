@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { Cube} from "@steeze-ui/carbon-icons";
 	import { Icon } from "@steeze-ui/svelte-icon";
-	import { fade } from "svelte/transition";
 	export let show:boolean = false;	
 </script>
 

@@ -31,7 +31,7 @@ Scrubbing.subscribe(($s) => $scrubbing = $s);
  */
 
 export function hannEnvelope(index: number): Signal {
-	return clippedHann({ gain: 30, index });
+	return clippedHann({ gain: 60, index });
 }
 
 /**════════════════════════════════════════════════
