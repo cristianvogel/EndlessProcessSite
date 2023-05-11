@@ -74,6 +74,7 @@
 <span class="timer">{ticker * 100} ms</span>
    <ul>
 	<div class="fileinfo" style="{category === 'music' ? 'left: 1rem' : 'right: 1rem'}" in:fade>
+		{@debug metadata}
 		{#await metadata.streamedMetaData[category]}
 			<div in:fade><h2>Initialising {category}.</h2></div>
 		{:then responseObject}

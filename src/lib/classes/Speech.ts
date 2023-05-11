@@ -1,4 +1,4 @@
-import type { AssetMetadata, AudioCoreStatus, PlaylistContainer, Signal, StereoSignal, StructuredAssetContainer } from '../../typeDeclarations';
+import type { AssetMetadata, AudioCoreStatus, Signal, StereoSignal } from '../../typeDeclarations';
 import { get } from 'svelte/store';
 import WebRenderer from '@elemaudio/web-renderer';
 import { writable, type Writable } from 'svelte/store';

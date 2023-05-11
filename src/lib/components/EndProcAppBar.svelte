@@ -11,7 +11,7 @@
 	import { get } from 'svelte/store';
 	import { handlePlaylistChoice } from '$lib/functions/handlePlaylistChoice';
 	import NowPlaying from './NowPlaying.svelte';
-	import TextToSpeech from './Speech/TextToSpeech.svelte';
+	import TextToSpeech from './speech/TextToSpeech.svelte';
 
 	const dispatch = createEventDispatcher();
 

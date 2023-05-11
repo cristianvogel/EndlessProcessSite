@@ -2,7 +2,7 @@
 
 	import type { PageData } from './$types';
 	import { Decoded } from '$lib/stores/stores';
-	import AssetLoader from '$lib/components/Data/AssetLoader.svelte';
+	import AssetLoader from '$lib/components/data/AssetLoader.svelte';
 	export let data: PageData;
 </script>
 
