@@ -1,12 +1,12 @@
 // This file defines the stores used in the app
 
 import { writable, type Readable, type Writable, readable } from 'svelte/store';
-import type { SinglePost, RawFFT, PlaylistContainer, MetersContainer, StructuredAssetContainer } from '../../typeDeclarations';
-import { getSpeechFiles } from '$lib/classes/Files';
+import type { SinglePost, RawFFT, PlaylistContainer, MetersContainer, StructuredAssetContainer, AssetCategoryContainers } from '../../typeDeclarations';
 
 //---- UX / State related -------------------
-export const Decoded: Writable<{ done: boolean; progress?: number }> = writable({
+export const Decoded: Writable<{ done: boolean; bounds?: number }> = writable({
 	done: false,
+	all: 0
 });
 export const MusicCoreLoaded: Writable<boolean> = writable(false);
 export const SpeechCoreLoaded: Writable<boolean> = writable(false);
@@ -44,18 +44,26 @@ export const OutputMeters: Writable<MetersContainer> = writable(
 
 /**
  * @Important  path prefix used as key for the Virtual File System (VFS)
+ * @Concept dynamic namespaces system for VFS?
  */
 export const VFS_PATH_PREFIX: Readable<string> = readable('vfs::');
-export const VFS_Entries_Music: Writable<Array<StructuredAssetContainer>> = writable([]);
-export const VFS_Entries_Speech: Writable<Array<StructuredAssetContainer>> = writable([]);
-//----------------- Music -----------------------
+
+export const VFS_Entries: Writable<AssetCategoryContainers> = writable({
+	music: [],
+	speech: []
+})
+
+
+
+//----------------- Sounding Assets -----------------------
 /** 
  * @todo:  better descriptions from meta data
- * not using local music files anymore, but keep here for future features
+ * not using `audioAssetPaths: {music:... }` as now 
+ * loading media from CMS but keep here for future features
  * like a drum machine, ambience generator or something
  */
 export const PlaylistMusic: Writable<PlaylistContainer> = writable({
-	audioAssetPaths: { music: undefined, speech: getSpeechFiles() },
+	audioAssetPaths: { music: undefined, speech: undefined },
 	titles: { music: new Array<string>(), speech: new Array<string>() },
 	durations: new Map<string, number>(),
 	show: false,

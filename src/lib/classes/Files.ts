@@ -9,7 +9,8 @@
 	DEFAULT_GLOB_PATH = '../../../static/audio/mp3/*'  
  */
 
-
+import type { TitlesPaths } from "../../typeDeclarations";
+import { formatTitleFromGlobalPath } from "./Utils";
 
 export function getSpeechFiles(): string[] {
 	let filePaths: string[] = [];
@@ -23,4 +24,19 @@ export function getSpeechFiles(): string[] {
 	});
 
 	return filePaths as Array<string>;
+}
+
+export function getPaths(pathlist: string[]): TitlesPaths {
+	const results = {
+		titles: new Array<string>,
+		paths: new Array<string>,
+	}
+
+	for (let i = 0; i < pathlist.length; i++) {
+		const path = pathlist[i];
+		const title = formatTitleFromGlobalPath(path);
+		results.titles.push(title);
+		results.paths.push(path);
+	}
+	return { titles: results.titles, paths: results.paths }
 }

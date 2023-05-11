@@ -1,6 +1,6 @@
 
 /**
-* @name Blog Assets LayouLoad
+* @name Blog Assets LayoutLoad
 **/
 
 import type { LayoutLoad } from './$types';

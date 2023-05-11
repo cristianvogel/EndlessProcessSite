@@ -1,10 +1,10 @@
-import type { AssetMetadata, AudioCoreStatus, PlaylistContainer, Signal, StereoSignal } from '../../typeDeclarations';
+import type { AssetMetadata, AudioCoreStatus, PlaylistContainer, Signal, StereoSignal, StructuredAssetContainer } from '../../typeDeclarations';
 import { get } from 'svelte/store';
 import WebRenderer from '@elemaudio/web-renderer';
 import { writable, type Writable } from 'svelte/store';
 import { AudioCore } from '$lib/classes/Audio';
 import { el } from '@elemaudio/core';
-import { MusicAssetsReady, OutputMeters, PlaylistMusic, SpeechCoreLoaded, VFS_Entries_Speech } from '$lib/stores/stores';
+import { MusicAssetsReady, OutputMeters, PlaylistMusic, SpeechCoreLoaded, VFS_Entries } from '$lib/stores/stores';
 import { attenuateStereo, driftingSamplesPlayer } from '$lib/audio/AudioFunctions';
 import { Wait } from './Utils';
 
@@ -71,18 +71,10 @@ export class VoiceCore extends AudioCore {
 		})
 		VoiceOver._core.on('load', () => {
 			VoiceOver.subscribeToStores()
-			// now we are sure Elementary is ready
-			// update the VFS from the store
-			Wait.forTrue(VoiceOver._assetsReady).then(() => {
-				const vfs = get(VFS_Entries_Speech);
-				vfs.forEach(entry => {
-					VoiceOver.updateVFS(entry, VoiceOver._core as WebRenderer);
-				});
-				SpeechCoreLoaded.set(true);
-				VoiceOver.status = 'ready';
-				console.log('Voice Core loaded  🎤');
-				VoiceOver.patch();
-			});
+			SpeechCoreLoaded.set(true);
+			VoiceOver.status = 'ready';
+			console.log('Speech core loaded  🎤');
+			VoiceOver.patch();
 		});	
 	}
 
