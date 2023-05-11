@@ -3,15 +3,13 @@
 * @name Media Asset PageLoad
 **/
 
-import { PlaylistMusic } from '$lib/stores/stores';
-import { get } from 'svelte/store';
 import { getPaths, getSpeechFiles as getSpeechPaths } from '$lib/classes/Files';
 import type { PageLoad } from './$types';
 import type { AssetCategories, TitlesPaths } from '../typeDeclarations';
 
 export const prerender = false;
 
-const query = `query GetMedia {
+const query = `query GetMusicFromCMS {
   mediaItems(where: {mimeType: AUDIO_MPEG}) {
     edges {
       node {
@@ -51,7 +49,7 @@ export const load = (async ({ fetch }) => {
         return (serialisedResponse);
       }
       default: {
-        throw new Error('Invalid metadata category');
+        throw new Error('Unknown metadata category');
       }
     }
   }
