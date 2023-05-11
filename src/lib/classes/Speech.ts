@@ -4,23 +4,19 @@ import WebRenderer from '@elemaudio/web-renderer';
 import { writable, type Writable } from 'svelte/store';
 import { AudioCore } from '$lib/classes/Audio';
 import { el } from '@elemaudio/core';
-import { MusicAssetsReady, OutputMeters, PlaylistMusic, SpeechCoreLoaded, VFS_Entries } from '$lib/stores/stores';
+import { OutputMeters, PlaylistMusic, SpeechCoreLoaded } from '$lib/stores/stores';
 import { attenuateStereo, driftingSamplesPlayer } from '$lib/audio/AudioFunctions';
-import { Wait } from './Utils';
 
-
-// ════════╡ Voice WebRenderer Core ╞═══════
-// todo: add a way to set the voice's position in the audio file
-// todo: add a way to set the voice's start offset in the audio file
-// 🚨 this is still a demo/test and not a full implementation
-
+/** ════════╡ Speech WebRenderer Core ╞═══════
+* @todo set the start offset in the audio file
+* @todo swap into different chapters / tracks on the fly
+*/
 
 export class VoiceCore extends AudioCore {
 	_core: WebRenderer;
 	_voiceCoreStatus: Writable<AudioCoreStatus>;
 	_voiceVolume: number | Signal;
 	_currentMetadata: AssetMetadata;
-
 
 	constructor() {
 		super();
@@ -89,7 +85,6 @@ export class VoiceCore extends AudioCore {
 		super.connectToDestination(VoiceOver.voiceEndNode);
 		super.connectToMain(VoiceOver.voiceEndNode);
 	}
-
 
 	/**
 	 * @name playSpeechFromVFS

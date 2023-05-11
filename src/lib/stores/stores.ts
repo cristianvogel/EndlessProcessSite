@@ -1,12 +1,12 @@
 // This file defines the stores used in the app
 
 import { writable, type Readable, type Writable, readable } from 'svelte/store';
-import type { SinglePost, RawFFT, PlaylistContainer, MetersContainer, StructuredAssetContainer, AssetCategoryContainers } from '../../typeDeclarations';
+import type { SinglePost, RawFFT, PlaylistContainer, MetersContainer, AssetCategoryContainers } from '../../typeDeclarations';
 
 //---- UX / State related -------------------
 export const Decoded: Writable<{ done: boolean; bounds?: number }> = writable({
 	done: false,
-	all: 0
+	bounds: 0
 });
 export const MusicCoreLoaded: Writable<boolean> = writable(false);
 export const SpeechCoreLoaded: Writable<boolean> = writable(false);
@@ -58,8 +58,8 @@ export const VFS_Entries: Writable<AssetCategoryContainers> = writable({
 //----------------- Sounding Assets -----------------------
 /** 
  * @todo:  better descriptions from meta data
- * not using `audioAssetPaths: {music:... }` as now 
- * loading media from CMS but keep here for future features
+ * not using local music assets `audioAssetPaths: {music:... }` cos  
+ * fetching music tracks from CMS but keep here for future features
  * like a drum machine, ambience generator or something
  */
 export const PlaylistMusic: Writable<PlaylistContainer> = writable({
@@ -86,6 +86,11 @@ export const PlaylistMusic: Writable<PlaylistContainer> = writable({
 export type DurationsMapElement = { key: string; value: number };
 export const PlaysCount: Writable<number> = writable(0);
 export const Scrubbing: Writable<boolean> = writable(false);
+
+
+
+
+
 
 
 
