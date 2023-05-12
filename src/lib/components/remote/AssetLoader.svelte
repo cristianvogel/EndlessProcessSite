@@ -63,14 +63,14 @@
 				}
 			}
 			clearInterval(tickerTimer);	
-			}	
+		}	
 
-		function setHeadersFor( category:AssetCategories){
-		const headers = {
-			music:  { 'Content-Type': 'audio/*', Range: `bytes=0-${clipExcerptLength}` },
-			speech: { 'Content-Type': 'audio/*', Range: `` }
-		}
-		return headers[category]
+	function setHeadersFor( category:AssetCategories){
+	const headers = {
+		music:  { 'Content-Type': 'audio/*', Range: `bytes=0-${clipExcerptLength}` },
+		speech: { 'Content-Type': 'audio/*', Range: `` }
+	}
+	return headers[category]
 	}
 
 </script>
