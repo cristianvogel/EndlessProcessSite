@@ -19,21 +19,21 @@ const headers = {
 
 const query = {
   MPEGs: `query GetMusicFromCMS {
-  mediaItems(where: {mimeType: AUDIO_MPEG}) {
-    edges {
-      node {
-        mediaItemUrl
-        fileSize
-        caption
-        title
-         Speech {
-          chapter
-        }
-      }
-    }
-  }
-}`
-}
+          mediaItems(where: {mimeType: AUDIO_MPEG}) {
+            edges {
+              node {
+                mediaItemUrl
+                fileSize
+                caption
+                title
+                Speech {
+                  chapter
+                }
+              }
+            }
+          }
+        }`
+};
 
 //------------------ Load In -------------------
 export const load = (async ({ fetch }) => {
