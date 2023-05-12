@@ -1,7 +1,7 @@
 
 
  export const queries = {
-  music: `query GetMusicFromCMS {
+  MPEGs: `query GetMusicFromCMS {
   mediaItems(where: {mimeType: AUDIO_MPEG}) {
     edges {
       node {
@@ -9,24 +9,11 @@
         fileSize
         caption
         title
-      }
-    }
-  }
-}`,
-  speech:`query GetSpeechFromCMS {
-  mediaItems(where: {mimeType: AUDIO_MPEG}) {
-    edges {
-      node {
-        mediaItemUrl
-        fileSize
-        caption
-        title
-        Speech {
+         Speech {
           chapter
         }
       }
     }
   }
 }`
-  
 }

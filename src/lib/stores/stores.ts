@@ -48,10 +48,12 @@ export const OutputMeters: Writable<MetersContainer> = writable(
  */
 export const VFS_PATH_PREFIX: Readable<string> = readable('vfs::');
 
-export const VFS_Entries: Writable<AssetCategoryContainers> = writable({
+export const VFS_Entries: Writable<AssetCategoryContainers & { done: boolean }> = writable({
 	music: [],
-	speech: []
-})
+	speech: [],
+	done: false,
+});
+
 
 
 

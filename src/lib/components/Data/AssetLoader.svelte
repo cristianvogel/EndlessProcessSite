@@ -12,6 +12,8 @@
  * Currently, speech is retrieved from local (global) asset path
  * and music from CMS. But, the big idea is to encode TTS on the fly  
  * using the Eleven Labs API when a post changes, and cache the results. 
+ * 
+ * @todo catch offline and other connection errrors
 */
 	import { fade, fly } from 'svelte/transition';
 	import { ProgressBar } from '@skeletonlabs/skeleton';
@@ -19,87 +21,92 @@
 	import type { AssetCategories, StructuredAssetContainer } from '../../../typeDeclarations';
 	import { ContextSampleRate, Decoded, VFS_Entries } from '$lib/stores/stores';
 	import { stripTags } from '$lib/classes/Utils';
-	import { Audio as Music } from '$lib/classes/Audio';
-	import { assign } from '$lib/classes/Assets';
-	import { tick } from 'svelte';
-	import { VoiceOver } from '$lib/classes/Speech';
-	import type WebAudioRenderer from '@elemaudio/web-renderer';
+	import { Audio } from '$lib/classes/Audio';
+	import { assign, coreForCategory, sumLengthsOfAllArraysInVFSStore as VFS_Entries_Checksum } from '$lib/classes/Assets';
 
  	export let metadata: PageData;
-	export let category:AssetCategories;
-	export let rangeLengthSeconds = 60;
+	export let rangeLengthSeconds = 3;
 
 	const clipExcerptLength = rangeLengthSeconds * ($ContextSampleRate || 44100);
-	let assetsCollectionSize: number;
 	let hideTimer: NodeJS.Timeout;
 	let ticker: number;
+	let loadProgress: number;
 	const tickerTimer = setInterval(() => {
 		ticker++;
 	}, 100);
-	
-	const coreForCategory = (category: AssetCategories):WebAudioRenderer => {
-		switch (category) {
-			case 'music':
-				return Music._core;
-			case 'speech':
-				return VoiceOver._core;
-			default:
-				return Music._core;
-		}
-	};
 
-	$: ready = false;
-	$: bounds = $Decoded.bounds as number;
+	$: ready = $VFS_Entries.done
+	$: loadProgress = (ready) ? (VFS_Entries_Checksum() + 1) : VFS_Entries_Checksum()
 	$: hide = false;
 	$: ticker = 0;
-	$: tick().then( ()=> {
-			if ( bounds > 0 ) {
-			ready = $VFS_Entries[category].length > (bounds - 1)}
-		})
 	$: if (ready) {
-		const storedVFSEntries: Array<StructuredAssetContainer> = $VFS_Entries[category];
-		storedVFSEntries.forEach((entry) => {
-			Music.updateVFS(entry, coreForCategory(category));
-		});
 		clearInterval(tickerTimer);
-		Decoded.update( ($d) =>{ $d.done = true; return $d} );
 		hideTimer = setTimeout(() => {
+			Decoded.update( ($d) =>{ $d.done = true; return $d} );
 			hide = true;
-		}, 3 * 1.0e3);
+		}, 30 * 1.0e3);
+	}
+	
+	function checkThenComplete ( element: HTMLElement, params: {category: AssetCategories | string}) {
+			if (!ready) return
+			if (!$VFS_Entries) return
+			for (const key in $VFS_Entries) {
+				if (Object.prototype.hasOwnProperty.call($VFS_Entries, key)) {
+					const storedVFSDictionaryForCategory:Array<StructuredAssetContainer> = $VFS_Entries[key as AssetCategories];
+					try {
+						storedVFSDictionaryForCategory.forEach((entry) => {
+						console.log('updating VFS ', entry?.header.vfsPath)
+						Audio.updateVFStoCore(entry, coreForCategory(key as AssetCategories));
+						});
+					} catch (error) {
+						console.warn( 'Hitting all done.' )
+					}
+				}
+			}
+			clearInterval(tickerTimer);	
+			}	
+
+		function setHeadersFor( category:AssetCategories){
+		const headers = {
+			music:  { 'Content-Type': 'audio/*', Range: `bytes=0-${clipExcerptLength}` },
+			speech: { 'Content-Type': 'audio/*', Range: `` }
+		}
+		return headers[category]
 	}
 
 </script>
 
 {#if !hide}
-<span class="timer">{ticker * 100} ms</span>
+<span class="timer">{ticker * 100} ms - {ready}</span>
    <ul>
-	<div class="fileinfo" style="{category === 'music' ? 'left: 1rem' : 'right: 1rem'}" in:fade>
-		{@debug metadata}
-		{#await metadata.streamedMetaData[category]}
-			<div in:fade><h2>Initialising {category}.</h2></div>
+	<div class="fileinfo"  in:fade>
+		{#await metadata.streamedMetaData.MPEGs}
+			<div in:fade><h2>Initialising.</h2></div>
 		{:then responseObject}
-			{@const sum = assetsCollectionSize = responseObject.data.mediaItems.edges.length}
-			{@const VFS_Store = $VFS_Entries[category]}
-			<div out:fade><h3>{ready ? ' Ready.' : 'Fetching Endproc Playlist.'}</h3></div>
-			<ProgressBar value={VFS_Store.length} max={sum} />
+			{@const bounds = responseObject.data.mediaItems.edges.length}
+			<ProgressBar value={loadProgress} max={bounds} />
 			{#each responseObject.data.mediaItems.edges as edge, index}
-				{#await fetch( edge.node.mediaItemUrl, { method: 'GET', headers: { 'Content-Type': 'audio/*', Range: `bytes=0-${clipExcerptLength}` } } )}
-					<span class="h1 animate-rotate" data-sveltekit-noscroll out:fade>◶</span>
+			{@const updatedCategory = edge.node.Speech.chapter ? 'speech' : 'music'}
+			{@const headers = setHeadersFor(updatedCategory) }
+			{#await fetch( edge.node.mediaItemUrl, { method: 'GET', headers} )}
+					<div out:fade><h3>{ready ? ' Ready.' : 'Fetching ' + updatedCategory + ' Media.'}</h3></div>
 				{:then responseObject}
 					{#await responseObject.arrayBuffer()}
 						<span class="h2 animate-pulse" data-sveltekit-noscroll out:fade>◶</span>
 					{:then buffer}
 						{@const loadedArrayBuffer = buffer}
 						{@const caption = stripTags(edge.node.caption)}
-						<li class="info" id={category}
+						<li class={updatedCategory === 'speech' ? 'text-md' : 'info'} id={updatedCategory} 
 							use:assign={{
-								assetContainer: { ...edge.node, category, buffer: loadedArrayBuffer },
+								assetContainer: { ...edge.node, 
+									category: updatedCategory, 
+									buffer: loadedArrayBuffer },
 								index,
-								sum
+								bounds
 							}}
+							use:checkThenComplete={{category: updatedCategory}}
 							in:fly={{ x: -200, duration: index * 200 }}
-							out:fade
-						>
+							out:fade>
 							{`${edge.node.title} ${edge.node.fileSize} bytes`}<br />
 							╰{@html caption ? caption : 'no detail'} <br />
 							{`╰ ${edge.node.mediaItemUrl}`}<br />

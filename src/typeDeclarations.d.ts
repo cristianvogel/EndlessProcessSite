@@ -91,10 +91,7 @@ type StructuredAssetContainer = {
 	body: ArrayBuffer | AudioBuffer | undefined;
 } | undefined;
 
-interface MultiAssetContainer {
-	music: StructuredAssetContainer;
-	speech: StructuredAssetContainer
-}
+
 
 
 //════════╡ CMS  ╞═══════

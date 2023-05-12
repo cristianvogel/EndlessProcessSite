@@ -41,7 +41,7 @@
     }
 
     onMount(() => {     
-      //  VoiceOver.init();
+         VoiceOver.init();
         })
 
 
@@ -57,7 +57,7 @@
     </div>
     <div class="-mt-5"> 
         <SlideToggle 
-        name="demo" 
+        name="Chapter 1" 
         bind:checked={activated} 
         size='sm' 
         active='bg-secondary-600'

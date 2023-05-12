@@ -93,7 +93,7 @@ export class AudioCore {
 		// this is the one AudioContext to reference throughout
 		if (ctx) {
 			Audio.actx = ctx;
-			console.log('Passing existing AudioContext', ctx);
+			//console.log('Passing existing AudioContext', ctx);
 			ContextSampleRate.set(Audio.actx.sampleRate)
 		} else {
 			console.log('No context!');
@@ -311,8 +311,8 @@ export class AudioCore {
 	}
 
 	/**
-	 * @name updateVFS
-	 * @description Elementary Audio WebRenderer uses a virtual file system to reference audio files.
+	 * @name updateVFStoCore
+	 * @description Elementary Audio Renderers use a virtual file system to reference audio * files in memory.
 	 * https://www.elementary.audio/docs/packages/web-renderer#virtual-file-system
 	 * Update the virtual file system using data loaded from a load() function.
 	 * @param container
@@ -324,7 +324,7 @@ export class AudioCore {
 	 * 🚨 Guard against race conditions by only updating the VFS when the core is loaded.
 	 */
 
-	async updateVFS(
+	async updateVFStoCore(
 		container: StructuredAssetContainer,
 		core: WebRenderer
 	) {
@@ -344,7 +344,7 @@ export class AudioCore {
 				};
 				core.updateVirtualFileSystem(vfsDictionaryEntry);
 			}
-			// update the DurationElement in the playlist container map
+			// update the DurationElement in the playlist store Map
 			PlaylistMusic.update(($plist) => {
 				if (!decoded) return $plist;
 				if (!$plist.durations) return $plist;

@@ -20,11 +20,11 @@ const headers = {
 //------------------ Load In -------------------
 export const load = (async ({ fetch }) => {
 
-  async function fetchMetaDataFor(category: AssetCategories) {
+  async function fetchMediaItems(category?: AssetCategories) {
     const response = await fetch(apiURL, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ query: queries[category] })
+      body: JSON.stringify({ query: queries.MPEGs })
     });
     const serialisedResponse = response.json();
     return await (serialisedResponse);
@@ -33,8 +33,7 @@ export const load = (async ({ fetch }) => {
 // ------------------ Load Out -------------------
   return {
     streamedMetaData: {
-      music: fetchMetaDataFor('music'),
-      speech: fetchMetaDataFor('speech')
+      MPEGs: fetchMediaItems()
     }
   };
 }) satisfies PageLoad;

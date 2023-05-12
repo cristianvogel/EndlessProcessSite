@@ -7,7 +7,6 @@
 </script>
 
 {#if !$Decoded.done }
-	<AssetLoader metadata={data} category='music'/>
-	<AssetLoader metadata={data} category='speech'/>
+	<AssetLoader metadata={data} />
 {/if}
 
