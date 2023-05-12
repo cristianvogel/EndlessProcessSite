@@ -44,7 +44,7 @@
 		hideTimer = setTimeout(() => {
 			Decoded.update( ($d) =>{ $d.done = true; return $d} );
 			hide = true;
-		}, 30 * 1.0e3);
+		}, 3 * 1.0e3);
 	}
 	
 	function checkThenComplete ( element: HTMLElement, params: {category: AssetCategories | string}) {
@@ -76,7 +76,7 @@
 </script>
 
 {#if !hide}
-<span class="timer">{ticker * 100} ms - {ready}</span>
+<span class="timer">{ticker * 100} ms - {ready ? 'Done.' : 'Loading.'}</span>
    <ul>
 	<div class="fileinfo"  in:fade>
 		{#await metadata.streamedMetaData.MPEGs}
@@ -95,7 +95,7 @@
 					{:then buffer}
 						{@const loadedArrayBuffer = buffer}
 						{@const caption = stripTags(edge.node.caption)}
-						<li class={updatedCategory === 'speech' ? 'text-md' : 'info'} id={updatedCategory} 
+						<li class={updatedCategory === 'speech' ? 'text-zinc text-sm' : 'info'} id={updatedCategory} 
 							use:assign={{
 								assetContainer: { ...edge.node, 
 									category: updatedCategory, 
