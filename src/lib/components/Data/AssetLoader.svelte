@@ -55,11 +55,10 @@
 					const storedVFSDictionaryForCategory:Array<StructuredAssetContainer> = $VFS_Entries[key as AssetCategories];
 					try {
 						storedVFSDictionaryForCategory.forEach((entry) => {
-						console.log('updating VFS ', entry?.header.vfsPath)
 						Audio.updateVFStoCore(entry, coreForCategory(key as AssetCategories));
 						});
 					} catch (error) {
-						console.warn( 'Hitting all done.' )
+						console.warn( 'Hit all done flag.' )
 					}
 				}
 			}
