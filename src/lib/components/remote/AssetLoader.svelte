@@ -25,7 +25,7 @@
 	import { assign, coreForCategory, sumLengthsOfAllArraysInVFSStore as VFS_Entries_Checksum } from '$lib/classes/Assets';
 
  	export let metadata: PageData;
-	export let rangeLengthSeconds = 3;
+	export let rangeLengthSeconds = 60;
 
 	const clipExcerptLength = rangeLengthSeconds * ($ContextSampleRate || 44100);
 	let hideTimer: NodeJS.Timeout;
