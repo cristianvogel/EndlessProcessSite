@@ -5,7 +5,7 @@
 
 import type { PageLoad } from './$types';
 import type { AssetCategories } from '../typeDeclarations';
-import { queries } from '$lib/queries/mediaItemQueries';
+
 
 export const prerender = false;
 
@@ -17,6 +17,24 @@ const headers = {
   'Access-Control-Request-Headers': 'Content-Type, Range'
 }
 
+const query = {
+  MPEGs: `query GetMusicFromCMS {
+  mediaItems(where: {mimeType: AUDIO_MPEG}) {
+    edges {
+      node {
+        mediaItemUrl
+        fileSize
+        caption
+        title
+         Speech {
+          chapter
+        }
+      }
+    }
+  }
+}`
+}
+
 //------------------ Load In -------------------
 export const load = (async ({ fetch }) => {
 
@@ -24,7 +42,7 @@ export const load = (async ({ fetch }) => {
     const response = await fetch(apiURL, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ query: queries.MPEGs })
+      body: JSON.stringify({ query: query.MPEGs })
     });
     const serialisedResponse = response.json();
     return await (serialisedResponse);
