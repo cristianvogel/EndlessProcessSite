@@ -4,7 +4,6 @@ import type { Writable } from 'svelte/store';
 
 //-════════╡ Music and Speech ╞═══════
 
-
 type AssetMetadata = {
 	title?: string;
 	vfsPath?: string;
@@ -17,7 +16,7 @@ type AssetMetadata = {
 interface PlaylistContainer {
 	currentTrack?: AssetMetadata;
 	currentChapter?: AssetMetadata;
-	audioAssetPaths?: { music: Array<string>, speech: Array<string> };
+	audioAssetPaths: { music?: Array<string> | undefined, speech: Array<string> | undefined };
 	titles: { music: Array<string>, speech: Array<string> }
 	show?: boolean;
 	durations: Map<string, number>;
@@ -29,7 +28,7 @@ type SamplerOptions = {
 	vfsPath?: string; // defaults to current track
 	trigger?: Signal | number;
 	rate?: Signal | number;
-	durationMs: number;
+	durationMs?: number;
 	startOffset?: number;
 	drift?: Signal | number;
 	loop?: boolean;
@@ -66,10 +65,22 @@ type AudioCoreStatus =
 
 //════════╡ Data  ╞═══════
 
-type HtmlContent = { rawHTML: string; sanitisedHTML: string };
+type TitlesPaths = { titles: string[], paths: string[] }
 type Url = string;
-type AssetCategories = 'music' | 'speech'
-type AssetContainers = { music: any, speech: any }
+
+// https://chat.openai.com/c/9e74f559-27b4-4baf-b4b8-f4ab637ecc86
+type AssetCategories = 'music' | 'speech';
+type AssetCategoryContainers = { [K in AssetCategories]: any } & { other?: any };
+
+type AudioAssetMetadata = {
+	category: AssetCategories
+	mediaItemUrl: string;
+	fileSize: number;
+	title: string;
+	caption: string;
+	format?: string;
+	buffer?: AudioBuffer | ArrayBuffer | undefined
+}
 type StructuredAssetContainer = {
 	header: {
 		globPath: string;
@@ -77,9 +88,14 @@ type StructuredAssetContainer = {
 		bytes?: number;
 		vfsPath?: string;
 	};
-	body: ArrayBuffer | AudioBuffer;
+	body: ArrayBuffer | AudioBuffer | undefined;
 } | undefined;
 
+
+
+
+//════════╡ CMS  ╞═══════
+type HtmlContent = { rawHTML: string; sanitisedHTML: string };
 interface SinglePost {
 	title: string;
 	content: HtmlContent;
@@ -90,13 +106,20 @@ interface SinglePost {
 	isOpen?: boolean;
 }
 
+// Tricky Typescript stuff for annotating the responses from CMS asset loader
+// which got complicated when I decided to do that inline as a Svelte component
+// see AssetLoader.svelte
+type CategoryMapping<T> = T extends keyof any ? { [K in T]: string } : never;
+type ResolvedPageData = CategoryMapping<AssetCategories> & {
+	[key: string]: {
+		mediaItems: {
+			edges: Array<{ node: AudioAssetMetadata }>;
+		};
+	};
+}
 
 //════════╡ AudioEngine :: Interfaces ╞═══════
 
-interface detunedSaws {
-	props: { ampMod: number };
-	frequency: Signal | number;
-}
 interface stereoOut {
 	props: {};
 	stereoSignal: StereoSignal;

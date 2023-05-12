@@ -18,7 +18,9 @@ import {
 	MusicCoreLoaded,
 	VFS_PATH_PREFIX,
 	Decoded,
-	ContextSampleRate
+	ContextSampleRate,
+	ForceAudioContextResume,
+	MusicAssetsReady
 } from '$lib/stores/stores';
 import WebRenderer from '@elemaudio/web-renderer';
 import type { NodeRepr_t } from '@elemaudio/core';
@@ -29,8 +31,8 @@ import { el } from '@elemaudio/core';
 // todo: set a sample rate constant prop
 
 export class AudioCore {
-	_core: WebRenderer | null;
-	_silentCore: WebRenderer | null;
+	_core: WebRenderer;
+	_silentCore: WebRenderer;
 	_AudioCoreStatus: Writable<AudioCoreStatus>;
 	_contextIsRunning: Writable<boolean>;
 	_audioContext: Writable<AudioContext>;
@@ -40,9 +42,10 @@ export class AudioCore {
 	_scrubbing: boolean;
 	_sidechain: number | Signal;
 	_outputBuss: StereoSignal
+	_assetsReady: boolean;
 
 	constructor() {
-		this._core = this._silentCore = null;
+		this._core = this._silentCore = null as unknown as WebRenderer;;
 		this._masterVolume = writable(0.909); // default master volume
 		this._AudioCoreStatus = writable('loading');
 		this._contextIsRunning = writable(false);
@@ -56,6 +59,7 @@ export class AudioCore {
 		// these below are dynamically set from store subscriptions
 		this._currentMetadata = { title: '', vfsPath: '', duration: 0, progress: 0 };
 		this._scrubbing = false;
+		this._assetsReady = false;
 		this._sidechain = 0
 	}
 
@@ -65,9 +69,12 @@ export class AudioCore {
 	 */
 	subscribeToStores() {
 
+		MusicAssetsReady.subscribe(($ready) => {
+			Audio._assetsReady = $ready;
+		});
 		PlaylistMusic.subscribe(($p) => {
 			Audio._currentMetadata = $p.currentTrack;
-		})
+		});
 		Scrubbing.subscribe(($scrubbing) => {
 			Audio._scrubbing = $scrubbing;
 		});
@@ -86,7 +93,7 @@ export class AudioCore {
 		// this is the one AudioContext to reference throughout
 		if (ctx) {
 			Audio.actx = ctx;
-			console.log('Passing existing AudioContext', ctx);
+			//console.log('Passing existing AudioContext', ctx);
 			ContextSampleRate.set(Audio.actx.sampleRate)
 		} else {
 			console.log('No context!');
@@ -131,24 +138,23 @@ export class AudioCore {
 		Audio.actx.addEventListener('statechange', Audio.stateChangeHandler);
 
 		Audio._core.on('load', () => {
-			MusicCoreLoaded.set(true)
-			// Subscribe to Svelte stores outside of component
 			Audio.subscribeToStores();
-			console.log('Main core loaded 🔊');
+			// now we are sure Elementary is ready
+			ForceAudioContextResume.update(($f) => { $f = Audio.resumeContext; return $f });
+			console.log('Main core loaded 🔊')
 		});
 
 		Audio._silentCore.on('load', () => {
+			MusicCoreLoaded.set(true)
 			console.log('Silent core loaded');
 		});
 
 		Audio._core.on('error', function (e) {
 			console.error('🔇 ', e);
-			//Audio.cleanup();
 		});
 
 		Audio._silentCore.on('error', function (e) {
 			console.error('🔇 ', e);
-			//Audio.cleanup();
 		});
 
 		Audio._core.on('fft', function (e) {
@@ -305,8 +311,8 @@ export class AudioCore {
 	}
 
 	/**
-	 * @name updateVFS
-	 * @description Elementary Audio WebRenderer uses a virtual file system to reference audio files.
+	 * @name updateVFStoCore
+	 * @description Elementary Audio Renderers use a virtual file system to reference audio * files in memory.
 	 * https://www.elementary.audio/docs/packages/web-renderer#virtual-file-system
 	 * Update the virtual file system using data loaded from a load() function.
 	 * @param container
@@ -318,9 +324,9 @@ export class AudioCore {
 	 * 🚨 Guard against race conditions by only updating the VFS when the core is loaded.
 	 */
 
-	async updateVFS(
+	async updateVFStoCore(
 		container: StructuredAssetContainer,
-		core: WebRenderer | null
+		core: WebRenderer
 	) {
 		// decoder
 		Audio.decodeRawBuffer(container).then((data) => {
@@ -329,16 +335,16 @@ export class AudioCore {
 				console.warn('Decoding skipped.');
 				return;
 			}
-			// adds a channel extension to the path for each channel, the extension starts at 1 (not 0)
+			// adds a channel extension, starts at 1 (not 0)
 			for (let i = 0; i < decoded.numberOfChannels; i++) {
 				const vfsKey = get(VFS_PATH_PREFIX) + title + channelExtensionFor(i + 1);
 				const vfsDictionaryEntry =
 				{
 					[vfsKey]: decoded.getChannelData(i)
 				};
-				core?.updateVirtualFileSystem(vfsDictionaryEntry);
+				core.updateVirtualFileSystem(vfsDictionaryEntry);
 			}
-			// update the DurationElement in the playlist container map
+			// update the DurationElement in the playlist store Map
 			PlaylistMusic.update(($plist) => {
 				if (!decoded) return $plist;
 				if (!$plist.durations) return $plist;
@@ -357,9 +363,9 @@ export class AudioCore {
 		while (!container) await new Promise((resolve) => setTimeout(resolve, 100));
 		const { body, header } = container;
 		let decoded: AudioBuffer | null = null;
-		while (!Audio.actx) {
-			await new Promise((resolve) => setTimeout(resolve, 50));
-		}
+		// while (!Audio.actx) {
+		// 	await new Promise((resolve) => setTimeout(resolve, 50));
+		// }
 		try {
 			decoded = await Audio.actx.decodeAudioData(body as ArrayBuffer);
 		} catch (error) {
@@ -381,7 +387,6 @@ export class AudioCore {
 	 * this should only be called once, after a user interaction
 	 */
 	resumeContext(): void {
-		if (Audio.status === 'resuming') return;
 		if (Audio.actx.state === 'suspended') {
 			Audio.status = 'resuming';
 			Audio.actx.resume().then(() => {

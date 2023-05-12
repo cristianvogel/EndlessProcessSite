@@ -1,15 +1,16 @@
 // This file defines the stores used in the app
 
 import { writable, type Readable, type Writable, readable } from 'svelte/store';
-import type { SinglePost, RawFFT, PlaylistContainer, MetersContainer } from '../../typeDeclarations';
-import { getMusicFiles, getSpeechFiles } from '$lib/classes/Files';
+import type { SinglePost, RawFFT, PlaylistContainer, MetersContainer, AssetCategoryContainers } from '../../typeDeclarations';
 
 //---- UX / State related -------------------
-export const Decoded: Writable<{ done: boolean; progress?: number }> = writable({
+export const Decoded: Writable<{ done: boolean; bounds?: number }> = writable({
 	done: false,
+	bounds: 0
 });
 export const MusicCoreLoaded: Writable<boolean> = writable(false);
 export const SpeechCoreLoaded: Writable<boolean> = writable(false);
+export const MusicAssetsReady: Writable<boolean> = writable(false);
 
 //---- Blog related -------------------
 // Todo: Implement sanitiser for the content
@@ -30,8 +31,8 @@ export const CablesIsLoaded: Writable<boolean> = writable(false);
 export const CablesText: Writable<Array<string>> = writable(['Endless', 'Process']);
 
 //---- Audio related -------------------
-
-export const ContextSampleRate: Writable<number> = writable(44100);
+export const ForceAudioContextResume: Writable<any> = writable(() => { console.log('ForceAudioContextResume not initialised') })
+export const ContextSampleRate: Writable<number> = writable(0);
 export const OutputMeters: Writable<MetersContainer> = writable(
 	{
 		MusicAudible: 0,
@@ -43,16 +44,28 @@ export const OutputMeters: Writable<MetersContainer> = writable(
 
 /**
  * @Important  path prefix used as key for the Virtual File System (VFS)
+ * @Concept dynamic namespaces system for VFS?
  */
 export const VFS_PATH_PREFIX: Readable<string> = readable('vfs::');
 
+export const VFS_Entries: Writable<AssetCategoryContainers & { done: boolean }> = writable({
+	music: [],
+	speech: [],
+	done: false,
+});
 
-//----------------- Music -----------------------
+
+
+
+//----------------- Sounding Assets -----------------------
 /** 
- * @todo: ID3, description, loaded flag
+ * @todo:  better descriptions from meta data
+ * not using local music assets `audioAssetPaths: {music:... }` cos  
+ * fetching music tracks from CMS but keep here for future features
+ * like a drum machine, ambience generator or something
  */
 export const PlaylistMusic: Writable<PlaylistContainer> = writable({
-	audioAssetPaths: { music: getMusicFiles(), speech: getSpeechFiles() },
+	audioAssetPaths: { music: undefined, speech: undefined },
 	titles: { music: new Array<string>(), speech: new Array<string>() },
 	durations: new Map<string, number>(),
 	show: false,
@@ -78,17 +91,20 @@ export const Scrubbing: Writable<boolean> = writable(false);
 
 
 
-//---------- deprecating zone -----------------------
-// 🚮 
 
-// probably not needed anymore, as sound output is all handled by the AudioCore now
+
+
+
+
+//---------- deprecating zone --- 🚮 --------------------
+/** 
+ * @deprecated 
+ * 
+ * */
 export const EndNodes: Writable<any> = writable({ elem: null, cables: null });
 export const rawFFT: Writable<RawFFT> = writable({
 	real: new Float32Array(0),
 	imag: new Float32Array(0)
 });
-
-
-
 
 // export const AUDIO_ASSETS_PREFIX: Readable<string> = readable('/audio/mp3');

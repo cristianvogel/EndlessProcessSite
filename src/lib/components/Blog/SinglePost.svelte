@@ -4,7 +4,7 @@
 	import { Icon } from '@steeze-ui/svelte-icon';
 	import { Close, PageFirst } from '@steeze-ui/carbon-icons';
 	import { onDestroy, onMount } from 'svelte';
-	import ImageModal from '$lib/components/UI/ImageModal.svelte';
+	import ImageModal from '$lib/components/gui/ImageModal.svelte';
 	import { preloadData } from '$app/navigation';
 	
 	let modalOpen = false;

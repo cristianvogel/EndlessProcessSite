@@ -1,4 +1,4 @@
-import type { AssetMetadata, AudioCoreStatus, PlaylistContainer, Signal, StereoSignal } from '../../typeDeclarations';
+import type { AssetMetadata, AudioCoreStatus, Signal, StereoSignal } from '../../typeDeclarations';
 import { get } from 'svelte/store';
 import WebRenderer from '@elemaudio/web-renderer';
 import { writable, type Writable } from 'svelte/store';
@@ -7,19 +7,16 @@ import { el } from '@elemaudio/core';
 import { OutputMeters, PlaylistMusic, SpeechCoreLoaded } from '$lib/stores/stores';
 import { attenuateStereo, driftingSamplesPlayer } from '$lib/audio/AudioFunctions';
 
-
-// ════════╡ Voice WebRenderer Core ╞═══════
-// todo: add a way to set the voice's position in the audio file
-// todo: add a way to set the voice's start offset in the audio file
-// 🚨 this is still a demo/test and not a full implementation
-
+/** ════════╡ Speech WebRenderer Core ╞═══════
+* @todo set the start offset in the audio file
+* @todo swap into different chapters / tracks on the fly
+*/
 
 export class VoiceCore extends AudioCore {
 	_core: WebRenderer;
 	_voiceCoreStatus: Writable<AudioCoreStatus>;
 	_voiceVolume: number | Signal;
 	_currentMetadata: AssetMetadata;
-
 
 	constructor() {
 		super();
@@ -44,12 +41,12 @@ export class VoiceCore extends AudioCore {
 	 * asynchronously and store in VoiceCore class as this._endNodes
 	 */
 	override async init(): Promise<void> {
-		VoiceOver._core = new WebRenderer();
+		this._core = new WebRenderer();
 		while (!super.actx) {
-			//console.log('Waiting for first WebRenderer instance to load...');
+			console.log('Waiting for first WebRenderer instance to load...');
 			await new Promise((resolve) => setTimeout(resolve, 50));
 		}
-		VoiceOver.voiceEndNode = await VoiceOver._core
+		this.voiceEndNode = await this._core
 			.initialize(super.actx, {
 				numberOfInputs: 0,
 				numberOfOutputs: 1,
@@ -72,7 +69,7 @@ export class VoiceCore extends AudioCore {
 			VoiceOver.subscribeToStores()
 			SpeechCoreLoaded.set(true);
 			VoiceOver.status = 'ready';
-			//console.log('Voice Core loaded  🎤');
+			console.log('Speech core loaded  🎤');
 			VoiceOver.patch();
 		});	
 	}
@@ -89,12 +86,11 @@ export class VoiceCore extends AudioCore {
 		super.connectToMain(VoiceOver.voiceEndNode);
 	}
 
-
 	/**
 	 * @name playSpeechFromVFS
 	 */
 	playSpeechFromVFS(gate: Number = 1): void {
-		const { vfsPath } = VoiceOver._currentMetadata;
+		const { vfsPath, duration = 1000 } = VoiceOver._currentMetadata;
 		const test = driftingSamplesPlayer(VoiceOver,
 			{
 				vfsPath,
@@ -102,13 +98,14 @@ export class VoiceCore extends AudioCore {
 				rate: 0.901,
 				drift: 1.0e-3,
 				monoSum: true,
+				durationMs: duration
 			});
 		console.log('🎤 -> ', vfsPath);
 		VoiceOver.master(test);
 	}
 
 	/**
-	 * @name render
+	 * @name master
 	 * @description renders a stereo signal via the voice core
 	 * This render has a side effect of firing a meter update on VoiceOver._core
 	 * It's output routes to the parent core, appearing as sidechain signal 

@@ -1,9 +1,17 @@
-/*
- * some useful routines, mostly written with Copilot and GPT3
+/**
+ * @name Utils
+ * @description generalised functions used throughout the app
+ * @todo categorise and organise a bit better, maybe submodules
  */
 
 import type { Signal, StereoSignal } from "../../typeDeclarations";
 
+export function stripTags(inputHTML: string): string | null {
+	const parser = new DOMParser();
+	const doc: Document = parser.parseFromString(inputHTML, 'text/html');
+	const strippedHTML = doc.body.textContent;
+	return strippedHTML;
+}
 
 export const clipToRange = (value: number, min: number, max: number): number => {
 	return Math.min(Math.max(value, min), max);
@@ -75,7 +83,7 @@ export const Wait = {
 	},
 
 	forTrue: async function (variable: boolean | null, interval = 100, maxAttempts = 50): Promise<void> {
-		console.log('waiting for true...');
+		console.log('waiting for true...', variable);
 		let attempts = 0;
 		await new Promise<void>((resolve, reject) => {
 			const timer = setInterval(() => {

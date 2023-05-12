@@ -22,11 +22,13 @@
 			durationMs: durationSecs * 1000
 		}}
 	$: if (progress >= 0.99 && !$Scrubbing) {
+		Audio.playWithScrub( {...samplerParams('stop')} );
 		dispatch('cueNext', $PlaylistMusic.currentTrack?.title);
 	}
 
 	function handleScrub(e: any) {
 		if (!$Scrubbing) return;
+		Audio.status = 'playing';
 		const { clientX, target } = e;
 		const { left, width } = target.getBoundingClientRect();
 		const x = clientX - left;

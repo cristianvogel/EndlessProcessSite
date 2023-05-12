@@ -31,7 +31,7 @@ Scrubbing.subscribe(($s) => $scrubbing = $s);
  */
 
 export function hannEnvelope(index: number): Signal {
-	return clippedHann({ gain: 30, index });
+	return clippedHann({ gain: 60, index });
 }
 
 /**════════════════════════════════════════════════
@@ -107,7 +107,7 @@ export function scrubbingSamplesPlayer(props: SamplerOptions): StereoSignal {
 			mode: 'gate',
 			startOffset: startOffsetSamps
 		},
-		el.select(selectTriggerSignal, el.const({ key: kl + 't', value: trigger as number }), scrub),
+		el.select(selectTriggerSignal, el.const({ key: kr + 't', value: trigger as number }), scrub),
 		rate
 	);
 	return { left: left, right: right };

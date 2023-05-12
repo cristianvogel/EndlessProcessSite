@@ -125,7 +125,7 @@ export function progress(props: {
 }): Signal {
 
 	let { run,
-		totalDurMs = 1,
+		totalDurMs = 0,
 		rate = 1000,
 		startOffset,
 		key = 'progress'

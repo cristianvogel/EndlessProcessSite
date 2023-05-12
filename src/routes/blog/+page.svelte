@@ -5,7 +5,7 @@
 */
 
   import type { PageServerData } from './$types';
-  import BlogPosts from '$lib/components/Blog/BlogPosts.svelte';
+  import BlogPosts from '$lib/components/blog/BlogPosts.svelte';
 
   export let data: PageServerData;
   

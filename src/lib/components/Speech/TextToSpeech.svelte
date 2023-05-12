@@ -41,13 +41,13 @@
     }
 
     onMount(() => {     
-        VoiceOver.init();
+         VoiceOver.init();
         })
 
 
 </script>
 
-<div class='absolute grid grid-rows-3 grid-cols-3 grid-flow-col gap-1 p-0 mt-4  '>
+<div class='absolute grid grid-rows-3 grid-cols-3 grid-flow-col gap-1 p-0 mt-16  '>
     <div>
         <Icon src={VoiceActivate} 
         class='w-9 p-1 fill-secondary-200 rounded-md '/>
@@ -57,7 +57,7 @@
     </div>
     <div class="-mt-5"> 
         <SlideToggle 
-        name="demo" 
+        name="Chapter 1" 
         bind:checked={activated} 
         size='sm' 
         active='bg-secondary-600'
