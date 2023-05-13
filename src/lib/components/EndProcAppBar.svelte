@@ -10,8 +10,8 @@
 	import { createEventDispatcher } from 'svelte';
 	import { get } from 'svelte/store';
 	import { handlePlaylistChoice } from '$lib/functions/handlePlaylistChoice';
-	import NowPlaying from './NowPlaying.svelte';
-	import TextToSpeech from './speech/TextToSpeech.svelte';
+	import NowPlaying from '$lib/components/NowPlaying.svelte';
+	import TextToSpeech from '$lib/components/Speech/TextToSpeech.svelte';
 
 	const dispatch = createEventDispatcher();
 
