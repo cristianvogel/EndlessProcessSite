@@ -1,6 +1,6 @@
 <script lang="ts">
 import { goto } from '$app/navigation';
-import SinglePost from '$lib/components/blog/SinglePost.svelte';
+import SinglePost from '$lib/components/Blog/SinglePost.svelte';
 import { singlePost } from '$lib/stores/stores';
 
 function handleClose() {
