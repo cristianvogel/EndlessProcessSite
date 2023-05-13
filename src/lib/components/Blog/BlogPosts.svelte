@@ -9,7 +9,6 @@
 	import { Utils } from '$lib/classes/Utils';
 	import { onMount } from 'svelte';
 	
-
 	const defaultFeaturedImage = '/Default_Avatar.svg';
 	const placeHolderCard = {
 		id: '',
@@ -23,8 +22,6 @@
 	export let blogPosts = placeHolders;
 	export let loaded:boolean;
 
-	let isPhone: boolean = false;
-	let isTablet: boolean = false;
 	const gradients = './svg/spectrum-gradient.svg'
 
 	$: cardEnter = false;
@@ -59,11 +56,6 @@
 		cardEnter = false;
 	}
 
-	function responsive() {
-		isPhone = window.innerWidth < 640;
-		isTablet = window.innerWidth < 1024;
-	}
-
 	onMount(() => {
 		responsive();
 		
@@ -72,8 +64,6 @@
 
 	$:placehold = !loaded
 </script>
-
-<svelte:window on:resize={responsive} />
 
 <main>
 	<div class="p-2 space-y-8 ">
