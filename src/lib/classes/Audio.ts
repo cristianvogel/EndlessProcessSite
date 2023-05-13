@@ -162,13 +162,13 @@ export class AudioCore {
 			console.count('fft');
 		});
 
-		Audio._core.on('meter', function (e) {
-			console.log('meter received in main core ', e.max);
-			OutputMeters.update(($o) => {
-				$o = { ...$o, MusicAudible: e.max }
-				return $o;
-			})
-		});
+		// Audio._core.on('meter', function (e) {
+		// 	console.log('meter received in main core ', e.max);
+		// 	OutputMeters.update(($o) => {
+		// 		$o = { ...$o, MusicAudible: e.max }
+		// 		return $o;
+		// 	})
+		// });
 
 		Audio._silentCore.on('snapshot', function (e) {
 			PlaylistMusic.update(($pl) => {
