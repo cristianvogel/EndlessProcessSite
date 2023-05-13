@@ -1,11 +1,11 @@
 <script lang="ts" >
-
+	import BlogPosts from '$lib/components/Blog/BlogPosts.svelte';
 /**
  * Blog posts layout page
 */
 
   import type { PageServerData } from './$types';
-  import BlogPosts from '$lib/components/blog/BlogPosts.svelte';
+
 
   export let data: PageServerData;
   
@@ -16,7 +16,7 @@
 {:then responseObject}
  
   {@const blogPosts = responseObject.data.posts.nodes } 
-  <BlogPosts loaded={true} {blogPosts}/>
+<BlogPosts loaded={true} {blogPosts}/>
 
 {:catch error}
 	<div class="card h-20 w-80% m-10 text-m p-1 text-red-500"  > {error} 🤷🏽  </div>

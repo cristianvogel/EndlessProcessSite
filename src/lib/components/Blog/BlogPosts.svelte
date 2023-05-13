@@ -25,7 +25,7 @@
 
 	let isPhone: boolean = false;
 	let isTablet: boolean = false;
-	const gradients = './svg/spectrum-gradient.svg'
+	const gradients = '/svg/spectrum-gradient.svg'
 
 	$: cardEnter = false;
 	
