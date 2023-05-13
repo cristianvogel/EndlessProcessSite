@@ -20,7 +20,7 @@
 	import type { PageData } from '../../../routes/$types';
 	import type { AssetCategories, StructuredAssetContainer } from '../../../typeDeclarations';
 	import { ContextSampleRate, Decoded, VFS_Entries } from '$lib/stores/stores';
-	import { stripTags } from '$lib/classes/Utils';
+	import { Utils, stripTags } from '$lib/classes/Utils';
 	import { Audio } from '$lib/classes/Audio';
 	import { assign, coreForCategory, sumLengthsOfAllArraysInVFSStore as VFS_Entries_Checksum } from '$lib/classes/Assets';
 
@@ -30,6 +30,7 @@
 	const clipExcerptLength = rangeLengthSeconds * ($ContextSampleRate || 44100);
 	let hideTimer: NodeJS.Timeout;
 	let ticker: number;
+	let lofiAnim: string;
 	let loadProgress: number;
 	const tickerTimer = setInterval(() => {
 		ticker++;
@@ -45,8 +46,9 @@
 			Decoded.update( ($d) =>{ $d.done = true; return $d} );
 			hide = true;
 		}, 3 * 1.0e3);
-	}
-	
+	};
+	$: lofiAnim = ((ticker % 2) === 0 ? Utils.scrambleString('▂▃▄▅▆▇▆▅▄▃▂') : Utils.scrambleString(lofiAnim))
+
 	function checkThenComplete ( element: HTMLElement, params: {category: AssetCategories | string}) {
 			if (!ready) return
 			if (!$VFS_Entries) return
@@ -76,26 +78,29 @@
 </script>
 
 {#if !hide}
-<span class="timer">{ticker * 100} ms - {ready ? 'Done.' : 'Loading.'}</span>
+<span class="timer"> {ready ? 'Done.    ' : 'Loading.'} {lofiAnim} </span>
    <ul>
 	<div class="fileinfo"  in:fade>
 		{#await metadata.streamedMetaData.MPEGs}
 			<div in:fade><h2>Initialising.</h2></div>
+				{lofiAnim}
 		{:then responseObject}
 			{@const bounds = responseObject.data.mediaItems.edges.length}
-			<ProgressBar value={loadProgress} max={bounds} />
+			<!-- <ProgressBar value={loadProgress} max={bounds} /> -->
 			{#each responseObject.data.mediaItems.edges as edge, index}
 			{@const updatedCategory = edge.node.Speech.chapter ? 'speech' : 'music'}
 			{@const headers = setHeadersFor(updatedCategory) }
 			{#await fetch( edge.node.mediaItemUrl, { method: 'GET', headers} )}
-					<div out:fade><h3>{ready ? ' Ready.' : 'Fetching ' + updatedCategory + ' Media.'}</h3></div>
+					{#if index === 0}
+					   {lofiAnim}
+					{/if}
 				{:then responseObject}
 					{#await responseObject.arrayBuffer()}
 						<span class="h2 animate-pulse" data-sveltekit-noscroll out:fade>◶</span>
 					{:then buffer}
 						{@const loadedArrayBuffer = buffer}
 						{@const caption = stripTags(edge.node.caption)}
-						<li class={updatedCategory === 'speech' ? 'text-zinc text-sm' : 'info'} id={updatedCategory} 
+						<li class={updatedCategory === 'speech' ? 'info-alt' : 'info'} id={updatedCategory} 
 							use:assign={{
 								assetContainer: { ...edge.node, 
 									category: updatedCategory, 
@@ -108,7 +113,7 @@
 							out:fade>
 							{`${edge.node.title} ${edge.node.fileSize} bytes`}<br />
 							╰{@html caption ? caption : 'no detail'} <br />
-							{`╰ ${edge.node.mediaItemUrl}`}<br />
+							{`╰ ${Utils.scrambleString(edge.node.mediaItemUrl)}`}<br />
 						</li>
 					{/await}
 				{/await}

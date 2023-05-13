@@ -174,7 +174,6 @@ export const Utils = {
 		if (str.length <= 1) {
 			return str;
 		}
-
 		const rotatedStr = Array.from(str);
 		for (let i = 0; i < str.length; i++) {
 			const newIndex = (i + 1) % str.length;
