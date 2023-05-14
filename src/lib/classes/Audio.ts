@@ -94,7 +94,6 @@ export class AudioCore {
 		if (ctx) {
 			Audio.actx = ctx;
 			//console.log('Passing existing AudioContext', ctx);
-			ContextSampleRate.set(Audio.actx.sampleRate)
 		} else {
 			console.log('No context!');
 		}
@@ -138,6 +137,7 @@ export class AudioCore {
 		Audio.actx.addEventListener('statechange', Audio.stateChangeHandler);
 
 		Audio._core.on('load', () => {
+			ContextSampleRate.set(Audio.actx.sampleRate)
 			Audio.subscribeToStores();
 			// now we are sure Elementary is ready
 			ForceAudioContextResume.update(($f) => { $f = Audio.resumeContext; return $f });
