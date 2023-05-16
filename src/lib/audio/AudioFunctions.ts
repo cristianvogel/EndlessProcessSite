@@ -6,11 +6,11 @@
  * memoized composite function, defined in the composites.ts file.
  * 
  * From here, we pass back a StereoSignal object, 
- * which is returned to the Elementary Core renderer in Audio.ts
+ * which is returned to the Elementary Core renderer in Music.ts
  * 
  */
 
-import { Audio, AudioCore } from '$lib/classes/Audio';
+import { Audio, MainAudio } from '$lib/classes/Audio';
 import { el } from '@elemaudio/core';
 import { channelExtensionFor, clipTo0 } from '$lib/classes/Utils';
 import { attenuate, clippedHann, progress } from '$lib/audio/El Funktions';
@@ -84,7 +84,7 @@ export function scrubbingSamplesPlayer(props: SamplerOptions): StereoSignal {
 	const scrubRate = el.sm(el.latch(el.train(50), el.rand()));
 	const scrub: Signal = el.train(el.mul(50, scrubRate)) as Signal;
 
-	const currentVFSPath = Audio.currentVFSPath;
+	const currentVFSPath = AudioMain.currentVFSPath;
 	let path = currentVFSPath + channelExtensionFor(1);
 	let kl = currentVFSPath + '_left';
 	let kr = currentVFSPath + '_right';
@@ -120,7 +120,7 @@ export function scrubbingSamplesPlayer(props: SamplerOptions): StereoSignal {
  * ════════════════════════════════════════════════
  */
 
-export function driftingSamplesPlayer(coreClass: AudioCore, props: SamplerOptions): StereoSignal {
+export function driftingSamplesPlayer(coreClass: MainAudio, props: SamplerOptions): StereoSignal {
 	let { trigger = 1,
 		rate = 1,
 		startOffset = 0,

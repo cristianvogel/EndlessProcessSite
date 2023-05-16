@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { PlaylistMusic } from '$lib/stores/stores';
-	import { Audio } from '$lib/classes/Audio';
+	import { AudioMain } from '$lib/classes/Audio';
 	import { ProgressBar } from '@skeletonlabs/skeleton';
 	import { Scrubbing } from '$lib/stores/stores';
 	import { createEventDispatcher } from 'svelte';
@@ -22,25 +22,25 @@
 			durationMs: durationSecs * 1000
 		}}
 	$: if (progress >= 0.99 && !$Scrubbing) {
-		Audio.playWithScrub( {...samplerParams('stop')} );
+		AudioMain.playWithScrub( {...samplerParams('stop')} );
 		dispatch('cueNext', $PlaylistMusic.currentTrack?.title);
 	}
 
 	function handleScrub(e: any) {
 		if (!$Scrubbing) return;
-		Audio.status = 'playing';
+		AudioMain.status = 'playing';
 		const { clientX, target } = e;
 		const { left, width } = target.getBoundingClientRect();
 		const x = clientX - left;
 		const percent = x / width;
 		startOffset = percent
-		Audio.playWithScrub( {...samplerParams('stop'), startOffset} );
+		AudioMain.playWithScrub( {...samplerParams('stop'), startOffset} );
 	}
 
 	function replay() {
 		if (!$Scrubbing) return;
 		$Scrubbing = false;
-		Audio.playWithScrub( {...samplerParams('start'), startOffset})
+		AudioMain.playWithScrub( {...samplerParams('start'), startOffset})
 		}
 
 

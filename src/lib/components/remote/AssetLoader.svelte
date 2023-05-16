@@ -21,7 +21,7 @@
 	import type { AssetCategories, StructuredAssetContainer } from '../../../typeDeclarations';
 	import { ContextSampleRate, Decoded, VFS_Entries } from '$lib/stores/stores';
 	import { Utils, stripTags } from '$lib/classes/Utils';
-	import { Audio } from '$lib/classes/Audio';
+	import { AudioMain } from '$lib/classes/Audio';
 	import { assign, coreForCategory, sumLengthsOfAllArraysInVFSStore as VFS_Entries_Checksum } from '$lib/classes/Assets';
 
  	export let metadata: PageData;
@@ -57,7 +57,7 @@
 					const storedVFSDictionaryForCategory:Array<StructuredAssetContainer> = $VFS_Entries[key as AssetCategories];
 					try {
 						storedVFSDictionaryForCategory.forEach((entry) => {
-						Audio.updateVFStoCore(entry, coreForCategory(key as AssetCategories));
+						AudioMain.updateVFStoCore(entry, coreForCategory(key as AssetCategories));
 						});
 					} catch (error) {
 						console.warn( 'Hit all done flag.' )

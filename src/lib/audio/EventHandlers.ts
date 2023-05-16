@@ -9,7 +9,7 @@ type MessageEvent = { data: number | Signal };
 // using snapshot event to update the progress of the windowing envelope
 export const customEvents: CustomEventHandler = {
     ['progressSignal']: function (e: MessageEvent) {
-        Audio.updateOutputLevelWith(hannEnvelope(Audio.progress));
+        AudioMain.updateOutputLevelWith(hannEnvelope(AudioMain.progress));
         PlaylistMusic.update(($pl) => {
             if (!$pl.currentTrack || !e.data) return $pl;
             $pl.currentTrack.progress = e.data as number;

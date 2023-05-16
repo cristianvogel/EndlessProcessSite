@@ -10,7 +10,7 @@
 			SpeechCoreLoaded
 
 		} from '$lib/stores/stores';
-	import { Audio } from '$lib/classes/Audio';
+	import { AudioMain } from '$lib/classes/Audio';
 	import { onMount } from 'svelte';
 	import { Utils } from '$lib/classes/Utils';
 	import WebAudioRenderer from '@elemaudio/web-renderer';
@@ -59,7 +59,7 @@
 
 	function patchFinishedLoading() {
 		$CablesIsLoaded = true;
-		$CablesAudioContext = CABLES.WEBAUDIO.getAudioContext()
+		$CablesAudioContext = CABLES.WEBAudioMain.getAudioContext()
 		spinText();	
 	}
 
@@ -72,8 +72,8 @@
 	onMount(async () => {
 
 		const initialisers:Array<Promise<any>> = [
-			Audio.init( {id:'music', renderer: Audio._core },  $CablesAudioContext),
-			Audio.init( {id:'silent', renderer: Audio._silentCore },  $CablesAudioContext),	
+			AudioMain.init( {id:'music', renderer: AudioMain._core },  $CablesAudioContext),
+			AudioMain.init( {id:'silent', renderer: AudioMain._silentCore },  $CablesAudioContext),	
 			VoiceOver.init()
 			]
 		await initializeCables().then (()=>{

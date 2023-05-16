@@ -1,7 +1,7 @@
 import { get, derived, writable, type Writable } from 'svelte/store';
 import type {
 	StereoSignal,
-	AudioCoreStatus,
+	MainAudioStatus,
 	Signal,
 	SamplerOptions,
 	StructuredAssetContainer,
@@ -34,10 +34,10 @@ import { customEvents } from '$lib/audio/EventHandlers';
 
 // ════════╡ Music WebAudioRenderer Core ╞═══════
 
-export class AudioCore {
+export class MainAudioClass {
 	_core: WebAudioRenderer;
 	_silentCore: WebAudioRenderer;
-	_AudioCoreStatus: Writable<AudioCoreStatus>;
+	_MainAudioStatus: Writable<MainAudioStatus>;
 	_contextIsRunning: Writable<boolean>;
 	_audioContext: Writable<AudioContext>;
 	_endNodes: Map<string, AudioNode>;
@@ -52,7 +52,7 @@ export class AudioCore {
 		this._core = new WebAudioRenderer()
 		this._silentCore = new WebAudioRenderer();
 		this._masterVolume = writable(0.909); // default master volume
-		this._AudioCoreStatus = writable('loading');
+		this._MainAudioStatus = writable('loading');
 		this._contextIsRunning = writable(false);
 		this._audioContext = writable();
 		this._outputBuss = { left: 0 as unknown as Signal, right: 0 as unknown as Signal };
@@ -93,23 +93,23 @@ export class AudioCore {
 
 	async init(renderer: NamedWebAudioRenderer, ctx?: AudioContext, options?: WebAudioRendererInitOptions): Promise<void> {
 		// first, there should only be one base AudioContext throughout the app
-		if (!Audio.actx && ctx) {
-			Audio.actx = ctx;
+		if (!AudioMain.actx && ctx) {
+			AudioMain.actx = ctx;
 			console.log('Passing existing AudioContext', ctx);
-		} else if (!ctx && !Audio.actx) {
-			Audio.actx = new AudioContext();
+		} else if (!ctx && !AudioMain.actx) {
+			AudioMain.actx = new AudioContext();
 			console.warn('No AudioContext passed. Creating new one.');
 		}
 
 		// ok, add listener for base AudioContext state changes
-		Audio.actx.addEventListener('statechange', Audio.stateChangeHandler);
+		AudioMain.actx.addEventListener('statechange', AudioMain.stateChangeHandler);
 
 		// initialise the named WebAudioRenderer instance and connect 
 		// it's end node according to user options
 		get(EndNodes)
 			.set(renderer.id,
-				await Audio._core
-					.initialize(Audio.actx, {
+				await AudioMain._core
+					.initialize(AudioMain.actx, {
 						numberOfInputs: 1,
 						numberOfOutputs: 1,
 						outputChannelCount: [2]
@@ -117,10 +117,10 @@ export class AudioCore {
 					.then((node) => {
 						switch (true) {
 							case options?.connectTo?.destination: {
-								Audio.connectToDestination(node);
+								AudioMain.connectToDestination(node);
 							}
 							case options?.connectTo?.visualiser: {
-								Audio.connectToVisualiser(node);
+								AudioMain.connectToVisualiser(node);
 							}
 							default: {
 								// connect to nothing
@@ -139,7 +139,7 @@ export class AudioCore {
 		if (renderer.id === 'silent') {
 			extraFunctionality = { ...extraFunctionality, progress }
 		}
-		Audio.registerCallbacksFor(renderer, extraFunctionality);
+		AudioMain.registerCallbacksFor(renderer, extraFunctionality);
 		EndNodes.update((_nodesDict) => {
 			_nodesDict.set(renderer.id, renderer.renderer);
 			return _nodesDict;
@@ -151,8 +151,8 @@ export class AudioCore {
 	registerCallbacksFor(namedRenderer: NamedWebAudioRenderer, customEventHandlers?: any) {
 		const { id, renderer } = namedRenderer;
 		renderer.on('load', () => {
-			ContextSampleRate.set(Audio.actx.sampleRate)
-			ForceAudioContextResume.update(($f) => { $f = Audio.resumeContext; return $f });
+			ContextSampleRate.set(AudioMain.actx.sampleRate)
+			ForceAudioContextResume.update(($f) => { $f = AudioMain.resumeContext; return $f });
 			console.log(`${id} loaded 🔊`)
 		});
 		renderer.on('error', function (e: unknown) {
@@ -175,24 +175,24 @@ export class AudioCore {
 	 * @description Connect a node to the BaseAudioContext hardware destination aka speakers
 	  */
 	connectToDestination(node: AudioNode) {
-		node.connect(Audio.actx.destination);
+		node.connect(AudioMain.actx.destination);
 	}
 
 	/**
 	 * @name connectToMusic
-	 * @description connect a node to the input of the AudioCore WebAudioRenderer 
+	 * @description connect a node to the input of the MainAudio WebAudioRenderer 
 	 * which handles the music playback
 	 */
 	connectToMusic(node: AudioNode) {
-		node.connect(Audio.endNodes.get('music') as AudioNode);
+		node.connect(AudioMain.endNodes.get('music') as AudioNode);
 	}
 
 	/**
 	 * @name connectToVisualiser
-	 * @description Routing the AudioCore WebAudioRenderer into the Cables.gl visualiser
+	 * @description Routing the MainAudio WebAudioRenderer into the Cables.gl visualiser
 	 */
 	connectToVisualiser(node: AudioNode) {
-		const cablesSend = new GainNode(Audio.actx, { gain: 10 }); // boost the send into Cables visualiser, never heard
+		const cablesSend = new GainNode(AudioMain.actx, { gain: 10 }); // boost the send into Cables visualiser, never heard
 		node.connect(cablesSend);
 		get(CablesPatch).getVar('CablesAnalyzerNodeInput').setValue(cablesSend);
 	}
@@ -202,11 +202,11 @@ export class AudioCore {
 	 * @description Callback when the base AudioContext state changes
 	 */
 	private stateChangeHandler = () => {
-		Audio._contextIsRunning.update(() => {
-			return Audio.actx.state === 'running';
+		AudioMain._contextIsRunning.update(() => {
+			return AudioMain.actx.state === 'running';
 		});
-		Audio._AudioCoreStatus.update(() => {
-			return Audio.baseState;
+		AudioMain._MainAudioStatus.update(() => {
+			return AudioMain.baseState;
 		});
 	};
 
@@ -217,7 +217,7 @@ export class AudioCore {
 	 * premaster level, fades etc.
 	 */
 	updateOutputLevelWith(node: Signal): void {
-		Audio.master(undefined, node);
+		AudioMain.master(undefined, node);
 	};
 
 	/**
@@ -226,22 +226,22 @@ export class AudioCore {
     * Includes a stereo compressor, which is ducked by the Speech signal 
 	* arriving at el.in({channel:0})
     * @param stereoSignal optional stereo signal to render through the Master. 
-	* If passed, it is stored in the Audio._out buss updating whatever was patched before.
+	* If passed, it is stored in the AudioMain._out buss updating whatever was patched before.
 	* @param attenuator optional attenuator signal which will smoothly scale the signal just
 	* before final output, which is hard coded to be smooth scaled by the overall master volume. 
 	*/
 	master(stereoSignal?: StereoSignal, attenuator?: Signal | number): void {
-		if (!Audio._core) return;
+		if (!AudioMain._core) return;
 		if (stereoSignal) {
-			Audio._outputBuss = stereoSignal;
+			AudioMain._outputBuss = stereoSignal;
 		} 
 		const duckingCompressor = {
-			left: el.compress(20, 160, -35, 90, el.in({ channel: 0 }), Audio._outputBuss.left),
-			right: el.compress(20, 160, -35, 90, el.in({ channel: 0 }), Audio._outputBuss.right)
+			left: el.compress(20, 160, -35, 90, el.in({ channel: 0 }), AudioMain._outputBuss.left),
+			right: el.compress(20, 160, -35, 90, el.in({ channel: 0 }), AudioMain._outputBuss.right)
 		}
 		let master = attenuator ? attenuateStereo(duckingCompressor, attenuator) : duckingCompressor;
-		master = attenuateStereo(master, Audio.masterVolume)
-		const result = Audio._core.render(master.left, master.right);
+		master = attenuateStereo(master, AudioMain.masterVolume)
+		const result = AudioMain._core.render(master.left, master.right);
 
 		//console.log('Render graph ፨ ', result);
 	}
@@ -254,8 +254,8 @@ export class AudioCore {
 	 * cause DC offset.
 	 */
 	controlRender(controlSignal: Signal): void {
-		if (!Audio._silentCore || !controlSignal) return;
-		Audio._silentCore.render(el.mul(controlSignal, 0));
+		if (!AudioMain._silentCore || !controlSignal) return;
+		AudioMain._silentCore.render(el.mul(controlSignal, 0));
 	}
 
 	/**
@@ -263,8 +263,8 @@ export class AudioCore {
 	 * @description: Plays samples from a VFS path, with scrubbing
 	 */
 	playWithScrub(props: SamplerOptions) {
-		Audio.master(scrubbingSamplesPlayer(props));
-		Audio.playProgressBar(props);
+		AudioMain.master(scrubbingSamplesPlayer(props));
+		AudioMain.playProgressBar(props);
 	}
 
 	/**
@@ -272,11 +272,11 @@ export class AudioCore {
 	 * @description todo
 	 */
 	playProgressBar(props: SamplerOptions) {
-		Audio.renderBufferProgress({
-			key: Audio.currentTrackTitle,
+		AudioMain.renderBufferProgress({
+			key: AudioMain.currentTrackTitle,
 			run: props.trigger as number,
 			startOffset: props.startOffset || 0,
-			totalDurMs: props.durationMs || Audio.currentTrackDurationSeconds * 1000
+			totalDurMs: props.durationMs || AudioMain.currentTrackDurationSeconds * 1000
 		});
 	}
 
@@ -292,7 +292,7 @@ export class AudioCore {
 			totalDurMs,
 		} = props;
 
-		Audio.controlRender(
+		AudioMain.controlRender(
 			bufferProgress({
 				key,
 				totalDurMs,
@@ -322,7 +322,7 @@ export class AudioCore {
 		core: WebAudioRenderer
 	) {
 		// decoder
-		Audio.decodeRawBuffer(container).then((data) => {
+		AudioMain.decodeRawBuffer(container).then((data) => {
 			let { decodedBuffer: decoded, title } = data;
 			if (!decoded || decoded.length < 16) {
 				console.warn('Decoding skipped.');
@@ -357,14 +357,14 @@ export class AudioCore {
 		while (!container) await new Promise((resolve) => setTimeout(resolve, 100));
 		const { body, header } = container;
 		let decoded: AudioBuffer | null = null;
-		// while (!Audio.actx) {
+		// while (!AudioMain.actx) {
 		// 	await new Promise((resolve) => setTimeout(resolve, 50));
 		// }
 		try {
-			decoded = await Audio.actx.decodeAudioData(body as ArrayBuffer);
+			decoded = await AudioMain.actx.decodeAudioData(body as ArrayBuffer);
 		} catch (error) {
 			console.warn('Decoding skipped ', error);
-			decoded = Audio.actx?.createBuffer(1, 1, 44100);
+			decoded = AudioMain.actx?.createBuffer(1, 1, 44100);
 		} finally {
 			header.bytes = decoded?.getChannelData(0).length || 0;
 		}
@@ -381,11 +381,11 @@ export class AudioCore {
 	 * this should only be called once, after a user interaction
 	 */
 	resumeContext(): void {
-		if (Audio.actx.state === 'suspended') {
-			Audio.status = 'resuming';
-			Audio.actx.resume().then(() => {
+		if (AudioMain.actx.state === 'suspended') {
+			AudioMain.status = 'resuming';
+			AudioMain.actx.resume().then(() => {
 				console.log('AudioContext resumed ⚙︎');
-				Audio.status = 'running';
+				AudioMain.status = 'running';
 			});
 		}
 	}
@@ -396,14 +396,14 @@ export class AudioCore {
 	 */
 	unmute(): void {
 		// try to resume the context if it's suspended
-		if (Audio.status === 'suspended') {
-			Audio.resumeContext();
+		if (AudioMain.status === 'suspended') {
+			AudioMain.resumeContext();
 		}
-		Audio.status = 'playing';
-		Audio.playWithScrub({
-			vfsPath: Audio.currentVFSPath,
+		AudioMain.status = 'playing';
+		AudioMain.playWithScrub({
+			vfsPath: AudioMain.currentVFSPath,
 			trigger: 1,
-			durationMs: Audio.currentTrackDurationSeconds * 1000
+			durationMs: AudioMain.currentTrackDurationSeconds * 1000
 		});
 	}
 
@@ -415,14 +415,14 @@ export class AudioCore {
 	pause(pauseCables: boolean = false): void {
 		// release gate on the current track
 
-		Audio.playWithScrub({
-			vfsPath: Audio.currentVFSPath,
+		AudioMain.playWithScrub({
+			vfsPath: AudioMain.currentVFSPath,
 			trigger: 0,
-			durationMs: Audio.currentTrackDurationSeconds * 1000
+			durationMs: AudioMain.currentTrackDurationSeconds * 1000
 		});
 
-		Audio.status = 'paused';
-		if (pauseCables) Audio.pauseCables('pause');
+		AudioMain.status = 'paused';
+		if (pauseCables) AudioMain.pauseCables('pause');
 	}
 
 	// todo: pause or resume Cables patch
@@ -434,83 +434,83 @@ export class AudioCore {
 		// todo: refactor these to Tan-Li Hau's subsciber pattern
 		// https://www.youtube.com/watch?v=oiWgqk8zG18
 		return {
-			audioStatus: Audio._AudioCoreStatus,
-			isRunning: Audio._contextIsRunning,
-			actx: Audio._audioContext,
-			masterVolume: Audio._masterVolume
+			audioStatus: AudioMain._MainAudioStatus,
+			isRunning: AudioMain._contextIsRunning,
+			actx: AudioMain._audioContext,
+			masterVolume: AudioMain._masterVolume
 		};
 	}
 
 	get progress() {
-		return Audio._currentMetadata?.progress || 0;
+		return AudioMain._currentMetadata?.progress || 0;
 	}
 	get sidechain() {
 		return this._sidechain;
 	}
 	get scrubbing(): boolean {
-		return Audio._scrubbing;
+		return AudioMain._scrubbing;
 	}
 	get currentTrackDurationSeconds(): number {
-		return Audio._currentMetadata?.duration || -1;
+		return AudioMain._currentMetadata?.duration || -1;
 	}
 	get currentVFSPath(): string {
-		return Audio._currentMetadata?.vfsPath || 'no VFS path';
+		return AudioMain._currentMetadata?.vfsPath || 'no VFS path';
 	}
 	get buffersReady(): boolean {
 		return get(Decoded).done
 	}
 	get currentTrackTitle(): string {
-		return Audio._currentMetadata?.title || '';
+		return AudioMain._currentMetadata?.title || '';
 	}
 	get masterVolume(): number | NodeRepr_t {
-		return get(Audio._masterVolume);
+		return get(AudioMain._masterVolume);
 	}
 	get contextAndStatus() {
-		return derived([Audio._audioContext, Audio._AudioCoreStatus], ([$audioContext, $status]) => {
+		return derived([AudioMain._audioContext, AudioMain._MainAudioStatus], ([$audioContext, $status]) => {
 			return { context: $audioContext, status: $status };
 		});
 	}
 	get actx() {
-		return get(Audio.contextAndStatus).context;
+		return get(AudioMain.contextAndStatus).context;
 	}
 	get status() {
-		console.log('get status', get(Audio._AudioCoreStatus));
-		return get(Audio._AudioCoreStatus);
+		console.log('get status', get(AudioMain._MainAudioStatus));
+		return get(AudioMain._MainAudioStatus);
 	}
 	get elemLoaded() {
 		return get(MusicCoreLoaded);
 	}
 	get isRunning(): boolean {
-		return get(Audio._contextIsRunning);
+		return get(AudioMain._contextIsRunning);
 	}
 	get isMuted(): boolean {
-		return Audio.status !== ('playing' || 'running') || !Audio.isRunning;
+		return AudioMain.status !== ('playing' || 'running') || !AudioMain.isRunning;
 	}
 
 	get endNodes(): Map<string, AudioNode> {
-		return Audio._endNodes;	
+		return AudioMain._endNodes;	
 	}
 
-	get baseState(): AudioCoreStatus {
-		return Audio.actx.state as AudioCoreStatus;
+	get baseState(): MainAudioStatus {
+		return AudioMain.actx.state as MainAudioStatus;
 	}
 
 	/*---- setters --------------------------------*/
 
 	set progress(newProgress: number) {
 		if (!newProgress) return;
-		Audio._currentMetadata = { ...Audio._currentMetadata, progress: newProgress };
+		AudioMain._currentMetadata = { ...AudioMain._currentMetadata, progress: newProgress };
 	}
 	set masterVolume(normLevel: number | NodeRepr_t) {
-		Audio._masterVolume.update(() => normLevel);
+		AudioMain._masterVolume.update(() => normLevel);
 	}
 	set actx(newCtx: AudioContext) {
-		Audio._audioContext.update(() => newCtx);
+		AudioMain._audioContext.update(() => newCtx);
 	}
-	set status(newStatus: AudioCoreStatus) {
-		Audio._AudioCoreStatus.update(() => newStatus);
+	set status(newStatus: MainAudioStatus) {
+		AudioMain._MainAudioStatus.update(() => newStatus);
 	}
 }
 
-export const Audio = new AudioCore();
+export const AudioMain = new MainAudioClass();
 
