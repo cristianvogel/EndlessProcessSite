@@ -10,7 +10,7 @@
  * 
  */
 
-import { Audio, MainAudio } from '$lib/classes/Audio';
+import { AudioMain, MainAudioClass } from '$lib/classes/Audio';
 import { el } from '@elemaudio/core';
 import { channelExtensionFor, clipTo0 } from '$lib/classes/Utils';
 import { attenuate, clippedHann, progress } from '$lib/audio/El Funktions';
@@ -120,7 +120,7 @@ export function scrubbingSamplesPlayer(props: SamplerOptions): StereoSignal {
  * ════════════════════════════════════════════════
  */
 
-export function driftingSamplesPlayer(coreClass: MainAudio, props: SamplerOptions): StereoSignal {
+export function driftingSamplesPlayer(coreClass: MainAudioClass, props: SamplerOptions): StereoSignal {
 	let { trigger = 1,
 		rate = 1,
 		startOffset = 0,

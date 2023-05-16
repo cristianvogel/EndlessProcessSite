@@ -1,6 +1,6 @@
 import { OutputMeters, PlaylistMusic } from "$lib/stores/stores";
 import type { CustomEventHandler, Signal } from "../../typeDeclarations";
-import { Audio } from "$lib/classes/Audio";
+import { AudioMain } from "$lib/classes/Audio";
 import { hannEnvelope } from "$lib/audio/AudioFunctions";
 
 type MeterEvent = { min: number, max: number };

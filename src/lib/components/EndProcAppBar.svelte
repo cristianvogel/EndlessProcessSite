@@ -2,7 +2,7 @@
 	import { fade } from 'svelte/transition';
 	import { AppBar } from '@skeletonlabs/skeleton';
 	import { Icon } from '@steeze-ui/svelte-icon';
-	import { ChartRadial, Cube } from '@steeze-ui/carbon-icons';
+	import { ChartRadial } from '@steeze-ui/carbon-icons';
 	import ElementaryPlayer from '$lib/components/ElementaryPlayer.svelte';
 	import Progress from '$lib/components/Progress.svelte';
 	import { CablesIsLoaded, PlaysCount, PlaylistMusic, VFS_PATH_PREFIX, Decoded } from '$lib/stores/stores';

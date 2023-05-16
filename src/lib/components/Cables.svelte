@@ -6,21 +6,17 @@
 			CablesIsLoaded,
 			CablesAudioContext,
 			MusicCoreLoaded,
-
 			SpeechCoreLoaded
-
 		} from '$lib/stores/stores';
 	import { AudioMain } from '$lib/classes/Audio';
 	import { onMount } from 'svelte';
 	import { Utils } from '$lib/classes/Utils';
-	import WebAudioRenderer from '@elemaudio/web-renderer';
 	import { VoiceOver } from '$lib/classes/Speech';
 
 	export let patch: string;
 	export let bg: boolean = false;
 	export let spin: boolean = false;
-
-		
+	
 	let pathPatch: string = `/cables/${patch}/patch.js`;	
 
 	$: if (spin) { 
