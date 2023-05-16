@@ -2,7 +2,7 @@ import type { AssetMetadata, MainAudioStatus, Functionality, Signal, StereoSigna
 import { get } from 'svelte/store';
 import WebAudioRenderer from '@elemaudio/web-renderer';
 import { writable, type Writable } from 'svelte/store';
-import { MainAudio } from '$lib/classes/Audio';
+import { MainAudioClass } from '$lib/classes/Audio';
 import { el } from '@elemaudio/core';
 import { OutputMeters, PlaylistMusic, SpeechCoreLoaded } from '$lib/stores/stores';
 import { attenuateStereo, driftingSamplesPlayer } from '$lib/audio/AudioFunctions';
@@ -14,7 +14,7 @@ import { customEvents } from '$lib/audio/EventHandlers';
 * @todo swap into different chapters / tracks on the fly
 */
 
-export class VoiceCore extends MainAudio {
+export class VoiceCore extends MainAudioClass {
 	_core: WebAudioRenderer;
 	_voiceCoreStatus: Writable<MainAudioStatus>;
 	_voiceVolume: number | Signal;
