@@ -122,7 +122,7 @@ type WebAudioRendererInitOptions = {
 	extraFunctionality?: Array<Functionality>
 }
 type RawFFT = { real: Float32Array; imag: Float32Array };
-type AudioCoreStatus =
+type MainAudioStatus =
 	| 'suspended'
 	| 'loading'
 	| 'resuming'

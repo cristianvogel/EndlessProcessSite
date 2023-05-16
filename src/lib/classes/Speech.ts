@@ -1,8 +1,8 @@
-import type { AssetMetadata, AudioCoreStatus, Functionality, Signal, StereoSignal } from '../../typeDeclarations';
+import type { AssetMetadata, MainAudioStatus, Functionality, Signal, StereoSignal } from '../../typeDeclarations';
 import { get } from 'svelte/store';
 import WebAudioRenderer from '@elemaudio/web-renderer';
 import { writable, type Writable } from 'svelte/store';
-import { AudioCore } from '$lib/classes/Audio';
+import { MainAudio } from '$lib/classes/Audio';
 import { el } from '@elemaudio/core';
 import { OutputMeters, PlaylistMusic, SpeechCoreLoaded } from '$lib/stores/stores';
 import { attenuateStereo, driftingSamplesPlayer } from '$lib/audio/AudioFunctions';
@@ -14,9 +14,9 @@ import { customEvents } from '$lib/audio/EventHandlers';
 * @todo swap into different chapters / tracks on the fly
 */
 
-export class VoiceCore extends AudioCore {
+export class VoiceCore extends MainAudio {
 	_core: WebAudioRenderer;
-	_voiceCoreStatus: Writable<AudioCoreStatus>;
+	_voiceCoreStatus: Writable<MainAudioStatus>;
 	_voiceVolume: number | Signal;
 	_currentMetadata: AssetMetadata;
 
@@ -130,7 +130,7 @@ export class VoiceCore extends AudioCore {
 	set voiceVolume(volume: number | Signal) {
 		this._voiceVolume = volume;
 	}
-	set status(status: AudioCoreStatus) {
+	set status(status: MainAudioStatus) {
 		this._voiceCoreStatus.update((s) => {
 			return status;
 		});
