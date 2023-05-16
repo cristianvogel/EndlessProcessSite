@@ -7,3 +7,5 @@ node_modules
 .prettierrc
 .DS_Store
 .env
+scratch1.ts
+

@@ -65,9 +65,6 @@ export function sumLengthsOfAllArraysInVFSStore() {
 }
 
 export function coreForCategory(category: AssetCategories): WebAudioRenderer {
-
-    console.log('coreForCategory ', category)
-
     switch (category) {
         case 'music':
             return Music._core;

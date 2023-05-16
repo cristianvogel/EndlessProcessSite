@@ -5,10 +5,14 @@ import type {
 	Signal,
 	SamplerOptions,
 	StructuredAssetContainer,
-	AssetMetadata
+	AssetMetadata,
+	NamedWebAudioRenderer,
+	WebAudioRendererInitOptions,
+	RawFFT,
+	Functionality
 } from '../../typeDeclarations';
 
-import { scrubbingSamplesPlayer, bufferProgress, attenuateStereo, hannEnvelope } from '$lib/audio/AudioFunctions';
+import { scrubbingSamplesPlayer, bufferProgress, attenuateStereo } from '$lib/audio/AudioFunctions';
 import { channelExtensionFor } from '$lib/classes/Utils';
 import {
 	CablesPatch,
@@ -20,23 +24,23 @@ import {
 	Decoded,
 	ContextSampleRate,
 	ForceAudioContextResume,
-	MusicAssetsReady
+	MusicAssetsReady,
+	EndNodes
 } from '$lib/stores/stores';
-import WebRenderer from '@elemaudio/web-renderer';
+import WebAudioRenderer from '@elemaudio/web-renderer';
 import type { NodeRepr_t } from '@elemaudio/core';
 import { el } from '@elemaudio/core';
+import { customEvents } from '$lib/audio/EventHandlers';
 
-
-// ════════╡ Music WebRenderer Core ╞═══════
-// todo: set a sample rate constant prop
+// ════════╡ Music WebAudioRenderer Core ╞═══════
 
 export class AudioCore {
-	_core: WebRenderer;
-	_silentCore: WebRenderer;
+	_core: WebAudioRenderer;
+	_silentCore: WebAudioRenderer;
 	_AudioCoreStatus: Writable<AudioCoreStatus>;
 	_contextIsRunning: Writable<boolean>;
 	_audioContext: Writable<AudioContext>;
-	_endNodes: Writable<any>;
+	_endNodes: Map<string, AudioNode>;
 	_masterVolume: Writable<number | Signal>;
 	_currentMetadata: AssetMetadata | undefined;
 	_scrubbing: boolean;
@@ -45,22 +49,21 @@ export class AudioCore {
 	_assetsReady: boolean;
 
 	constructor() {
-		this._core = this._silentCore = null as unknown as WebRenderer;;
+		this._core = new WebAudioRenderer()
+		this._silentCore = new WebAudioRenderer();
 		this._masterVolume = writable(0.909); // default master volume
 		this._AudioCoreStatus = writable('loading');
 		this._contextIsRunning = writable(false);
 		this._audioContext = writable();
-		this._endNodes = writable({
-			mainCore: null,
-			silentCore: null
-		});
 		this._outputBuss = { left: 0 as unknown as Signal, right: 0 as unknown as Signal };
 
 		// these below are dynamically set from store subscriptions
-		this._currentMetadata = { title: '', vfsPath: '', duration: 0, progress: 0 };
-		this._scrubbing = false;
-		this._assetsReady = false;
-		this._sidechain = 0
+		this._endNodes = get(EndNodes);
+		this._currentMetadata = get(PlaylistMusic).currentTrack;
+		this._scrubbing = get(Scrubbing);
+		this._assetsReady = get(MusicAssetsReady);
+		this._sidechain = el.sm(0) as Signal;
+		this.subscribeToStores();
 	}
 
 	/**
@@ -68,146 +71,136 @@ export class AudioCore {
 	*  Subscribers that update the Audio class 's internal state from outside
 	 */
 	subscribeToStores() {
-
+		EndNodes.subscribe((endNodes) => {
+			endNodes.forEach((node, key) => {
+				this._endNodes.set(key, node);
+			})
+		})
 		MusicAssetsReady.subscribe(($ready) => {
-			Audio._assetsReady = $ready;
+			this._assetsReady = $ready;
 		});
 		PlaylistMusic.subscribe(($p) => {
-			Audio._currentMetadata = $p.currentTrack;
+			this._currentMetadata = $p.currentTrack;
 		});
 		Scrubbing.subscribe(($scrubbing) => {
-			Audio._scrubbing = $scrubbing;
+			this._scrubbing = $scrubbing;
 		});
 		OutputMeters.subscribe(($meters) => {
-			if (!Audio._core) return;
-			Audio._sidechain = el.sm($meters.SpeechAudible as number) as Signal;
+			if (!this._core) return;
+			this._sidechain = el.sm($meters.SpeechAudible as number) as Signal;
 		});
 	}
 
-	/**
-	 * @description Initialise the main WebRenderer instances handling the music 
-	 *  and store in AudioCore class as this._endNodes
-	 */
-	async init(ctx?: AudioContext): Promise<void> {
-
-		// this is the one AudioContext to reference throughout
-		if (ctx) {
+	async init(renderer: NamedWebAudioRenderer, ctx?: AudioContext, options?: WebAudioRendererInitOptions): Promise<void> {
+		// first, there should only be one base AudioContext throughout the app
+		if (!Audio.actx && ctx) {
 			Audio.actx = ctx;
-			//console.log('Passing existing AudioContext', ctx);
-		} else {
-			console.log('No context!');
+			console.log('Passing existing AudioContext', ctx);
+		} else if (!ctx && !Audio.actx) {
+			Audio.actx = new AudioContext();
+			console.warn('No AudioContext passed. Creating new one.');
 		}
 
-		// Elementary Node : Main Core
-		Audio._core = new WebRenderer();
-		Audio.elemEndNode = await Audio._core
-			.initialize(Audio.actx, {
-				numberOfInputs: 1,
-				numberOfOutputs: 1,
-				outputChannelCount: [2]
-			})
-			.then((node) => {
-				return node;
-			});
-
-
-		/**
-		 * @info The 'silent core' signal computer creates a second 
-		 * WebRenderer instance to compute at audio rate
-		 * and emit event based on results, without the 
-		 * unwanted side effect of outputting DC to speakers 
-		 */
-		Audio._silentCore = new WebRenderer();
-		Audio.elemSilentNode = await Audio._silentCore
-			.initialize(Audio.actx, {
-				numberOfInputs: 1,
-				numberOfOutputs: 1,
-				outputChannelCount: [2]
-			})
-			.then((node) => {
-				return node;
-			});
-
-		// connect the Main Core only to the hardware output
-		Audio.routeToCables();
-		Audio.connectToDestination(Audio.elemEndNode);
-
-		/* ---- Event Driven Callbacks ----------------- */
-
+		// ok, add listener for base AudioContext state changes
 		Audio.actx.addEventListener('statechange', Audio.stateChangeHandler);
 
-		Audio._core.on('load', () => {
+		// initialise the named WebAudioRenderer instance and connect 
+		// it's end node according to user options
+		get(EndNodes)
+			.set(renderer.id,
+				await Audio._core
+					.initialize(Audio.actx, {
+						numberOfInputs: 1,
+						numberOfOutputs: 1,
+						outputChannelCount: [2]
+					})
+					.then((node) => {
+						switch (true) {
+							case options?.connectTo?.destination: {
+								Audio.connectToDestination(node);
+							}
+							case options?.connectTo?.visualiser: {
+								Audio.connectToVisualiser(node);
+							}
+							default: {
+								// connect to nothing
+								break;
+							}
+						}
+						return node
+					})
+			);
+
+		// add any extra features for a specific
+		// named renderer here, as custom event handlers then
+		// register them all
+		let extraFunctionality = options?.extraFunctionality || {};
+		const progress: Functionality = customEvents.progressSignal
+		if (renderer.id === 'silent') {
+			extraFunctionality = { ...extraFunctionality, progress }
+		}
+		Audio.registerCallbacksFor(renderer, extraFunctionality);
+		EndNodes.update((_nodesDict) => {
+			_nodesDict.set(renderer.id, renderer.renderer);
+			return _nodesDict;
+		})
+		// done
+		return Promise.resolve();
+	}
+
+	registerCallbacksFor(namedRenderer: NamedWebAudioRenderer, customEventHandlers?: any) {
+		const { id, renderer } = namedRenderer;
+		renderer.on('load', () => {
 			ContextSampleRate.set(Audio.actx.sampleRate)
-			Audio.subscribeToStores();
-			// now we are sure Elementary is ready
 			ForceAudioContextResume.update(($f) => { $f = Audio.resumeContext; return $f });
-			console.log('Main core loaded 🔊')
+			console.log(`${id} loaded 🔊`)
 		});
-
-		Audio._silentCore.on('load', () => {
-			MusicCoreLoaded.set(true)
-			console.log('Silent core loaded');
+		renderer.on('error', function (e: unknown) {
+			console.error(`🔇 ${id} -> Error from core`);
 		});
-
-		Audio._core.on('error', function (e) {
-			console.error('🔇 ', e);
-		});
-
-		Audio._silentCore.on('error', function (e) {
-			console.error('🔇 ', e);
-		});
-
-		Audio._core.on('fft', function (e) {
+		renderer.on('fft', function (fft: RawFFT) {
 			// do something with the FFT data
-			console.count('fft');
+			console.count(`${id} fft data`);
 		});
 
-		// Audio._core.on('meter', function (e) {
-		// 	console.log('meter received in main core ', e.max);
-		// 	OutputMeters.update(($o) => {
-		// 		$o = { ...$o, MusicAudible: e.max }
-		// 		return $o;
-		// 	})
-		// });
-
-		Audio._silentCore.on('snapshot', function (e) {
-			PlaylistMusic.update(($pl) => {
-				if (!$pl.currentTrack || !e.data) return $pl;
-				$pl.currentTrack.progress = e.data as number;
-				return $pl;
+		if (customEventHandlers) {
+			Object.keys(customEventHandlers).forEach((key) => {
+				renderer.on(key, customEventHandlers[key]);
 			});
-			// use snapshot event to update the progress of the windowing envelope
-			Audio.updateOutputLevelWith(hannEnvelope(Audio.progress));
-		});
+		}
 	}
 
 	/**
 	 * @name connectToDestination
-	 * @description Connect a node to the BaseAudioContext hardware destination
+	 * @description Connect a node to the BaseAudioContext hardware destination aka speakers
 	  */
 	connectToDestination(node: AudioNode) {
 		node.connect(Audio.actx.destination);
 	}
 
 	/**
-	 * @name connectToMain
-	 * @description connect a node to the input of the AudioCore WebRenderer 
+	 * @name connectToMusic
+	 * @description connect a node to the input of the AudioCore WebAudioRenderer 
 	 * which handles the music playback
 	 */
-	connectToMain(node: AudioNode) {
-		node.connect(Audio.elemEndNode);
+	connectToMusic(node: AudioNode) {
+		node.connect(Audio.endNodes.get('music') as AudioNode);
 	}
 
 	/**
-	 * @name routeToCables
-	 * @description Routing the AudioCore WebRenderer into the Cables.gl visualiser
+	 * @name connectToVisualiser
+	 * @description Routing the AudioCore WebAudioRenderer into the Cables.gl visualiser
 	 */
-	routeToCables() {
+	connectToVisualiser(node: AudioNode) {
 		const cablesSend = new GainNode(Audio.actx, { gain: 10 }); // boost the send into Cables visualiser, never heard
-		Audio.elemEndNode.connect(cablesSend);
+		node.connect(cablesSend);
 		get(CablesPatch).getVar('CablesAnalyzerNodeInput').setValue(cablesSend);
 	}
 
+	/**
+	 * @name stateChangeHandler
+	 * @description Callback when the base AudioContext state changes
+	 */
 	private stateChangeHandler = () => {
 		Audio._contextIsRunning.update(() => {
 			return Audio.actx.state === 'running';
@@ -255,7 +248,7 @@ export class AudioCore {
 
 	/**
 	 * @name controlRender
-	 * @description silent render of a control signal using the secondary 'silent core' WebRenderer,
+	 * @description silent render of a control signal using the secondary 'silent core' WebAudioRenderer,
 	 * for rendering a signal with a side effect. For example the play progress counter, 
 	 * which emits an event _and_ an audiorate signal, which we don't want to hear as it will likely 
 	 * cause DC offset.
@@ -326,7 +319,7 @@ export class AudioCore {
 
 	async updateVFStoCore(
 		container: StructuredAssetContainer,
-		core: WebRenderer
+		core: WebAudioRenderer
 	) {
 		// decoder
 		Audio.decodeRawBuffer(container).then((data) => {
@@ -342,7 +335,8 @@ export class AudioCore {
 				{
 					[vfsKey]: decoded.getChannelData(i)
 				};
-				core.updateVirtualFileSystem(vfsDictionaryEntry);
+				console.log('Will update VFS with ', vfsDictionaryEntry, ' to core ', core)
+			//	core.updateVirtualFileSystem(vfsDictionaryEntry);
 			}
 			// update the DurationElement in the playlist store Map
 			PlaylistMusic.update(($plist) => {
@@ -443,7 +437,6 @@ export class AudioCore {
 			audioStatus: Audio._AudioCoreStatus,
 			isRunning: Audio._contextIsRunning,
 			actx: Audio._audioContext,
-			endNodes: Audio._endNodes,
 			masterVolume: Audio._masterVolume
 		};
 	}
@@ -493,12 +486,11 @@ export class AudioCore {
 	get isMuted(): boolean {
 		return Audio.status !== ('playing' || 'running') || !Audio.isRunning;
 	}
-	get elemSilentNode() {
-		return get(Audio._endNodes).silentCore;
+
+	get endNodes(): Map<string, AudioNode> {
+		return Audio._endNodes;	
 	}
-	get elemEndNode() {
-		return get(Audio._endNodes).mainCore;
-	}
+
 	get baseState(): AudioCoreStatus {
 		return Audio.actx.state as AudioCoreStatus;
 	}
@@ -517,18 +509,6 @@ export class AudioCore {
 	}
 	set status(newStatus: AudioCoreStatus) {
 		Audio._AudioCoreStatus.update(() => newStatus);
-	}
-	set elemSilentNode(node: AudioNode) {
-		Audio._endNodes.update((n) => {
-			n.silentCore = node;
-			return n;
-		});
-	}
-	set elemEndNode(node: AudioNode) {
-		Audio._endNodes.update((n) => {
-			n.mainCore = node;
-			return n;
-		});
 	}
 }
 

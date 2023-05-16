@@ -21,9 +21,7 @@ interface PlaylistContainer {
 	show?: boolean;
 	durations: Map<string, number>;
 }
-type RawFFT = { real: Float32Array; imag: Float32Array };
-type Signal = NodeRepr_t;
-type StereoSignal = { left: NodeRepr_t; right: NodeRepr_t };
+
 type SamplerOptions = {
 	vfsPath?: string; // defaults to current track
 	trigger?: Signal | number;
@@ -50,17 +48,6 @@ type MetersContainer = {
 	SpeechAudible?: number,
 	SpeechSilent?: number,
 }
-type AudioCoreStatus =
-	| 'suspended'
-	| 'loading'
-	| 'resuming'
-	| 'playing'
-	| 'paused'
-	| 'closed '
-	| 'running'
-	| 'ready'
-	| 'scrubbing'
-	| 'error';
 
 
 //════════╡ Data  ╞═══════
@@ -118,10 +105,31 @@ type ResolvedPageData = CategoryMapping<AssetCategories> & {
 	};
 }
 
-//════════╡ AudioEngine :: Interfaces ╞═══════
+//════════╡ AudioEngine ╞═══════
 
 interface stereoOut {
 	props: {};
 	stereoSignal: StereoSignal;
 }
-
+type Signal = NodeRepr_t;
+type StereoSignal = { left: NodeRepr_t; right: NodeRepr_t };
+type Functionality = Function
+type CustomEventHandler = { [key: string]: (e: any) => void }
+type RendererIdentifiers = 'silent' | 'music' | 'speech'
+type NamedWebAudioRenderer = { id: RendererIdentifiers, renderer: WebAudioRenderer }
+type WebAudioRendererInitOptions = {
+	connectTo: { destination?: boolean, visualiser?: boolean, sidechain?: boolean, silence?: boolean },
+	extraFunctionality?: Array<Functionality>
+}
+type RawFFT = { real: Float32Array; imag: Float32Array };
+type AudioCoreStatus =
+	| 'suspended'
+	| 'loading'
+	| 'resuming'
+	| 'playing'
+	| 'paused'
+	| 'closed '
+	| 'running'
+	| 'ready'
+	| 'scrubbing'
+	| 'error';

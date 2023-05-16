@@ -1,7 +1,7 @@
 // This file defines the stores used in the app
 
 import { writable, type Readable, type Writable, readable } from 'svelte/store';
-import type { SinglePost, RawFFT, PlaylistContainer, MetersContainer, AssetCategoryContainers } from '../../typeDeclarations';
+import type { SinglePost, RawFFT, PlaylistContainer, MetersContainer, AssetCategoryContainers, RendererIdentifiers } from '../../typeDeclarations';
 
 //---- UX / State related -------------------
 export const Decoded: Writable<{ done: boolean; bounds?: number }> = writable({
@@ -91,9 +91,9 @@ export const Scrubbing: Writable<boolean> = writable(false);
 
 
 
+//----------------- WebAudio -----------------------
 
-
-
+export const EndNodes: Writable<Map<RendererIdentifiers, AudioNode>> = writable(new Map<RendererIdentifiers, AudioNode>());
 
 
 //---------- deprecating zone --- 🚮 --------------------
@@ -101,7 +101,7 @@ export const Scrubbing: Writable<boolean> = writable(false);
  * @deprecated 
  * 
  * */
-export const EndNodes: Writable<any> = writable({ elem: null, cables: null });
+
 export const rawFFT: Writable<RawFFT> = writable({
 	real: new Float32Array(0),
 	imag: new Float32Array(0)

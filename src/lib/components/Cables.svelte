@@ -5,10 +5,16 @@
 			CablesText,
 			CablesIsLoaded,
 			CablesAudioContext,
+			MusicCoreLoaded,
+
+			SpeechCoreLoaded
+
 		} from '$lib/stores/stores';
 	import { Audio } from '$lib/classes/Audio';
 	import { onMount } from 'svelte';
 	import { Utils } from '$lib/classes/Utils';
+	import WebAudioRenderer from '@elemaudio/web-renderer';
+	import { VoiceOver } from '$lib/classes/Speech';
 
 	export let patch: string;
 	export let bg: boolean = false;
@@ -23,7 +29,7 @@
 	}
 
 
-	const initializeCables = () => {
+	const initializeCables = async () => {
 		CablesPatch.set ( new CABLES.Patch({
 			patch: CABLES.exportedPatch,
 			prefixAssetPath: `/cables/${patch}/`,
@@ -54,8 +60,7 @@
 	function patchFinishedLoading() {
 		$CablesIsLoaded = true;
 		$CablesAudioContext = CABLES.WEBAUDIO.getAudioContext()
-		spinText();
-		Audio.init($CablesAudioContext);		
+		spinText();	
 	}
 
 	function spinText(  prompts:string[] = ["End","Proc"]  ) {
@@ -64,8 +69,20 @@
 		}
 	}
 
-	onMount(() => {
-		initializeCables();
+	onMount(async () => {
+
+		const initialisers:Array<Promise<any>> = [
+			Audio.init( {id:'music', renderer: Audio._core },  $CablesAudioContext),
+			Audio.init( {id:'silent', renderer: Audio._silentCore },  $CablesAudioContext),	
+			VoiceOver.init()
+			]
+		await initializeCables().then (()=>{
+		Promise.all(initialisers).then( () => { 
+			console.log('Initialisation completed')
+			$MusicCoreLoaded = true;
+			$SpeechCoreLoaded = true;
+			})
+		})
 	})
 	
 	</script>
