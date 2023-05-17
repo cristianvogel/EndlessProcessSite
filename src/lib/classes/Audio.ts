@@ -1,19 +1,18 @@
-import { get, derived, writable, type Writable } from 'svelte/store';
+import { derived, get, writable, type Writable } from 'svelte/store';
 import type {
 	StereoSignal,
 	MainAudioStatus,
 	Signal,
-	SamplerOptions,
-	StructuredAssetContainer,
 	AssetMetadata,
 	NamedWebAudioRenderer,
-	WebAudioRendererInitOptions,
 	RawFFT,
-	Functionality
+	RendererInitialisationProps,
+	StructuredAssetContainer,
+	SamplerOptions
 } from '../../typeDeclarations';
 
 import { scrubbingSamplesPlayer, bufferProgress, attenuateStereo } from '$lib/audio/AudioFunctions';
-import { channelExtensionFor } from '$lib/classes/Utils';
+import { channelExtensionFor, Wait } from '$lib/classes/Utils';
 import {
 	CablesPatch,
 	PlaylistMusic,
@@ -28,9 +27,7 @@ import {
 	EndNodes
 } from '$lib/stores/stores';
 import WebAudioRenderer from '@elemaudio/web-renderer';
-import type { NodeRepr_t } from '@elemaudio/core';
-import { el } from '@elemaudio/core';
-import { customEvents } from '$lib/audio/EventHandlers';
+import { el, type NodeRepr_t } from '@elemaudio/core';
 
 // ════════╡ Music WebAudioRenderer Core ╞═══════
 
@@ -91,89 +88,112 @@ export class MainAudioClass {
 		});
 	}
 
-	async init(renderer: NamedWebAudioRenderer, ctx?: AudioContext, options?: WebAudioRendererInitOptions): Promise<void> {
+	async init(props: RendererInitialisationProps): Promise<void> {
+		const { namedRenderer, ctx, options } = props;
+		const { renderer, id } = namedRenderer;
+
 		// first, there should only be one base AudioContext throughout the app
-		if (!AudioMain.actx && ctx) {
+		if (!AudioMain.actx && ctx?.sampleRate) {
 			AudioMain.actx = ctx;
-			console.log('Passing existing AudioContext', ctx);
+			console.log('Passing existing AudioContext ', ctx.sampleRate);
 		} else if (!ctx && !AudioMain.actx) {
 			AudioMain.actx = new AudioContext();
-			console.warn('No AudioContext passed. Creating new one.');
+			console.warn('No AudioContext passed. Stashing new one.');
 		}
 
 		// ok, add listener for base AudioContext state changes
 		AudioMain.actx.addEventListener('statechange', AudioMain.stateChangeHandler);
 
-		// initialise the named WebAudioRenderer instance and connect 
-		// it's end node according to user options
-		get(EndNodes)
-			.set(renderer.id,
-				await AudioMain._core
-					.initialize(AudioMain.actx, {
-						numberOfInputs: 1,
-						numberOfOutputs: 1,
-						outputChannelCount: [2]
-					})
-					.then((node) => {
-						switch (true) {
-							case options?.connectTo?.destination: {
-								AudioMain.connectToDestination(node);
-							}
-							case options?.connectTo?.visualiser: {
-								AudioMain.connectToVisualiser(node);
-							}
-							default: {
-								// connect to nothing
-								break;
-							}
-						}
-						return node
-					})
-			);
+		// set the sample rate for the app
+		ContextSampleRate.set(AudioMain.actx.sampleRate)
 
-		// add any extra features for a specific
-		// named renderer here, as custom event handlers then
-		// register them all
-		let extraFunctionality = options?.extraFunctionality || {};
-		const progress: Functionality = customEvents.progressSignal
-		if (renderer.id === 'silent') {
-			extraFunctionality = { ...extraFunctionality, progress }
+		// initialise the named WebAudioRenderer instance & connect 
+		// it's end node according to user options
+		console.log('initialising renderer ', id)
+		const endNode = await renderer
+			.initialize(AudioMain.actx, {
+				numberOfInputs: 1,
+				numberOfOutputs: 1,
+				outputChannelCount: [2]
+			}).then((node: AudioNode) => { return node })
+
+		console.group('Routing Options:')
+		if (options?.connectTo) {
+			if (options.connectTo.destination) {
+				console.log('✅ destination')
+				AudioMain.connectToDestination(endNode);
+			}
+			if (options.connectTo.visualiser) {
+				console.log('✅ visualiser')
+				AudioMain.connectToVisualiser(endNode)
+			}
+			if (options.connectTo.sidechain) {
+				console.log('✅ sidechain')
+				AudioMain.connectToSidechain(endNode)
+			} else {
+				// connect to nothing
+				console.log('⟤ connecting to nothing')
+			}
 		}
-		AudioMain.registerCallbacksFor(renderer, extraFunctionality);
+		console.groupEnd();
+
+		// add user defined id to the renderer
+		Object.defineProperty(renderer, 'id', { value: id, writable: false });
+
+		// update the EndNodes store a reference to the last node of the initialised 
+		// renderer for further routing
 		EndNodes.update((_nodesDict) => {
-			_nodesDict.set(renderer.id, renderer.renderer);
+			_nodesDict.set(namedRenderer.id, endNode);
 			return _nodesDict;
 		})
+
+		// add any extra functionality for a 
+		// named renderer as custom event handlers then
+		// register them with the renderer
+		AudioMain.registerCallbacksFor(namedRenderer, options?.extraFunctionality);
+
+
 		// done
 		return Promise.resolve();
 	}
 
-	registerCallbacksFor(namedRenderer: NamedWebAudioRenderer, customEventHandlers?: any) {
+	registerCallbacksFor(namedRenderer: NamedWebAudioRenderer, extraFunctionality?: any) {
 		const { id, renderer } = namedRenderer;
+		// fires when the renderet is ready, returns 
+		// some info about the renderer
 		renderer.on('load', () => {
-			ContextSampleRate.set(AudioMain.actx.sampleRate)
 			ForceAudioContextResume.update(($f) => { $f = AudioMain.resumeContext; return $f });
-			console.log(`${id} loaded 🔊`)
-		});
-		renderer.on('error', function (e: unknown) {
-			console.error(`🔇 ${id} -> Error from core`);
-		});
-		renderer.on('fft', function (fft: RawFFT) {
-			// do something with the FFT data
-			console.count(`${id} fft data`);
+			console.log(`${renderer.id} loaded 🔊`)
 		});
 
-		if (customEventHandlers) {
-			Object.keys(customEventHandlers).forEach((key) => {
-				renderer.on(key, customEventHandlers[key]);
+		// error reporting from the WASM module
+		renderer.on('error', function (e: unknown) {
+			console.error(`🔇 ${renderer.id} -> Error`);
+			console.groupCollapsed('Error details ▶︎');
+			console.log(e)
+			console.groupEnd();
+		});
+
+		// raw fft analysis data from el.fft
+		renderer.on('fft', function (fft: RawFFT) {
+			// do something with the FFT data
+			console.count(`${renderer.id} fft data`);
+		});
+
+		// any extra event-based functionality can be added
+		// for example, el.snapshot el.meter etc
+		if (extraFunctionality) {
+			Object.keys(extraFunctionality).forEach((key) => {
+				renderer.on(key, extraFunctionality[key]);
 			});
 		}
 	}
 
 	/**
 	 * @name connectToDestination
-	 * @description Connect a node to the BaseAudioContext hardware destination aka speakers
-	  */
+	 * @description 
+	 * Connect a node to the BaseAudioContext hardware destination aka speakers
+	*/
 	connectToDestination(node: AudioNode) {
 		node.connect(AudioMain.actx.destination);
 	}
@@ -183,8 +203,11 @@ export class MainAudioClass {
 	 * @description connect a node to the input of the MainAudio WebAudioRenderer 
 	 * which handles the music playback
 	 */
-	connectToMusic(node: AudioNode) {
-		node.connect(AudioMain.endNodes.get('music') as AudioNode);
+	connectToSidechain(node: AudioNode) {
+		console.log('EndNodes ', get(EndNodes))
+		const musicNode = get(EndNodes).get('music');
+		console.log('musicNode ', musicNode)
+		node.connect(musicNode as AudioNode);
 	}
 
 	/**
@@ -335,8 +358,7 @@ export class MainAudioClass {
 				{
 					[vfsKey]: decoded.getChannelData(i)
 				};
-				console.log('Will update VFS with ', vfsDictionaryEntry, ' to core ', core)
-			//	core.updateVirtualFileSystem(vfsDictionaryEntry);
+				core.updateVirtualFileSystem(vfsDictionaryEntry);
 			}
 			// update the DurationElement in the playlist store Map
 			PlaylistMusic.update(($plist) => {

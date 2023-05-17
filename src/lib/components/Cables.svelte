@@ -5,12 +5,11 @@
 			CablesText,
 			CablesIsLoaded,
 			CablesAudioContext,
-			MusicCoreLoaded,
-			SpeechCoreLoaded
 		} from '$lib/stores/stores';
-	import { AudioMain } from '$lib/classes/Audio';
+	import Initialisation from './pure/Initialisation.svelte';
 	import { onMount } from 'svelte';
-	import { Utils } from '$lib/classes/Utils';
+	import { Utils } from '$lib/classes/Utils'
+	import { customEvents } from '$lib/audio/EventHandlers';
 	import { VoiceOver } from '$lib/classes/Speech';
 
 	export let patch: string;
@@ -25,7 +24,7 @@
 	}
 
 
-	const initializeCables = async () => {
+	const initializeCables =  () => {
 		CablesPatch.set ( new CABLES.Patch({
 			patch: CABLES.exportedPatch,
 			prefixAssetPath: `/cables/${patch}/`,
@@ -53,11 +52,13 @@
 		console.log('Cables Patch initialized');
 	} 
 
-	function patchFinishedLoading() {
+	async function  patchFinishedLoading() {
 		$CablesIsLoaded = true;
-		$CablesAudioContext = CABLES.WEBAudioMain.getAudioContext()
+		$CablesAudioContext = CABLES.WEBAUDIO.getAudioContext()
 		spinText();	
 	}
+
+
 
 	function spinText(  prompts:string[] = ["End","Proc"]  ) {
 	if ( $CablesIsLoaded ) {
@@ -65,22 +66,10 @@
 		}
 	}
 
-	onMount(async () => {
-
-		const initialisers:Array<Promise<any>> = [
-			AudioMain.init( {id:'music', renderer: AudioMain._core },  $CablesAudioContext),
-			AudioMain.init( {id:'silent', renderer: AudioMain._silentCore },  $CablesAudioContext),	
-			VoiceOver.init()
-			]
-		await initializeCables().then (()=>{
-		Promise.all(initialisers).then( () => { 
-			console.log('Initialisation completed')
-			$MusicCoreLoaded = true;
-			$SpeechCoreLoaded = true;
-			})
+	onMount( () => {
+		initializeCables();
 		})
-	})
-	
+
 	</script>
 
 <svelte:head>
@@ -95,4 +84,5 @@
 		height="100%"
 		style="width: 100%; height: 100%; z-index: {bg? -137: 0}; position: fixed;"
 	/>
+	<Initialisation />
 </div>

@@ -47,14 +47,11 @@ export const OutputMeters: Writable<MetersContainer> = writable(
  * @Concept dynamic namespaces system for VFS?
  */
 export const VFS_PATH_PREFIX: Readable<string> = readable('vfs::');
-
 export const VFS_Entries: Writable<AssetCategoryContainers & { done: boolean }> = writable({
 	music: [],
 	speech: [],
 	done: false,
 });
-
-
 
 
 //----------------- Sounding Assets -----------------------
@@ -92,7 +89,6 @@ export const Scrubbing: Writable<boolean> = writable(false);
 
 
 //----------------- WebAudio -----------------------
-
 export const EndNodes: Writable<Map<RendererIdentifiers, AudioNode>> = writable(new Map<RendererIdentifiers, AudioNode>());
 
 

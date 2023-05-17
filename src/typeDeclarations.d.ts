@@ -54,11 +54,8 @@ type MetersContainer = {
 
 type TitlesPaths = { titles: string[], paths: string[] }
 type Url = string;
-
-// https://chat.openai.com/c/9e74f559-27b4-4baf-b4b8-f4ab637ecc86
 type AssetCategories = 'music' | 'speech';
-type AssetCategoryContainers = { [K in AssetCategories]: any } & { other?: any };
-
+type AssetCategoryContainers = { [K in AssetCategories]: any } & { other?: any }; // https://chat.openai.com/c/9e74f559-27b4-4baf-b4b8-f4ab637ecc86
 type AudioAssetMetadata = {
 	category: AssetCategories
 	mediaItemUrl: string;
@@ -106,7 +103,11 @@ type ResolvedPageData = CategoryMapping<AssetCategories> & {
 }
 
 //════════╡ AudioEngine ╞═══════
-
+interface RendererInitialisationProps {
+	namedRenderer: NamedWebAudioRenderer,
+	ctx?: AudioContext,
+	options?: InitialisationOptions
+}
 interface stereoOut {
 	props: {};
 	stereoSignal: StereoSignal;
@@ -117,8 +118,8 @@ type Functionality = Function
 type CustomEventHandler = { [key: string]: (e: any) => void }
 type RendererIdentifiers = 'silent' | 'music' | 'speech'
 type NamedWebAudioRenderer = { id: RendererIdentifiers, renderer: WebAudioRenderer }
-type WebAudioRendererInitOptions = {
-	connectTo: { destination?: boolean, visualiser?: boolean, sidechain?: boolean, silence?: boolean },
+type InitialisationOptions = {
+	connectTo?: { destination?: boolean, visualiser?: boolean, sidechain?: boolean, nothing?: boolean },
 	extraFunctionality?: Array<Functionality>
 }
 type RawFFT = { real: Float32Array; imag: Float32Array };

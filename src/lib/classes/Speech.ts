@@ -22,12 +22,13 @@ export class VoiceCore extends MainAudioClass {
 
 	constructor() {
 		super();
-		this._core = null as unknown as WebAudioRenderer;
+		this._core = new WebAudioRenderer();
 		this._voiceCoreStatus = writable('loading');
 		this._voiceVolume = 0.727;
 
 		// below gets updated from store subscription
 		this._currentMetadata = { title: '', vfsPath: '', duration: 0 };
+		this.subscribeToStores();
 	}
 
 	override subscribeToStores(): void {
@@ -42,30 +43,17 @@ export class VoiceCore extends MainAudioClass {
 	 * asynchronously and store in VoiceCore class as this._endNodes
 	 */
 	override async init(): Promise<void> {
-		this._core = new WebAudioRenderer();
-		while (!super.actx) {
-			console.log('Waiting for first WebAudioRenderer instance to load...');
-			await new Promise((resolve) => setTimeout(resolve, 50));
-		}
 		const metering: Functionality = customEvents.meter
-		VoiceOver.subscribeToStores()
-		super.init(
-			{ id: 'speech', renderer: VoiceOver._core },
-			super.actx,
-			{
-				connectTo: { sidechain: true },
+		super.init({
+			namedRenderer: {
+				id: 'speech',
+				renderer: VoiceOver._core
+			},
+			options: {
+				connectTo: { sidechain: true, destination: true },
 				extraFunctionality: [metering]
 			}
-		);
-
-
-		// VoiceOver._core.on('load', () => {
-		// 	VoiceOver.subscribeToStores()
-		// 	SpeechCoreLoaded.set(true);
-		// 	VoiceOver.status = 'ready';
-		// 	console.log('Speech core loaded  🎤');
-		// 	VoiceOver.patch();
-		// });	
+		})
 	}
 
 	// /**
