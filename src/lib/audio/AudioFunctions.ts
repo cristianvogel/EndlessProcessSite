@@ -13,7 +13,7 @@
 import { AudioMain, MainAudioClass } from '$lib/classes/Audio';
 import { el } from '@elemaudio/core';
 import { channelExtensionFor, clipTo0 } from '$lib/classes/Utils';
-import { attenuate, clippedHann, progress } from '$lib/audio/El Funktions';
+import { attenuate, clippedHann, progress } from '$lib/audio/Funktions';
 import type { StereoSignal, SamplerOptions, ProgressOptions, Signal } from '../../typeDeclarations';
 import { ContextSampleRate, Scrubbing } from '$lib/stores/stores';
 import { get } from 'svelte/store';

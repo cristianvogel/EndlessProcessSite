@@ -5,14 +5,15 @@ import type {
 	Signal,
 	AssetMetadata,
 	NamedWebAudioRenderer,
-	RawFFT,
 	RendererInitialisationProps,
 	StructuredAssetContainer,
-	SamplerOptions
+	SamplerOptions,
+	AudioEventExpression,
+	AudioEvent
 } from '../../typeDeclarations';
 
 import { scrubbingSamplesPlayer, bufferProgress, attenuateStereo } from '$lib/audio/AudioFunctions';
-import { channelExtensionFor, Wait } from '$lib/classes/Utils';
+import { channelExtensionFor } from '$lib/classes/Utils';
 import {
 	CablesPatch,
 	PlaylistMusic,
@@ -28,6 +29,7 @@ import {
 } from '$lib/stores/stores';
 import WebAudioRenderer from '@elemaudio/web-renderer';
 import { el, type NodeRepr_t } from '@elemaudio/core';
+
 
 // ════════╡ Music WebAudioRenderer Core ╞═══════
 
@@ -54,7 +56,7 @@ export class MainAudioClass {
 		this._audioContext = writable();
 		this._outputBuss = { left: 0 as unknown as Signal, right: 0 as unknown as Signal };
 
-		// these below are dynamically set from store subscriptions
+		// these here below are dynamically set from store subscriptions
 		this._endNodes = get(EndNodes);
 		this._currentMetadata = get(PlaylistMusic).currentTrack;
 		this._scrubbing = get(Scrubbing);
@@ -64,9 +66,10 @@ export class MainAudioClass {
 	}
 
 	/**
-	 * @description
+	* @description
 	*  Subscribers that update the Audio class 's internal state from outside
-	 */
+    *  as this is not a Svelte component
+	*/
 	subscribeToStores() {
 		EndNodes.subscribe((endNodes) => {
 			endNodes.forEach((node, key) => {
@@ -88,6 +91,52 @@ export class MainAudioClass {
 		});
 	}
 
+	/**
+	@name init
+	@description 
+	● instantiate a named renderer
+	● set routing 
+	● register event driven expressions
+	@param {AudioContext} ctx 
+	@param {NamedWebAudioRenderer} namedRenderer
+	@param {RendererInitialisationProps} options
+	@returns {Promise<void>} could be used to report init errors...not implemented yet
+	@exampleCall
+		  await AudioMain.init({
+				namedRenderer: { id:'music', renderer: AudioMain._core }, 
+				ctx: $CablesAudioContext,
+				options: {
+					connectTo: {
+						destination: true,
+						visualiser: true,
+					},
+				}
+			});
+	Example above would:
+	● initialise a WebRenderer instance identifed as 'music'
+	● store inside the Audio class as a property called _core
+	● route to the main output destination and to a visualiser
+
+	@exampleCall
+		await AudioMain.init({
+			namedRenderer: { id:'silent', renderer: AudioMain._silentCore }, 
+			ctx: $CablesAudioContext,
+			options: {
+				connectTo: {
+					nothing: true,
+				},
+				eventExpressions: [
+					customEvents.progressSignal
+				],
+			}
+		});
+	Example above would:
+	● initialise a WebRenderer instance identifed as 'silent'
+	● store inside the Audio class as a property called _silentCore
+	● route to nothing
+	● register a custom event listener called 'progressSignal'
+	  that is sent only to the instance identified as 'silent'
+	*/
 	async init(props: RendererInitialisationProps): Promise<void> {
 		const { namedRenderer, ctx, options } = props;
 		const { renderer, id } = namedRenderer;
@@ -117,7 +166,7 @@ export class MainAudioClass {
 				outputChannelCount: [2]
 			}).then((node: AudioNode) => { return node })
 
-		console.group('Routing Options:')
+		console.groupCollapsed('Routing for:', id)
 		if (options?.connectTo) {
 			if (options.connectTo.destination) {
 				console.log('✅ destination')
@@ -140,25 +189,24 @@ export class MainAudioClass {
 		// add user defined id to the renderer
 		Object.defineProperty(renderer, 'id', { value: id, writable: false });
 
-		// update the EndNodes store a reference to the last node of the initialised 
-		// renderer for further routing
-		EndNodes.update((_nodesDict) => {
-			_nodesDict.set(namedRenderer.id, endNode);
-			return _nodesDict;
-		})
-
 		// add any extra functionality for a 
 		// named renderer as custom event handlers then
 		// register them with the renderer
-		AudioMain.registerCallbacksFor(namedRenderer, options?.extraFunctionality);
+		AudioMain.registerCallbacksFor(namedRenderer, options?.eventExpressions);
 
+		// update the EndNodes store a reference to the last node of the initialised 
+		// renderer for further routing
+		EndNodes.update((_nodesDict) => {
+			_nodesDict.set(id, endNode);
+			return _nodesDict;
+		})
 
 		// done
 		return Promise.resolve();
 	}
 
-	registerCallbacksFor(namedRenderer: NamedWebAudioRenderer, extraFunctionality?: any) {
-		const { id, renderer } = namedRenderer;
+	registerCallbacksFor(namedRenderer: NamedWebAudioRenderer, eventExpressions?: AudioEventExpression<AudioEvent>[]) {
+		const { renderer } = namedRenderer;
 		// fires when the renderet is ready, returns 
 		// some info about the renderer
 		renderer.on('load', () => {
@@ -174,19 +222,17 @@ export class MainAudioClass {
 			console.groupEnd();
 		});
 
-		// raw fft analysis data from el.fft
-		renderer.on('fft', function (fft: RawFFT) {
-			// do something with the FFT data
-			console.count(`${renderer.id} fft data`);
-		});
-
-		// any extra event-based functionality can be added
-		// for example, el.snapshot el.meter etc
-		if (extraFunctionality) {
-			Object.keys(extraFunctionality).forEach((key) => {
-				renderer.on(key, extraFunctionality[key]);
+		// any extra audio Event-Driven functionality can be added
+		// emitted by el.snapshot, el.meter etc
+		if (eventExpressions) {
+			console.group('Adding Audio Event Expressions to', renderer.id)
+			Object.keys(eventExpressions).forEach((name: string) => {
+				const event = { name, expression: eventExpressions[name] }
+				console.log(` ╠ ${event.name}, ${event.expression}`)
+				renderer.on(event.name, event.expression);
 			});
-		}
+			console.groupEnd();
+		};
 	}
 
 	/**
@@ -204,9 +250,7 @@ export class MainAudioClass {
 	 * which handles the music playback
 	 */
 	connectToSidechain(node: AudioNode) {
-		console.log('EndNodes ', get(EndNodes))
 		const musicNode = get(EndNodes).get('music');
-		console.log('musicNode ', musicNode)
 		node.connect(musicNode as AudioNode);
 	}
 
@@ -219,19 +263,6 @@ export class MainAudioClass {
 		node.connect(cablesSend);
 		get(CablesPatch).getVar('CablesAnalyzerNodeInput').setValue(cablesSend);
 	}
-
-	/**
-	 * @name stateChangeHandler
-	 * @description Callback when the base AudioContext state changes
-	 */
-	private stateChangeHandler = () => {
-		AudioMain._contextIsRunning.update(() => {
-			return AudioMain.actx.state === 'running';
-		});
-		AudioMain._MainAudioStatus.update(() => {
-			return AudioMain.baseState;
-		});
-	};
 
 	/**
 	 * @name updateOutputLevelWith
@@ -450,6 +481,20 @@ export class MainAudioClass {
 	// todo: pause or resume Cables patch
 	pauseCables(state: 'pause' | 'resume'): void { }
 
+	/*--- handlers --------------------------------*/
+
+	/**
+	 * @name stateChangeHandler
+	 * @description Callback when the base AudioContext state changes
+	 */
+	private stateChangeHandler = () => {
+		AudioMain._contextIsRunning.update(() => {
+			return AudioMain.actx.state === 'running';
+		});
+		AudioMain._MainAudioStatus.update(() => {
+			return AudioMain.baseState;
+		});
+	};
 
 	/*---- getters  --------------------------------*/
 	get stores() {
@@ -462,7 +507,6 @@ export class MainAudioClass {
 			masterVolume: AudioMain._masterVolume
 		};
 	}
-
 	get progress() {
 		return AudioMain._currentMetadata?.progress || 0;
 	}
@@ -508,11 +552,9 @@ export class MainAudioClass {
 	get isMuted(): boolean {
 		return AudioMain.status !== ('playing' || 'running') || !AudioMain.isRunning;
 	}
-
 	get endNodes(): Map<string, AudioNode> {
 		return AudioMain._endNodes;	
 	}
-
 	get baseState(): MainAudioStatus {
 		return AudioMain.actx.state as MainAudioStatus;
 	}

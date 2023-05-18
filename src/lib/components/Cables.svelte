@@ -9,8 +9,6 @@
 	import Initialisation from './pure/Initialisation.svelte';
 	import { onMount } from 'svelte';
 	import { Utils } from '$lib/classes/Utils'
-	import { customEvents } from '$lib/audio/EventHandlers';
-	import { VoiceOver } from '$lib/classes/Speech';
 
 	export let patch: string;
 	export let bg: boolean = false;
@@ -22,7 +20,6 @@
 		CablesText.set( [ Utils.rotateString($CablesText[0]), Utils.rotateString($CablesText[1]) ] )
 		spinText($CablesText) 
 	}
-
 
 	const initializeCables =  () => {
 		CablesPatch.set ( new CABLES.Patch({
@@ -57,8 +54,6 @@
 		$CablesAudioContext = CABLES.WEBAUDIO.getAudioContext()
 		spinText();	
 	}
-
-
 
 	function spinText(  prompts:string[] = ["End","Proc"]  ) {
 	if ( $CablesIsLoaded ) {

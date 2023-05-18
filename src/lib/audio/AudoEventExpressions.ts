@@ -1,14 +1,12 @@
 import { OutputMeters, PlaylistMusic } from "$lib/stores/stores";
-import type { CustomEventHandler, Signal } from "../../typeDeclarations";
 import { AudioMain } from "$lib/classes/Audio";
 import { hannEnvelope } from "$lib/audio/AudioFunctions";
+import type { AudioEventExpression, MessageEvent, MeterEvent } from "../../typeDeclarations";
 
-type MeterEvent = { min: number, max: number };
-type MessageEvent = { data: number | Signal };
 
-// using snapshot event to update the progress of the windowing envelope
-export const customEvents: CustomEventHandler = {
-    ['progressSignal']: function (e: MessageEvent) {
+export const eventExpressions: AudioEventExpression<any> =
+{
+    progress: (e: MessageEvent) => {
         AudioMain.updateOutputLevelWith(hannEnvelope(AudioMain.progress));
         PlaylistMusic.update(($pl) => {
             if (!$pl.currentTrack || !e.data) return $pl;
@@ -16,7 +14,7 @@ export const customEvents: CustomEventHandler = {
             return $pl;
         })
     },
-    ['meter']: function (e: MeterEvent) {
+    meter: (e: MeterEvent) => {
         OutputMeters.update(($o) => {
             const absMax = Math.max(e.max, Math.abs(e.min));
             $o = { ...$o, SpeechAudible: absMax };
@@ -24,3 +22,5 @@ export const customEvents: CustomEventHandler = {
         })
     }
 }
+
+

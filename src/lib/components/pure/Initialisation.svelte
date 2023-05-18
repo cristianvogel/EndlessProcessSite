@@ -1,18 +1,15 @@
 <script lang="ts">
-import { customEvents } from "$lib/audio/EventHandlers";
+import { eventExpressions } from "$lib/audio/AudoEventExpressions";
 import { AudioMain } from "$lib/classes/Audio";
 import { VoiceOver } from "$lib/classes/Speech";
 import { CablesAudioContext, MusicCoreLoaded, SpeechCoreLoaded } from "$lib/stores/stores";
 
  async function initialiseAudioRenderers() {
-
-		if ( Object.hasOwn( $CablesAudioContext,'__elemRegistered') ) {
-			console.log('Elementary already registered')
-			return Promise.resolve(false)
-		}
-
 			await AudioMain.init({
-				namedRenderer: { id:'music', renderer: AudioMain._core }, 
+				namedRenderer: { 
+					id:'music', 
+					renderer: AudioMain._core 
+				}, 
 				ctx: $CablesAudioContext,
 				options: {
 					connectTo: {
@@ -22,20 +19,33 @@ import { CablesAudioContext, MusicCoreLoaded, SpeechCoreLoaded } from "$lib/stor
 				}
 			});
 			await AudioMain.init({
-				namedRenderer: { id:'silent', renderer: AudioMain._silentCore }, 
+				namedRenderer: { 
+					id:'silent', 
+					renderer: AudioMain._silentCore 
+				}, 
 				ctx: $CablesAudioContext,
 				options: {
 					connectTo: {
-						nothing: true,
+						nothing: true
 					},
-					extraFunctionality: [
-						customEvents.progressSignal
-					],
+					eventExpressions: { snapshot: eventExpressions.progress } ,
 				}
 			});
-			await VoiceOver.init()
+			await VoiceOver.init({
+				namedRenderer: {
+				id: 'speech',
+				renderer: VoiceOver._core
+			},
+			options: {
+				connectTo: { 
+					sidechain: true, 
+					destination: true 
+				},
+				eventExpressions: { meter: eventExpressions.meter }
+			}
+		});
 
-			return Promise.resolve(true)
+		return Promise.resolve(true)
         }
 
 function done( element: HTMLElement, answer: boolean){
@@ -48,7 +58,7 @@ function done( element: HTMLElement, answer: boolean){
 
 {#if $CablesAudioContext}
 	{#await initialiseAudioRenderers()}
-	<span class='info'> intialising audio renderers </span>
+	<div data-comment> Intialising audio renderers. </div>
 	{:then answer }
 	<div data-comment use:done={answer} />
 	{/await}

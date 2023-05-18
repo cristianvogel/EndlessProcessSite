@@ -6,7 +6,7 @@ import { MainAudioClass } from '$lib/classes/Audio';
 import { el } from '@elemaudio/core';
 import { PlaylistMusic } from '$lib/stores/stores';
 import { attenuateStereo, driftingSamplesPlayer } from '$lib/audio/AudioFunctions';
-import { customEvents } from '$lib/audio/EventHandlers';
+import { eventExpressions } from '$lib/audio/AudoEventExpressions';
 
 
 /** ════════╡ Speech WebAudioRenderer Core ╞═══════
@@ -36,37 +36,6 @@ export class VoiceCore extends MainAudioClass {
 			this._currentMetadata = $p.currentChapter as AssetMetadata;
 		});
 	}
-
-	/**
-	 * @name init
-	 * @description Initialise the main WebAudioRenderer instances handling the Speech 
-	 * asynchronously and store in VoiceCore class as this._endNodes
-	 */
-	override async init(): Promise<void> {
-		const metering: Functionality = customEvents.meter
-		super.init({
-			namedRenderer: {
-				id: 'speech',
-				renderer: VoiceOver._core
-			},
-			options: {
-				connectTo: { sidechain: true, destination: true },
-				extraFunctionality: [metering]
-			}
-		})
-	}
-
-	// /**
-	//  * @name patch
-	//  * @description
-	//  * connects the VoiceOver core to the hardware output
-	//  * and also to the main WebAudioRenderer instance handling the music.
-	//  * Which of course has already loaded cleanly, right?
-	//  */
-	// private patch() {
-	// 	super.connectToDestination(VoiceOver.voiceEndNode);
-	// 	super.connectToMusic(VoiceOver.voiceEndNode);
-	// }
 
 	/**
 	 * @name playSpeechFromVFS

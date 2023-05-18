@@ -103,6 +103,15 @@ type ResolvedPageData = CategoryMapping<AssetCategories> & {
 }
 
 //════════╡ AudioEngine ╞═══════
+
+interface MessageEvent { data: number }
+interface MeterEvent extends MessageEvent { min: number, max: number }
+interface AudioEvent extends MessageEvent, MeterEvent { };
+type AudioEventExpression<T> = {
+	progress: any;
+	meter: any;
+};
+
 interface RendererInitialisationProps {
 	namedRenderer: NamedWebAudioRenderer,
 	ctx?: AudioContext,
@@ -115,12 +124,11 @@ interface stereoOut {
 type Signal = NodeRepr_t;
 type StereoSignal = { left: NodeRepr_t; right: NodeRepr_t };
 type Functionality = Function
-type CustomEventHandler = { [key: string]: (e: any) => void }
 type RendererIdentifiers = 'silent' | 'music' | 'speech'
 type NamedWebAudioRenderer = { id: RendererIdentifiers, renderer: WebAudioRenderer }
 type InitialisationOptions = {
 	connectTo?: { destination?: boolean, visualiser?: boolean, sidechain?: boolean, nothing?: boolean },
-	extraFunctionality?: Array<Functionality>
+	eventExpressions?: {},
 }
 type RawFFT = { real: Float32Array; imag: Float32Array };
 type MainAudioStatus =
