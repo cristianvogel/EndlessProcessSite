@@ -36,9 +36,7 @@ export const ContextSampleRate: Writable<number> = writable(44100);
 export const OutputMeters: Writable<MetersContainer> = writable(
 	{
 		MusicAudible: 0,
-		MusicSilent: 0,
 		SpeechAudible: 0,
-		SpeechSilent: 0
 	}
 )
 

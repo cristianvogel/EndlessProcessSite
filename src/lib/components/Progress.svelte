@@ -52,6 +52,7 @@
 
 	{#if !$Scrubbing }	
 	<div in:fade >
+		{$PlaylistMusic.currentTrack?.title}
 		<ProgressBar
 			label="Progress Bar"
 			value={ Math.fround(progress * durationSecs) }

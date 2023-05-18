@@ -44,9 +44,7 @@ type ProgressOptions = {
 
 type MetersContainer = {
 	MusicAudible?: number,
-	MusicSilent?: number,
 	SpeechAudible?: number,
-	SpeechSilent?: number,
 }
 
 

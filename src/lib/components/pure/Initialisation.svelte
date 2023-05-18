@@ -1,5 +1,5 @@
 <script lang="ts">
-import { eventExpressions } from "$lib/audio/AudoEventExpressions";
+import eventExpressions from "$lib/audio/AudoEventExpressions";
 import { AudioMain } from "$lib/classes/Audio";
 import { VoiceOver } from "$lib/classes/Speech";
 import { CablesAudioContext, MusicCoreLoaded, SpeechCoreLoaded } from "$lib/stores/stores";
