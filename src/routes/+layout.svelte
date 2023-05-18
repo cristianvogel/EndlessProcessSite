@@ -13,8 +13,6 @@
 	import SplashPage from '$lib/components/SplashPage.svelte';
 	import PageFooter from '$lib/components/Footer.svelte';
 	import CanvasBody from '$lib/components/CanvasBody.svelte';
-	import { ForceAudioContextResume } from '$lib/stores/stores';
-
 
 	$: spin = false;
 

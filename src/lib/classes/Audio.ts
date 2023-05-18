@@ -144,14 +144,12 @@ export class MainAudioClass {
 		// first, there should only be one base AudioContext throughout the app
 		if (!AudioMain.actx && ctx?.sampleRate) {
 			AudioMain.actx = ctx;
-			console.log('Passing existing AudioContext ', ctx.sampleRate);
 		} else if (!ctx && !AudioMain.actx) {
 			AudioMain.actx = new AudioContext();
 			console.warn('No AudioContext passed. Stashing new one.');
 		}
 
-		// ok, add listener for base AudioContext state changes
-		AudioMain.actx.addEventListener('statechange', AudioMain.stateChangeHandler);
+		console.log('Using AudioContext ', AudioMain.actx.sampleRate, AudioMain.actx.state);
 
 		// set the sample rate for the app
 		ContextSampleRate.set(AudioMain.actx.sampleRate)
@@ -193,6 +191,9 @@ export class MainAudioClass {
 		// named renderer as custom event handlers then
 		// register them with the renderer
 		AudioMain.registerCallbacksFor(namedRenderer, options?.eventExpressions);
+
+		// ok, add listener for base AudioContext state changes
+		AudioMain.actx.addEventListener('statechange', AudioMain.stateChangeHandler);
 
 		// update the EndNodes store a reference to the last node of the initialised 
 		// renderer for further routing
@@ -448,7 +449,6 @@ export class MainAudioClass {
 	 */
 	pause(pauseCables: boolean = false): void {
 		// release gate on the current track
-
 		AudioMain.playWithScrub({
 			vfsPath: AudioMain.currentVFSPath,
 			trigger: 0,
@@ -473,6 +473,7 @@ export class MainAudioClass {
 			return AudioMain.actx.state === 'running';
 		});
 		AudioMain._MainAudioStatus.update(() => {
+			console.log('Base context state change: ', AudioMain.baseState);
 			return AudioMain.baseState;
 		});
 	};
@@ -564,10 +565,10 @@ export const AudioMain = new MainAudioClass();
  * @description Tries to resume the base AudioContext
  * this should only be called once, after a user interaction
  */
-export const resumeContext = async (): Promise<void> => {
-	if (!AudioMain._contextIsRunning) {
-		AudioMain.status = 'resuming';
-		await AudioMain.actx.resume().then(() => {
+export const resumeContext = () => {
+
+	if (AudioMain.actx.state !== 'running') {
+		AudioMain.actx.resume().then(() => {
 			console.log('AudioContext resumed ⚙︎');
 		});
 	}

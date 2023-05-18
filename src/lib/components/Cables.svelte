@@ -51,6 +51,7 @@
 
 	async function  patchFinishedLoading() {
 		$CablesIsLoaded = true;
+		CABLES.WEBAUDIO.getAudioContext().suspend()
 		$CablesAudioContext = CABLES.WEBAUDIO.getAudioContext()
 		spinText();	
 	}
