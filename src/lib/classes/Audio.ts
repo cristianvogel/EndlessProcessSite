@@ -319,7 +319,7 @@ export class MainAudioClass {
 	 * @description: Plays samples from a VFS path, with scrubbing
 	 */
 	playWithScrub(props: SamplerOptions) {
-		AudioMain.master(scrubbingSamplesPlayer(props), undefined, true);
+		AudioMain.master(scrubbingSamplesPlayer(props), undefined, { useExtSidechain: true, bypassCompressor: false });
 		AudioMain.playProgressBar(props);
 	}
 
