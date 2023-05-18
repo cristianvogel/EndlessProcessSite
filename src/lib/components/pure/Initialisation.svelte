@@ -5,7 +5,7 @@ import { VoiceOver } from "$lib/classes/Speech";
 import { CablesAudioContext, MusicCoreLoaded, SpeechCoreLoaded } from "$lib/stores/stores";
 
  async function initialiseAudioRenderers() {
-			await AudioMain.init({
+			await AudioMain.initialiseRenderer({
 				namedRenderer: { 
 					id:'music', 
 					renderer: AudioMain._core 
@@ -16,22 +16,23 @@ import { CablesAudioContext, MusicCoreLoaded, SpeechCoreLoaded } from "$lib/stor
 						destination: true,
 						visualiser: true,
 					},
+					eventExpressions: eventExpressions.get('music')
 				}
 			});
-			await AudioMain.init({
+			await AudioMain.initialiseRenderer({
 				namedRenderer: { 
 					id:'silent', 
 					renderer: AudioMain._silentCore 
 				}, 
-				ctx: $CablesAudioContext,
 				options: {
 					connectTo: {
 						nothing: true
 					},
-					eventExpressions: { snapshot: eventExpressions.progress } ,
+					eventExpressions: eventExpressions.get('silent')
+ ,
 				}
 			});
-			await VoiceOver.init({
+			await VoiceOver.initialiseRenderer({
 				namedRenderer: {
 				id: 'speech',
 				renderer: VoiceOver._core
@@ -41,7 +42,7 @@ import { CablesAudioContext, MusicCoreLoaded, SpeechCoreLoaded } from "$lib/stor
 					sidechain: true, 
 					destination: true 
 				},
-				eventExpressions: { meter: eventExpressions.meter }
+				eventExpressions: eventExpressions.get('speech')
 			}
 		});
 

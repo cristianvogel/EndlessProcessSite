@@ -7,9 +7,7 @@ import type {
 	NamedWebAudioRenderer,
 	RendererInitialisationProps,
 	StructuredAssetContainer,
-	SamplerOptions,
-	AudioEventExpression,
-	AudioEvent
+	SamplerOptions
 } from '../../typeDeclarations';
 
 import { scrubbingSamplesPlayer, bufferProgress, attenuateStereo } from '$lib/audio/AudioFunctions';
@@ -50,7 +48,7 @@ export class MainAudioClass {
 	constructor() {
 		this._core = new WebAudioRenderer()
 		this._silentCore = new WebAudioRenderer();
-		this._masterVolume = writable(0.909); // default master volume
+		this._masterVolume = writable(0.808); // default master volume
 		this._MainAudioStatus = writable('loading');
 		this._contextIsRunning = writable(false);
 		this._audioContext = writable();
@@ -68,7 +66,7 @@ export class MainAudioClass {
 	/**
 	* @description
 	*  Subscribers that update the Audio class 's internal state from outside
-    *  as this is not a Svelte component
+	*  as this is not a Svelte component
 	*/
 	subscribeToStores() {
 		EndNodes.subscribe((endNodes) => {
@@ -92,17 +90,17 @@ export class MainAudioClass {
 	}
 
 	/**
-	@name init
+	@name initialiseRenderer
 	@description 
 	● instantiate a named renderer
 	● set routing 
 	● register event driven expressions
 	@param {AudioContext} ctx 
 	@param {NamedWebAudioRenderer} namedRenderer
-	@param {RendererInitialisationProps} options
-	@returns {Promise<void>} could be used to report init errors...not implemented yet
+	@param {RendererInitialisationProps} props 
+	@returns {Promise<void>}  could be used to report init errors...not implemented yet
 	@exampleCall
-		  await AudioMain.init({
+		  await AudioMain.initialiseRenderer({
 				namedRenderer: { id:'music', renderer: AudioMain._core }, 
 				ctx: $CablesAudioContext,
 				options: {
@@ -118,26 +116,23 @@ export class MainAudioClass {
 	● route to the main output destination and to a visualiser
 
 	@exampleCall
-		await AudioMain.init({
+		await AudioMain.initialiseRenderer({
 			namedRenderer: { id:'silent', renderer: AudioMain._silentCore }, 
 			ctx: $CablesAudioContext,
 			options: {
 				connectTo: {
 					nothing: true,
 				},
-				eventExpressions: [
-					customEvents.progressSignal
-				],
+				eventExpressions: eventExpressions.get('silent')
 			}
 		});
 	Example above would:
 	● initialise a WebRenderer instance identifed as 'silent'
 	● store inside the Audio class as a property called _silentCore
 	● route to nothing
-	● register a custom event listener called 'progressSignal'
-	  that is sent only to the instance identified as 'silent'
+	● register any audio event listeners defined in an EventExpressionsForNamedRenderer
 	*/
-	async init(props: RendererInitialisationProps): Promise<void> {
+	async initialiseRenderer(props: RendererInitialisationProps): Promise<void> {
 		const { namedRenderer, ctx, options } = props;
 		const { renderer, id } = namedRenderer;
 
@@ -206,12 +201,12 @@ export class MainAudioClass {
 		return Promise.resolve();
 	}
 
-	registerCallbacksFor(namedRenderer: NamedWebAudioRenderer, eventExpressions?: AudioEventExpression<AudioEvent>[]) {
+	registerCallbacksFor(namedRenderer: NamedWebAudioRenderer, eventExpressions?: any) {
 		const { renderer } = namedRenderer;
 		// fires when the renderet is ready, returns 
 		// some info about the renderer
 		renderer.on('load', () => {
-			ForceAudioContextResume.update(($f) => { $f = AudioMain.resumeContext; return $f });
+			ForceAudioContextResume.update(($f) => { $f = resumeContext; return $f });
 			console.log(`${renderer.id} loaded 🔊`)
 		});
 
@@ -223,7 +218,7 @@ export class MainAudioClass {
 			console.groupEnd();
 		});
 
-		// any extra audio Event-Driven functionality can be added
+		// any audio Event-Driven functionality can be added
 		// emitted by el.snapshot, el.meter etc
 		if (eventExpressions) {
 			console.group('Adding Audio Event Expressions to', renderer.id)
@@ -277,28 +272,34 @@ export class MainAudioClass {
 
 	/**
 	* @name master
-	* @description Master channel render.
-    * Includes a stereo compressor, which is ducked by the Speech signal 
-	* arriving at el.in({channel:0})
-    * @param stereoSignal optional stereo signal to render through the Master. 
+	* @description Audible Master buss
+	* Includes a stereo compressor, which is ducked by any signal routed to the sidechain   
+	* initialisation option, arriving at el.in({channel:0})
+	* @param stereoSignal optional stereo signal to render through the Master. 
 	* If passed, it is stored in the AudioMain._out buss updating whatever was patched before.
 	* @param attenuator optional attenuator signal which will smoothly scale the signal just
 	* before final output, which is hard coded to be smooth scaled by the overall master volume. 
+	* @param useExtSidechain optional boolean to use an external sidechain signal,
+	* @param bypassCompressor optional boolean to bypass the compressor
 	*/
-	master(stereoSignal?: StereoSignal, attenuator?: Signal | number): void {
+	master(stereoSignal?: StereoSignal, attenuator?: Signal | number,
+		compressor?: { useExtSidechain?: boolean, bypassCompressor?: boolean }): void {
+		const { useExtSidechain = true, bypassCompressor = false } = compressor || {};	
 		if (!AudioMain._core) return;
 		if (stereoSignal) {
 			AudioMain._outputBuss = stereoSignal;
 		} 
-		const duckingCompressor = {
-			left: el.compress(20, 160, -35, 90, el.in({ channel: 0 }), AudioMain._outputBuss.left),
-			right: el.compress(20, 160, -35, 90, el.in({ channel: 0 }), AudioMain._outputBuss.right)
-		}
-		let master = attenuator ? attenuateStereo(duckingCompressor, attenuator) : duckingCompressor;
+		const sc = useExtSidechain ? el.in({ channel: 0 }) : AudioMain._outputBuss.left;
+
+		const dynamics = bypassCompressor ? AudioMain._outputBuss : {
+			left: el.compress(20, 160, -35, 90, sc, AudioMain._outputBuss.left),
+			right: el.compress(20, 160, -35, 90, sc, AudioMain._outputBuss.right)
+		} 
+
+		let master = attenuator ? attenuateStereo(dynamics, attenuator) : dynamics;
 		master = attenuateStereo(master, AudioMain.masterVolume)
 		const result = AudioMain._core.render(master.left, master.right);
-
-		//console.log('Render graph ፨ ', result);
+		//@debug console.groupCollapsed('Updated graph ፨ ', result)
 	}
 
 	/**
@@ -318,7 +319,7 @@ export class MainAudioClass {
 	 * @description: Plays samples from a VFS path, with scrubbing
 	 */
 	playWithScrub(props: SamplerOptions) {
-		AudioMain.master(scrubbingSamplesPlayer(props));
+		AudioMain.master(scrubbingSamplesPlayer(props), undefined, true);
 		AudioMain.playProgressBar(props);
 	}
 
@@ -566,8 +567,7 @@ export const AudioMain = new MainAudioClass();
  * this should only be called once, after a user interaction
  */
 export const resumeContext = () => {
-
-	if (AudioMain.actx.state !== 'running') {
+	if (AudioMain.actx.state === 'suspended') {
 		AudioMain.actx.resume().then(() => {
 			console.log('AudioContext resumed ⚙︎');
 		});

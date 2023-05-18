@@ -103,19 +103,23 @@ type ResolvedPageData = CategoryMapping<AssetCategories> & {
 }
 
 //════════╡ AudioEngine ╞═══════
-
+type NamedRenderers = "silent" | "music" | "speech";
+type StandardAudioEvents = "meter" | "snapshot" | "fft";
+type Expression = (event: AudioEvent) => void;
+type AudioEventExpressions = Partial<Record<StandardAudioEvents, Expression>>;
+type EventExpressionsForNamedRenderer = Map<NamedRenderers, AudioEventExpressions>;
 interface MessageEvent { data: number }
 interface MeterEvent extends MessageEvent { min: number, max: number }
 interface AudioEvent extends MessageEvent, MeterEvent { };
-type AudioEventExpression<T> = {
-	progress: any;
-	meter: any;
-};
 
 interface RendererInitialisationProps {
 	namedRenderer: NamedWebAudioRenderer,
 	ctx?: AudioContext,
 	options?: InitialisationOptions
+}
+interface InitialisationOptions {
+	connectTo?: { destination?: boolean, visualiser?: boolean, sidechain?: boolean, nothing?: boolean },
+	eventExpressions?: any,
 }
 interface stereoOut {
 	props: {};
@@ -126,10 +130,7 @@ type StereoSignal = { left: NodeRepr_t; right: NodeRepr_t };
 type Functionality = Function
 type RendererIdentifiers = 'silent' | 'music' | 'speech'
 type NamedWebAudioRenderer = { id: RendererIdentifiers, renderer: WebAudioRenderer }
-type InitialisationOptions = {
-	connectTo?: { destination?: boolean, visualiser?: boolean, sidechain?: boolean, nothing?: boolean },
-	eventExpressions?: undefined,
-}
+
 type RawFFT = { real: Float32Array; imag: Float32Array };
 type MainAudioStatus =
 	| 'suspended'
