@@ -106,7 +106,7 @@ type StandardAudioEvents = "meter" | "snapshot" | "fft";
 type Expression = (event: AudioEvent) => void;
 type AudioEventExpressions = Partial<Record<StandardAudioEvents, Expression>>;
 type EventExpressionsForNamedRenderer = Map<NamedRenderers, AudioEventExpressions>;
-interface MessageEvent { data: number }
+interface MessageEvent { data: number, source: string }
 interface MeterEvent extends MessageEvent { min: number, max: number }
 interface AudioEvent extends MessageEvent, MeterEvent { };
 

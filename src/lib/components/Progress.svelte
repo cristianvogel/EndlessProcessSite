@@ -22,7 +22,6 @@
 			durationMs: durationSecs * 1000
 		}}
 	$: if (progress >= 0.99 && !$Scrubbing) {
-		AudioMain.playWithScrub( {...samplerParams('stop')} );
 		dispatch('cueNext', $PlaylistMusic.currentTrack?.title);
 	}
 
@@ -49,10 +48,9 @@
 <svelte:window bind:innerWidth/>
 
 <div id="parent">
-
+	<div class='absolute info pt-0.5'>{Math.fround(progress * durationSecs).toPrecision(2)}</div>
 	{#if !$Scrubbing }	
 	<div in:fade >
-		{$PlaylistMusic.currentTrack?.title}
 		<ProgressBar
 			label="Progress Bar"
 			value={ Math.fround(progress * durationSecs) }

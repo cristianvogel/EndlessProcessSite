@@ -29,7 +29,6 @@ import { CablesAudioContext, MusicCoreLoaded, SpeechCoreLoaded } from "$lib/stor
 						nothing: true
 					},
 					eventExpressions: eventExpressions.get('silent')
- ,
 				}
 			});
 			await VoiceOver.initialiseRenderer({

@@ -133,8 +133,9 @@ export class MainAudioClass {
 	● register any audio event listeners defined in an EventExpressionsForNamedRenderer
 	*/
 	async initialiseRenderer(props: RendererInitialisationProps): Promise<void> {
-		const { namedRenderer, ctx, options } = props;
+		const { namedRenderer, ctx, options = {} } = props;
 		const { renderer, id } = namedRenderer;
+		const { connectTo, eventExpressions } = options;
 
 		// first, there should only be one base AudioContext throughout the app
 		if (!AudioMain.actx && ctx?.sampleRate) {
@@ -160,24 +161,23 @@ export class MainAudioClass {
 			}).then((node: AudioNode) => { return node })
 
 		console.groupCollapsed('Routing for:', id)
-		if (options?.connectTo) {
-			if (options.connectTo.destination) {
+		if (connectTo) {
+			if (connectTo.destination) {
 				console.log('✅ destination')
 				AudioMain.connectToDestination(endNode);
 			}
-			if (options.connectTo.visualiser) {
+			if (connectTo.visualiser) {
 				console.log('✅ visualiser')
 				AudioMain.connectToVisualiser(endNode)
 			}
-			if (options.connectTo.sidechain) {
+			if (connectTo.sidechain) {
 				console.log('✅ sidechain')
 				AudioMain.connectToSidechain(endNode)
 			} else {
 				// connect to nothing
 				console.log('⟤ connecting to nothing')
 			}
-		}
-		console.groupEnd();
+		}; console.groupEnd();
 
 		// add user defined id to the renderer
 		Object.defineProperty(renderer, 'id', { value: id, writable: false });
@@ -185,7 +185,7 @@ export class MainAudioClass {
 		// add any extra functionality for a 
 		// named renderer as custom event handlers then
 		// register them with the renderer
-		AudioMain.registerCallbacksFor(namedRenderer, options?.eventExpressions);
+		AudioMain.registerCallbacksFor(namedRenderer, eventExpressions);
 
 		// ok, add listener for base AudioContext state changes
 		AudioMain.actx.addEventListener('statechange', AudioMain.stateChangeHandler);
@@ -224,7 +224,7 @@ export class MainAudioClass {
 			console.group('Adding Audio Event Expressions to', renderer.id)
 			Object.keys(eventExpressions).forEach((name: string) => {
 				const event = { name, expression: eventExpressions[name] }
-				console.log(` ╠ ${event.name}`)
+				console.log(` ╠ ${event.name} -> ${event.expression}`)
 				renderer.on(event.name, event.expression);
 			});
 			console.groupEnd();
