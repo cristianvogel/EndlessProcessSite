@@ -123,7 +123,6 @@ export function progress(props: {
 	rate?: number;
 	startOffset?: number;
 }): Signal {
-
 	let { run,
 		totalDurMs = 0,
 		rate = 1000,
@@ -138,7 +137,6 @@ export function progress(props: {
 
 	let progress = el.add(el.phasor(pausingRateSignal, reset), el.sm(numberToConstant('startOffset', startOffset as number)));
 	let trig = el.train(el.mul(rate, run))
-
 	return (
 		el.snapshot({ key, name: 'progress' }, trig, progress)
 	);

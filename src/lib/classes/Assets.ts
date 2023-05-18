@@ -6,7 +6,7 @@ import {
 import { get } from "svelte/store";
 import type { AssetCategories, AudioAssetMetadata, StructuredAssetContainer } from "../../typeDeclarations";
 import type WebAudioRenderer from "@elemaudio/web-renderer";
-import { Audio as Music } from "./Audio";
+import { AudioMain as Music } from "./Audio";
 import { VoiceOver as Speech } from "./Speech";
 
 export function assign(
@@ -65,9 +65,6 @@ export function sumLengthsOfAllArraysInVFSStore() {
 }
 
 export function coreForCategory(category: AssetCategories): WebAudioRenderer {
-
-    console.log('coreForCategory ', category)
-
     switch (category) {
         case 'music':
             return Music._core;

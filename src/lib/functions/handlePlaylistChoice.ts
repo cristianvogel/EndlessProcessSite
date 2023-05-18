@@ -1,7 +1,7 @@
 
 import { get } from 'svelte/store';
 import { VFS_PATH_PREFIX, PlaylistMusic } from '$lib/stores/stores';
-import { Audio } from '$lib/classes/Audio';
+import { AudioMain } from '$lib/classes/Audio';
 import type { PlaylistContainer } from '../../typeDeclarations';
 
 let $playlistMusic: PlaylistContainer;
@@ -27,7 +27,7 @@ export function handlePlaylistChoice(e?: any, name?: string) {
         return $pl;
     });
 
-    Audio.status = 'playing';
-    Audio.playWithScrub({ trigger: 0, startOffset: 0 });
-    Audio.playWithScrub({ trigger: 1, startOffset: 0 });
+    AudioMain.status = 'playing';
+    AudioMain.playWithScrub({ trigger: 0, startOffset: 0 });
+    AudioMain.playWithScrub({ trigger: 1, startOffset: 0 });
 }

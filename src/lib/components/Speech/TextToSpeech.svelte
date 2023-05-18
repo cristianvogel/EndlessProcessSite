@@ -41,7 +41,7 @@
     }
 
     onMount(() => {     
-         VoiceOver.init();
+       //  VoiceOver.init();
         })
 
 

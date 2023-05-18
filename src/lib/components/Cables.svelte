@@ -6,15 +6,14 @@
 			CablesIsLoaded,
 			CablesAudioContext,
 		} from '$lib/stores/stores';
-	import { Audio } from '$lib/classes/Audio';
+	import Initialisation from './pure/Initialisation.svelte';
 	import { onMount } from 'svelte';
-	import { Utils } from '$lib/classes/Utils';
+	import { Utils } from '$lib/classes/Utils'
 
 	export let patch: string;
 	export let bg: boolean = false;
 	export let spin: boolean = false;
-
-		
+	
 	let pathPatch: string = `/cables/${patch}/patch.js`;	
 
 	$: if (spin) { 
@@ -22,8 +21,7 @@
 		spinText($CablesText) 
 	}
 
-
-	const initializeCables = () => {
+	const initializeCables =  () => {
 		CablesPatch.set ( new CABLES.Patch({
 			patch: CABLES.exportedPatch,
 			prefixAssetPath: `/cables/${patch}/`,
@@ -51,11 +49,10 @@
 		console.log('Cables Patch initialized');
 	} 
 
-	function patchFinishedLoading() {
+	async function  patchFinishedLoading() {
 		$CablesIsLoaded = true;
 		$CablesAudioContext = CABLES.WEBAUDIO.getAudioContext()
-		spinText();
-		Audio.init($CablesAudioContext);		
+		spinText();	
 	}
 
 	function spinText(  prompts:string[] = ["End","Proc"]  ) {
@@ -64,10 +61,10 @@
 		}
 	}
 
-	onMount(() => {
+	onMount( () => {
 		initializeCables();
-	})
-	
+		})
+
 	</script>
 
 <svelte:head>
@@ -82,4 +79,5 @@
 		height="100%"
 		style="width: 100%; height: 100%; z-index: {bg? -137: 0}; position: fixed;"
 	/>
+	<Initialisation />
 </div>

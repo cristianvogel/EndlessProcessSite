@@ -2,11 +2,11 @@
 	import { fade } from 'svelte/transition';
 	import { AppBar } from '@skeletonlabs/skeleton';
 	import { Icon } from '@steeze-ui/svelte-icon';
-	import { ChartRadial, Cube } from '@steeze-ui/carbon-icons';
+	import { ChartRadial } from '@steeze-ui/carbon-icons';
 	import ElementaryPlayer from '$lib/components/ElementaryPlayer.svelte';
 	import Progress from '$lib/components/Progress.svelte';
 	import { CablesIsLoaded, PlaysCount, PlaylistMusic, VFS_PATH_PREFIX, Decoded } from '$lib/stores/stores';
-	import { Audio } from '$lib/classes/Audio';
+	import { AudioMain } from '$lib/classes/Audio';
 	import { createEventDispatcher } from 'svelte';
 	import { get } from 'svelte/store';
 	import { handlePlaylistChoice } from '$lib/functions/handlePlaylistChoice';
@@ -15,7 +15,7 @@
 
 	const dispatch = createEventDispatcher();
 
-	const { audioStatus } = Audio.stores;
+	const { audioStatus } = AudioMain.stores;
 
 	$: audioBuffersReady = $Decoded.done;
 	$: isPlaying = $audioStatus === 'playing';
@@ -43,7 +43,7 @@
 	 * what happens when the user presses the Play/Pause button
 	 */
 	function playPauseLogic() {
-		if (!Audio.buffersReady) {
+		if (!AudioMain.buffersReady) {
 			return;
 		}
 		// initialise first track data if this is the first play
@@ -62,10 +62,10 @@
 								console.log('Cued track:', $PlaylistMusic.currentTrack?.title)
 
 		if ($audioStatus === 'playing') {
-			Audio.pause();
+			AudioMain.pause();
 			return;
 		} else {
-			Audio.unmute();
+			AudioMain.unmute();
 		}
 	}
 

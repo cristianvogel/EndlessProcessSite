@@ -1,9 +1,9 @@
 <script lang='ts'>
 	import {PlaylistMusic} from '$lib/stores/stores';
-	import {Audio} from '$lib/classes/Audio';
+	import {AudioMain} from '$lib/classes/Audio';
 	import DescriptionList from './DescriptionList.svelte';
 	import { fade } from 'svelte/transition';
-	const { audioStatus } = Audio.stores
+	const { audioStatus } = AudioMain.stores
 
 	export let show:boolean = false;
 

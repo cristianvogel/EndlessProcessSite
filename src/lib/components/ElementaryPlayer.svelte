@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { Audio } from '$lib/classes/Audio';
+	import { AudioMain } from '$lib/classes/Audio';
 	import { Icon } from '@steeze-ui/svelte-icon';
 	import { PauseOutline, PlayOutline, QueryQueue } from '@steeze-ui/carbon-icons';
 	import { Decoded, PlaylistMusic } from '$lib/stores/stores';
 	import PlaylistView from './PlaylistView.svelte';
 	import { onDestroy } from 'svelte';
 
-	const { audioStatus } = Audio.stores;
+	const { audioStatus } = AudioMain.stores;
 
 	let trackTitles: Array<string>;
 
@@ -14,7 +14,7 @@
 	$: isPlaying = $audioStatus === 'playing';
 	
 	onDestroy(() => {
-	//	Audio.actx.close();
+	//	AudioMain.actx.close();
 	});
 
 </script>

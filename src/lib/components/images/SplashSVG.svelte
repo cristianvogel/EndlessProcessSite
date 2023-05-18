@@ -1,7 +1,7 @@
 <script lang="ts">
-import { Audio } from '$lib/classes/Audio';
+import { AudioMain } from '$lib/classes/Audio';
 
-const { audioStatus } = Audio.stores
+const { audioStatus } = AudioMain.stores
 
 $: isPlaying = $audioStatus === 'playing';
 

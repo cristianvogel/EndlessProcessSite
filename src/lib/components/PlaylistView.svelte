@@ -5,7 +5,7 @@
 import { ListBox, ListBoxItem } from '@skeletonlabs/skeleton';
 import { Icon } from '@steeze-ui/svelte-icon';
 import  {CircleDash, CircleFilled} from '@steeze-ui/carbon-icons';
-import {Audio} from '$lib/classes/Audio';
+import {AudioMain} from '$lib/classes/Audio';
 import { Utils, formatTitleFromGlobalPath } from '$lib/classes/Utils';
 import { handlePlaylistChoice } from '$lib/functions/handlePlaylistChoice';
 
@@ -15,7 +15,7 @@ let valueSingle: number;
 
 const dividerClass = 'my-12 h-0.5 border-t-0 bg-primary-800 opacity-100 dark:opacity-50'
 
-$: current = Audio.currentTrackTitle;
+$: current = AudioMain.currentTrackTitle;
 
 
 </script>

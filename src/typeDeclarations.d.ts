@@ -21,9 +21,7 @@ interface PlaylistContainer {
 	show?: boolean;
 	durations: Map<string, number>;
 }
-type RawFFT = { real: Float32Array; imag: Float32Array };
-type Signal = NodeRepr_t;
-type StereoSignal = { left: NodeRepr_t; right: NodeRepr_t };
+
 type SamplerOptions = {
 	vfsPath?: string; // defaults to current track
 	trigger?: Signal | number;
@@ -50,28 +48,14 @@ type MetersContainer = {
 	SpeechAudible?: number,
 	SpeechSilent?: number,
 }
-type AudioCoreStatus =
-	| 'suspended'
-	| 'loading'
-	| 'resuming'
-	| 'playing'
-	| 'paused'
-	| 'closed '
-	| 'running'
-	| 'ready'
-	| 'scrubbing'
-	| 'error';
 
 
 //════════╡ Data  ╞═══════
 
 type TitlesPaths = { titles: string[], paths: string[] }
 type Url = string;
-
-// https://chat.openai.com/c/9e74f559-27b4-4baf-b4b8-f4ab637ecc86
 type AssetCategories = 'music' | 'speech';
-type AssetCategoryContainers = { [K in AssetCategories]: any } & { other?: any };
-
+type AssetCategoryContainers = { [K in AssetCategories]: any } & { other?: any }; // https://chat.openai.com/c/9e74f559-27b4-4baf-b4b8-f4ab637ecc86
 type AudioAssetMetadata = {
 	category: AssetCategories
 	mediaItemUrl: string;
@@ -118,10 +102,43 @@ type ResolvedPageData = CategoryMapping<AssetCategories> & {
 	};
 }
 
-//════════╡ AudioEngine :: Interfaces ╞═══════
+//════════╡ AudioEngine ╞═══════
 
+interface MessageEvent { data: number }
+interface MeterEvent extends MessageEvent { min: number, max: number }
+interface AudioEvent extends MessageEvent, MeterEvent { };
+type AudioEventExpression<T> = {
+	progress: any;
+	meter: any;
+};
+
+interface RendererInitialisationProps {
+	namedRenderer: NamedWebAudioRenderer,
+	ctx?: AudioContext,
+	options?: InitialisationOptions
+}
 interface stereoOut {
 	props: {};
 	stereoSignal: StereoSignal;
 }
-
+type Signal = NodeRepr_t;
+type StereoSignal = { left: NodeRepr_t; right: NodeRepr_t };
+type Functionality = Function
+type RendererIdentifiers = 'silent' | 'music' | 'speech'
+type NamedWebAudioRenderer = { id: RendererIdentifiers, renderer: WebAudioRenderer }
+type InitialisationOptions = {
+	connectTo?: { destination?: boolean, visualiser?: boolean, sidechain?: boolean, nothing?: boolean },
+	eventExpressions?: {},
+}
+type RawFFT = { real: Float32Array; imag: Float32Array };
+type MainAudioStatus =
+	| 'suspended'
+	| 'loading'
+	| 'resuming'
+	| 'playing'
+	| 'paused'
+	| 'closed '
+	| 'running'
+	| 'ready'
+	| 'scrubbing'
+	| 'error';

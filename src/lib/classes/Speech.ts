@@ -1,89 +1,40 @@
-import type { AssetMetadata, AudioCoreStatus, Signal, StereoSignal } from '../../typeDeclarations';
+import type { AssetMetadata, MainAudioStatus, Functionality, Signal, StereoSignal } from '../../typeDeclarations';
 import { get } from 'svelte/store';
-import WebRenderer from '@elemaudio/web-renderer';
+import WebAudioRenderer from '@elemaudio/web-renderer';
 import { writable, type Writable } from 'svelte/store';
-import { AudioCore } from '$lib/classes/Audio';
+import { MainAudioClass } from '$lib/classes/Audio';
 import { el } from '@elemaudio/core';
-import { OutputMeters, PlaylistMusic, SpeechCoreLoaded } from '$lib/stores/stores';
+import { PlaylistMusic } from '$lib/stores/stores';
 import { attenuateStereo, driftingSamplesPlayer } from '$lib/audio/AudioFunctions';
+import { eventExpressions } from '$lib/audio/AudoEventExpressions';
 
-/** ════════╡ Speech WebRenderer Core ╞═══════
+
+/** ════════╡ Speech WebAudioRenderer Core ╞═══════
 * @todo set the start offset in the audio file
 * @todo swap into different chapters / tracks on the fly
 */
 
-export class VoiceCore extends AudioCore {
-	_core: WebRenderer;
-	_voiceCoreStatus: Writable<AudioCoreStatus>;
+export class VoiceCore extends MainAudioClass {
+	_core: WebAudioRenderer;
+	_voiceCoreStatus: Writable<MainAudioStatus>;
 	_voiceVolume: number | Signal;
 	_currentMetadata: AssetMetadata;
 
 	constructor() {
 		super();
-		this._core = null as unknown as WebRenderer;
+		this._core = new WebAudioRenderer();
 		this._voiceCoreStatus = writable('loading');
-		this._endNodes = writable({ mainCore: null, silentCore: null });
 		this._voiceVolume = 0.727;
 
 		// below gets updated from store subscription
 		this._currentMetadata = { title: '', vfsPath: '', duration: 0 };
+		this.subscribeToStores();
 	}
 
 	override subscribeToStores(): void {
 		PlaylistMusic.subscribe(($p) => {
 			this._currentMetadata = $p.currentChapter as AssetMetadata;
 		});
-	}
-
-	/**
-	 * @name init
-	 * @description Initialise the main WebRenderer instances handling the Speech 
-	 * asynchronously and store in VoiceCore class as this._endNodes
-	 */
-	override async init(): Promise<void> {
-		this._core = new WebRenderer();
-		while (!super.actx) {
-			console.log('Waiting for first WebRenderer instance to load...');
-			await new Promise((resolve) => setTimeout(resolve, 50));
-		}
-		this.voiceEndNode = await this._core
-			.initialize(super.actx, {
-				numberOfInputs: 0,
-				numberOfOutputs: 1,
-				outputChannelCount: [2]
-			})
-			.then((node) => {
-				return node;
-			});
-		VoiceOver._core.on('error', function (e) {
-			console.error('🔇 ', e);
-		});
-		VoiceOver._core.on('meter', function (e) {
-			OutputMeters.update(($o) => {
-				const absMax = Math.max(e.max, Math.abs(e.min));
-				$o = { ...$o, SpeechAudible: absMax };
-				return $o;
-			})
-		})
-		VoiceOver._core.on('load', () => {
-			VoiceOver.subscribeToStores()
-			SpeechCoreLoaded.set(true);
-			VoiceOver.status = 'ready';
-			console.log('Speech core loaded  🎤');
-			VoiceOver.patch();
-		});	
-	}
-
-	/**
-	 * @name patch
-	 * @description 
-	 * connects the VoiceOver core to the hardware output
-	 * and also to the main WebRenderer instance handling the music.
-	 * Which of course has already loaded cleanly, right?
-	 */
-	private patch() {
-		super.connectToDestination(VoiceOver.voiceEndNode);
-		super.connectToMain(VoiceOver.voiceEndNode);
 	}
 
 	/**
@@ -127,9 +78,6 @@ export class VoiceCore extends AudioCore {
 	get sidechain() {
 		return this._sidechain;
 	}
-	get voiceEndNode() {
-		return get(this._endNodes).mainCore;
-	}
 	get voiceVolume() {
 		return this._voiceVolume;
 	}
@@ -139,21 +87,9 @@ export class VoiceCore extends AudioCore {
 	set voiceVolume(volume: number | Signal) {
 		this._voiceVolume = volume;
 	}
-	set status(status: AudioCoreStatus) {
+	set status(status: MainAudioStatus) {
 		this._voiceCoreStatus.update((s) => {
 			return status;
-		});
-	}
-	set voiceEndNode(node: AudioNode) {
-		this._endNodes.update((endNodes) => {
-			endNodes.mainCore = node;
-			return endNodes;
-		});
-	}
-	set silentVoiceEndNode(node: AudioNode) {
-		this._endNodes.update((endNodes) => {
-			endNodes.silentCore = node;
-			return endNodes;
 		});
 	}
 }
