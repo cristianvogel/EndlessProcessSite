@@ -429,29 +429,10 @@ export class MainAudioClass {
 	}
 
 	/**
-	 * @name resumeContext
-	 * @description Tries to resume the base AudioContext
-	 * this should only be called once, after a user interaction
-	 */
-	async resumeContext(): Promise<void> {
-		if (AudioMain.status !== 'running') {
-			AudioMain.status = 'resuming';
-			await AudioMain.actx.resume().then(() => {
-				console.log('AudioContext resumed ⚙︎');
-				AudioMain.status = 'running';
-			});
-		}
-	}
-
-	/**
 	 * @name unmute aka 'Play'
 	 * @description Main way the music starts playing, from a user interaction.
 	 */
 	unmute(): void {
-		// try to resume the context if it's suspended
-		if (AudioMain.status === 'suspended') {
-			AudioMain.resumeContext();
-		}
 		AudioMain.status = 'playing';
 		AudioMain.playWithScrub({
 			vfsPath: AudioMain.currentVFSPath,
@@ -578,3 +559,16 @@ export class MainAudioClass {
 
 export const AudioMain = new MainAudioClass();
 
+/**
+ * @name resumeContext
+ * @description Tries to resume the base AudioContext
+ * this should only be called once, after a user interaction
+ */
+export const resumeContext = async (): Promise<void> => {
+	if (!AudioMain._contextIsRunning) {
+		AudioMain.status = 'resuming';
+		await AudioMain.actx.resume().then(() => {
+			console.log('AudioContext resumed ⚙︎');
+		});
+	}
+}
