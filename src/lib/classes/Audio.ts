@@ -228,7 +228,7 @@ export class MainAudioClass {
 			console.group('Adding Audio Event Expressions to', renderer.id)
 			Object.keys(eventExpressions).forEach((name: string) => {
 				const event = { name, expression: eventExpressions[name] }
-				console.log(` ╠ ${event.name}, ${event.expression}`)
+				console.log(` ╠ ${event.name}`)
 				renderer.on(event.name, event.expression);
 			});
 			console.groupEnd();

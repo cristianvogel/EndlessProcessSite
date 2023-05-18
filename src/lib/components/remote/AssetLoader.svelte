@@ -60,7 +60,7 @@
 						AudioMain.updateVFStoCore(entry, coreForCategory(key as AssetCategories));
 						});
 					} catch (error) {
-						console.warn( 'Hit all done flag.' )
+						console.warn( 'Bounds reached, finishing initialisation.' )
 					}
 				}
 			}

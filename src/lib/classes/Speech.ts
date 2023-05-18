@@ -1,12 +1,10 @@
-import type { AssetMetadata, MainAudioStatus, Functionality, Signal, StereoSignal } from '../../typeDeclarations';
-import { get } from 'svelte/store';
+import type { AssetMetadata, MainAudioStatus, Signal, StereoSignal } from '../../typeDeclarations';
 import WebAudioRenderer from '@elemaudio/web-renderer';
 import { writable, type Writable } from 'svelte/store';
 import { MainAudioClass } from '$lib/classes/Audio';
 import { el } from '@elemaudio/core';
 import { PlaylistMusic } from '$lib/stores/stores';
 import { attenuateStereo, driftingSamplesPlayer } from '$lib/audio/AudioFunctions';
-import { eventExpressions } from '$lib/audio/AudoEventExpressions';
 
 
 /** ════════╡ Speech WebAudioRenderer Core ╞═══════
@@ -51,16 +49,16 @@ export class VoiceCore extends MainAudioClass {
 				monoSum: true,
 				durationMs: duration
 			});
-		console.log('🎤 -> ', vfsPath);
+		console.log('speech -> ', vfsPath);
 		VoiceOver.master(test);
 	}
 
 	/**
 	 * @name master
-	 * @description renders a stereo signal via the voice core
+	 * @description renders a stereo signal via the Speech renderer
 	 * This render has a side effect of firing a meter update on VoiceOver._core
-	 * It's output routes to the parent core, appearing as sidechain signal 
-	 * at el.in({channel: 0}) at super.render()
+	 * It's output routes to the parent core, routed to sidechain signal 
+	 * at el.in({channel: 0}) (see super.render())
 	 */
 	override master(stereoSignal: StereoSignal, attenuator?: Signal | number, key?: string): void {
 		if (!VoiceOver._core) return;
