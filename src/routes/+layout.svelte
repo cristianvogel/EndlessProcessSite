@@ -38,9 +38,6 @@
 
 </script>
 
-
-<svelte:window on:mousedown={$ForceAudioContextResume} />
-
 <AppShell class="p-1 bg-transparent" on:scroll={cablesScroller}>
 	<!--  Appbar in Skeleton header slot -->
 	<svelte:fragment slot="header">

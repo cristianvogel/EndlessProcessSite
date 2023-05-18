@@ -128,7 +128,7 @@ type RendererIdentifiers = 'silent' | 'music' | 'speech'
 type NamedWebAudioRenderer = { id: RendererIdentifiers, renderer: WebAudioRenderer }
 type InitialisationOptions = {
 	connectTo?: { destination?: boolean, visualiser?: boolean, sidechain?: boolean, nothing?: boolean },
-	eventExpressions?: {},
+	eventExpressions?: undefined,
 }
 type RawFFT = { real: Float32Array; imag: Float32Array };
 type MainAudioStatus =

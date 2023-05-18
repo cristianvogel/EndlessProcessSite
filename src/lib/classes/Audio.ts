@@ -433,10 +433,10 @@ export class MainAudioClass {
 	 * @description Tries to resume the base AudioContext
 	 * this should only be called once, after a user interaction
 	 */
-	resumeContext(): void {
-		if (AudioMain.actx.state === 'suspended') {
+	async resumeContext(): Promise<void> {
+		if (AudioMain.status !== 'running') {
 			AudioMain.status = 'resuming';
-			AudioMain.actx.resume().then(() => {
+			await AudioMain.actx.resume().then(() => {
 				console.log('AudioContext resumed ⚙︎');
 				AudioMain.status = 'running';
 			});
