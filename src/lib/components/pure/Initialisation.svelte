@@ -1,14 +1,15 @@
 <script lang="ts">
 import eventExpressions from "$lib/audio/AudoEventExpressions";
 import { AudioMain } from "$lib/classes/Audio";
-import { VoiceOver } from "$lib/classes/Speech";
 import { CablesAudioContext, MusicCoreLoaded, SpeechCoreLoaded } from "$lib/stores/stores";
+	import WebAudioRenderer from "@elemaudio/web-renderer";
+	import type { ExtendedWebRenderer } from "../../../typeDeclarations";
 
  async function initialiseAudioRenderers() {
 			await AudioMain.initialiseRenderer({
 				namedRenderer: { 
 					id:'music', 
-					renderer: AudioMain._core 
+					renderer: new WebAudioRenderer() as ExtendedWebRenderer
 				}, 
 				ctx: $CablesAudioContext,
 				options: {
@@ -22,7 +23,7 @@ import { CablesAudioContext, MusicCoreLoaded, SpeechCoreLoaded } from "$lib/stor
 			await AudioMain.initialiseRenderer({
 				namedRenderer: { 
 					id:'silent', 
-					renderer: AudioMain._silentCore 
+					renderer: new WebAudioRenderer() as ExtendedWebRenderer
 				}, 
 				ctx: $CablesAudioContext,
 				options: {
@@ -32,12 +33,12 @@ import { CablesAudioContext, MusicCoreLoaded, SpeechCoreLoaded } from "$lib/stor
 					eventExpressions: eventExpressions.get('silent')
 				}
 			});
-			await VoiceOver.initialiseRenderer({
+			await AudioMain.initialiseRenderer({
 				namedRenderer: {
 				id: 'speech',
-				renderer: VoiceOver._core
+				renderer: new WebAudioRenderer() as ExtendedWebRenderer
 			},
-			
+			ctx: $CablesAudioContext,
 			options: {
 				connectTo: { 
 					sidechain: true, 

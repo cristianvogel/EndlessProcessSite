@@ -1,7 +1,7 @@
 import { OutputMeters, PlaylistMusic } from "$lib/stores/stores";
 import { AudioMain } from "$lib/classes/Audio";
 import { hannEnvelope } from "$lib/audio/AudioFunctions";
-import type { MessageEvent, MeterEvent, EventExpressionsForNamedRenderer } from "../../typeDeclarations";
+import type { MessageEvent, MeterEvent, EventExpressionsForNamedRenderer, ExtendedWebRenderer } from "../../typeDeclarations";
 
 /**
  * EventExpressoions are functions that are called when an event is received 
@@ -13,21 +13,27 @@ import type { MessageEvent, MeterEvent, EventExpressionsForNamedRenderer } from 
 
 const eventExpressions: EventExpressionsForNamedRenderer = new Map()
 
-const speechRenderer = {
+const speech = {
     meter: (e: MeterEvent) => {
         OutputMeters.update(($o) => {
             const absMax = Math.max(e.max, Math.abs(e.min));
             $o = { ...$o, SpeechAudible: absMax };
             return $o
         })
-    }
+    },
+    fft: (e: MessageEvent) => { },
+    scope: (e: MessageEvent) => { },
+    snapshot: (e: MessageEvent) => { },
 }
 
-const silentRenderer = {
+const silent = {
+    meter: (e: MeterEvent) => { },
+    fft: (e: MessageEvent) => { },
+    scope: (e: MessageEvent) => { },
     snapshot: (e: MessageEvent) => {
         switch (e.source) {
             case 'progress':
-                AudioMain.updateOutputLevelWith(hannEnvelope(AudioMain.progress));
+                AudioMain.updateOutputLevelWith(AudioMain._renderers.get('music') as ExtendedWebRenderer, hannEnvelope(AudioMain.progress));
                 PlaylistMusic.update(($pl) => {
                     if (!$pl.currentTrack || !e.data) return $pl;
                     $pl.currentTrack.progress = e.data as number;
@@ -41,7 +47,7 @@ const silentRenderer = {
 }
 
 eventExpressions.set('music', {})
-eventExpressions.set('speech', speechRenderer)
-eventExpressions.set('silent', silentRenderer)
+eventExpressions.set('speech', speech)
+eventExpressions.set('silent', silent)
 
 export default eventExpressions

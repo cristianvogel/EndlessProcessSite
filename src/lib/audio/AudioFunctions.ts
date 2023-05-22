@@ -10,13 +10,14 @@
  * 
  */
 
-import { AudioMain, MainAudioClass } from '$lib/classes/Audio';
+import { AudioMain } from '$lib/classes/Audio';
 import { el } from '@elemaudio/core';
 import { channelExtensionFor, clipTo0 } from '$lib/classes/Utils';
 import { attenuate, clippedHann, progress } from '$lib/audio/Funktions';
 import type { StereoSignal, SamplerOptions, ProgressOptions, Signal } from '../../typeDeclarations';
 import { ContextSampleRate, Scrubbing } from '$lib/stores/stores';
 import { get } from 'svelte/store';
+
 
 
 const SR = get(ContextSampleRate);
@@ -83,11 +84,10 @@ export function scrubbingSamplesPlayer(props: SamplerOptions): StereoSignal {
 	const startOffsetSamps: number = Math.round(startOffset * durationMs * (SR / 1000));
 	const scrubRate = el.sm(el.latch(el.train(50), el.rand()));
 	const scrub: Signal = el.train(el.mul(50, scrubRate)) as Signal;
-
-	const currentVFSPath = AudioMain.currentVFSPath;
-	let path = currentVFSPath + channelExtensionFor(1);
-	let kl = currentVFSPath + '_left';
-	let kr = currentVFSPath + '_right';
+	const targetVFSPath = props.vfsPath || AudioMain.currentVFSPath;
+	let path = targetVFSPath + channelExtensionFor(1);
+	let kl = targetVFSPath + '_left';
+	let kr = targetVFSPath + '_right';
 	const left = el.sample(
 		{
 			key: kl,
@@ -99,7 +99,7 @@ export function scrubbingSamplesPlayer(props: SamplerOptions): StereoSignal {
 		rate
 	);
 
-	path = currentVFSPath + channelExtensionFor(2);
+	path = targetVFSPath + channelExtensionFor(2);
 	const right = el.sample(
 		{
 			key: kr,
@@ -120,25 +120,26 @@ export function scrubbingSamplesPlayer(props: SamplerOptions): StereoSignal {
  * ════════════════════════════════════════════════
  */
 
-export function driftingSamplesPlayer(coreClass: MainAudioClass, props: SamplerOptions): StereoSignal {
+export function driftingSamplesPlayer(props: SamplerOptions): StereoSignal {
 	let { trigger = 1,
 		rate = 1,
 		startOffset = 0,
-		vfsPath = coreClass.currentVFSPath,
+		vfsPath,
 		monoSum = false,
-		drift = 0 } = props;
+		drift = 0,
+		rendererId = 'speech' } = props;
 
 	let kr, kl, path, rateWithDrift;
 	let left, right;
-	const currentVFSPath = vfsPath;
+
 
 	if (typeof drift === 'number' && typeof rate === 'number') {
 		rateWithDrift = drift + rate;
 	}
 
 	startOffset = clipTo0(startOffset);
-	path = currentVFSPath + channelExtensionFor(1);
-	kl = currentVFSPath + '_left';
+	path = vfsPath + channelExtensionFor(1);
+	kl = vfsPath + '_left';
 
 	left = el.sample(
 		{
@@ -151,8 +152,8 @@ export function driftingSamplesPlayer(coreClass: MainAudioClass, props: SamplerO
 		rate
 	);
 
-	path = currentVFSPath + channelExtensionFor(monoSum ? 1 : 2);
-	kr = currentVFSPath + '_right';
+	path = vfsPath + channelExtensionFor(monoSum ? 1 : 2);
+	kr = vfsPath + '_right';
 
 	right = el.sample(
 		{

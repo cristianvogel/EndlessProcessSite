@@ -7,10 +7,12 @@ import type {
 	NamedWebAudioRenderer,
 	RendererInitialisationProps,
 	StructuredAssetContainer,
-	SamplerOptions
+	SamplerOptions,
+	RendererIdentifiers,
+	ExtendedWebRenderer
 } from '../../typeDeclarations';
 
-import { scrubbingSamplesPlayer, bufferProgress, attenuateStereo } from '$lib/audio/AudioFunctions';
+import { scrubbingSamplesPlayer, bufferProgress, attenuateStereo, driftingSamplesPlayer } from '$lib/audio/AudioFunctions';
 import { channelExtensionFor } from '$lib/classes/Utils';
 import {
 	CablesPatch,
@@ -29,36 +31,42 @@ import WebAudioRenderer from '@elemaudio/web-renderer';
 import { el, type NodeRepr_t } from '@elemaudio/core';
 
 
+
 // ════════╡ Music WebAudioRenderer Core ╞═══════
 
 export class MainAudioClass {
-	_core: WebAudioRenderer;
-	_silentCore: WebAudioRenderer;
+	_renderers: Map<RendererIdentifiers, ExtendedWebRenderer>;
 	_MainAudioStatus: Writable<MainAudioStatus>;
 	_contextIsRunning: Writable<boolean>;
 	_audioContext: Writable<AudioContext>;
 	_endNodes: Map<string, AudioNode>;
 	_masterVolume: Writable<number | Signal>;
-	_currentMetadata: AssetMetadata | undefined;
+	_currentTrackMetadata: AssetMetadata;
+	_currentSpeechMetadata: AssetMetadata;
 	_scrubbing: boolean;
 	_sidechain: number | Signal;
-	_outputBuss: StereoSignal
+	_masterBuss: StereoSignal
 	_assetsReady: boolean;
+	_voiceVolume: number | Signal;
 
 	constructor() {
-		this._core = new WebAudioRenderer()
-		this._silentCore = new WebAudioRenderer();
 		this._masterVolume = writable(0.808); // default master volume
+		this._voiceVolume = 0.727;
 		this._MainAudioStatus = writable('loading');
 		this._contextIsRunning = writable(false);
 		this._audioContext = writable();
-		this._outputBuss = { left: 0 as unknown as Signal, right: 0 as unknown as Signal };
+		this._masterBuss = { left: 0 as unknown as Signal, right: 0 as unknown as Signal };
+		this._renderers = new Map()
+			.set('music', new WebAudioRenderer())
+			.set('silent', new WebAudioRenderer()) // rename to control...?
+			.set('speech', new WebAudioRenderer());
 
 		// these here below are dynamically set from store subscriptions
-		this._endNodes = get(EndNodes);
-		this._currentMetadata = get(PlaylistMusic).currentTrack;
-		this._scrubbing = get(Scrubbing);
-		this._assetsReady = get(MusicAssetsReady);
+		this._endNodes = get(EndNodes) as Map<string, AudioNode>;
+		this._currentTrackMetadata = get(PlaylistMusic).currentTrack as AssetMetadata;
+		this._currentSpeechMetadata = get(PlaylistMusic).currentChapter as AssetMetadata;
+		this._scrubbing = get(Scrubbing) as boolean;
+		this._assetsReady = get(MusicAssetsReady) as boolean;
 		this._sidechain = el.sm(0) as Signal;
 		this.subscribeToStores();
 	}
@@ -78,13 +86,12 @@ export class MainAudioClass {
 			this._assetsReady = $ready;
 		});
 		PlaylistMusic.subscribe(($p) => {
-			this._currentMetadata = $p.currentTrack;
+			this._currentTrackMetadata = $p.currentTrack as AssetMetadata;
 		});
 		Scrubbing.subscribe(($scrubbing) => {
 			this._scrubbing = $scrubbing;
 		});
 		OutputMeters.subscribe(($meters) => {
-			if (!this._core) return;
 			this._sidechain = el.sm($meters.SpeechAudible as number) as Signal;
 		});
 	}
@@ -141,7 +148,7 @@ export class MainAudioClass {
 			AudioMain.actx = ctx;
 		} else if (!ctx && !AudioMain.actx) {
 			AudioMain.actx = new AudioContext();
-			console.warn('No AudioContext passed. Stashing new one.');
+			console.warn('No AudioContext passed. Creating new one.');
 		}
 
 		console.log('Using AudioContext ', AudioMain.actx.sampleRate, AudioMain.actx.state);
@@ -150,7 +157,7 @@ export class MainAudioClass {
 		ContextSampleRate.set(AudioMain.actx.sampleRate)
 
 		// initialise the named WebAudioRenderer instance & connect 
-		// it's end node according to user options
+		// its end node according to user options
 		const { renderer, id } = namedRenderer;
 		console.log('initialising renderer ', id)
 		const endNode = await renderer
@@ -159,6 +166,7 @@ export class MainAudioClass {
 				numberOfOutputs: 1,
 				outputChannelCount: [2]
 			}).then((node: AudioNode) => { return node })
+
 
 		console.groupCollapsed('Routing for:', id)
 		if (connectTo) {
@@ -179,13 +187,17 @@ export class MainAudioClass {
 			}
 		}; console.groupEnd();
 
-		// add user defined id to the renderer
+		// extend renderer with custom id property
 		Object.defineProperty(renderer, 'id', { value: id, writable: false });
 
+		// extend renderer with custom Master Output Buss
+		const newMasterBuss: StereoSignal = { left: 0 as unknown as Signal, right: 0 as unknown as Signal };
+		Object.defineProperty(renderer, 'masterBuss', { value: newMasterBuss, writable: true });
+
 		// add any extra functionality for a 
-		// named renderer as custom event handlers then
+		// named renderer as event handlers then
 		// register them with the renderer
-		AudioMain.registerCallbacksFor(namedRenderer, eventExpressions);
+		AudioMain.registerCallbacksFor({ renderer: renderer, id: id }, eventExpressions);
 
 		// ok, add listener for base AudioContext state changes
 		AudioMain.actx.addEventListener('statechange', AudioMain.stateChangeHandler);
@@ -196,6 +208,9 @@ export class MainAudioClass {
 			_nodesDict.set(id, endNode);
 			return _nodesDict;
 		})
+
+		// store the renderer in the AudioMain Map
+		AudioMain._renderers.set(id, renderer);
 
 		// done
 		return Promise.resolve();
@@ -263,11 +278,12 @@ export class MainAudioClass {
 	/**
 	 * @name updateOutputLevelWith
 	 * @description a useful Elem render call which will scale
-	 * the main output level with the passed node. Useful for 
+	 * a renderers output level with the passed node. Useful for 
 	 * premaster level, fades etc.
 	 */
-	updateOutputLevelWith(node: Signal): void {
-		AudioMain.master(undefined, node);
+
+	updateOutputLevelWith(renderer: ExtendedWebRenderer, node: Signal): void {
+		AudioMain.master(renderer.id, undefined, { attenuator: node });
 	};
 
 	/**
@@ -282,24 +298,31 @@ export class MainAudioClass {
 	* @param useExtSidechain optional boolean to use an external sidechain signal,
 	* @param bypassCompressor optional boolean to bypass the compressor
 	*/
-	master(stereoSignal?: StereoSignal, attenuator?: Signal | number,
-		compressor?: { useExtSidechain?: boolean, bypassCompressor?: boolean }): void {
+	master(rendererId: RendererIdentifiers,
+		stereoSignal?: StereoSignal | undefined,
+		options?: {
+			attenuator?: Signal | number | undefined,
+			compressor?: { useExtSidechain?: boolean, bypassCompressor?: boolean }
+		}): void {
+		const { attenuator, compressor } = options || {};
 		const { useExtSidechain = true, bypassCompressor = false } = compressor || {};	
-		if (!AudioMain._core) return;
-		if (stereoSignal) {
-			AudioMain._outputBuss = stereoSignal;
-		} 
-		const sc = useExtSidechain ? el.in({ channel: 0 }) : AudioMain._outputBuss.left;
 
-		const dynamics = bypassCompressor ? AudioMain._outputBuss : {
-			left: el.compress(20, 160, -35, 90, sc, AudioMain._outputBuss.left),
-			right: el.compress(20, 160, -35, 90, sc, AudioMain._outputBuss.right)
+		let targetRenderer: ExtendedWebRenderer = AudioMain._renderers.get(rendererId) as ExtendedWebRenderer;	
+
+		if (stereoSignal) {
+			targetRenderer.masterBuss = stereoSignal;
+		} 
+		const sc = useExtSidechain ? el.in({ channel: 0 }) : targetRenderer.masterBuss.left;
+
+		const dynamics = bypassCompressor ? targetRenderer.masterBuss : {
+			left: el.compress(20, 160, -35, 90, sc, targetRenderer.masterBuss.left),
+			right: el.compress(20, 160, -35, 90, sc, targetRenderer.masterBuss.right)
 		} 
 
 		let master = attenuator ? attenuateStereo(dynamics, attenuator) : dynamics;
 		master = attenuateStereo(master, AudioMain.masterVolume)
-		const result = AudioMain._core.render(master.left, master.right);
-		//@debug console.groupCollapsed('Updated graph ፨ ', result)
+		const result = targetRenderer.render(master.left, master.right);
+		console.groupCollapsed('Updated graph for ', rendererId, ' ፨ ', result)
 	}
 
 	/**
@@ -310,8 +333,7 @@ export class MainAudioClass {
 	 * cause DC offset.
 	 */
 	controlRender(controlSignal: Signal): void {
-		if (!AudioMain._silentCore || !controlSignal) return;
-		AudioMain._silentCore.render(el.mul(controlSignal, 0));
+		AudioMain._renderers.get('silent')?.render(el.mul(controlSignal, 0));
 	}
 
 	/**
@@ -319,7 +341,12 @@ export class MainAudioClass {
 	 * @description: Plays samples from a VFS path, with scrubbing
 	 */
 	playWithScrub(props: SamplerOptions) {
-		AudioMain.master(scrubbingSamplesPlayer(props), undefined, { useExtSidechain: true, bypassCompressor: false });
+		AudioMain.master(
+			'music', scrubbingSamplesPlayer(props),
+			{
+				compressor: { useExtSidechain: true, bypassCompressor: false }
+			}
+		);
 		AudioMain.playProgressBar(props);
 	}
 
@@ -328,39 +355,46 @@ export class MainAudioClass {
 	 * @description todo
 	 */
 	playProgressBar(props: SamplerOptions) {
-		AudioMain.renderBufferProgress({
-			key: AudioMain.currentTrackTitle,
-			run: props.trigger as number,
-			startOffset: props.startOffset || 0,
-			totalDurMs: props.durationMs || AudioMain.currentTrackDurationSeconds * 1000
-		});
-	}
+		const { trigger, startOffset } = props;
+		const key = AudioMain.currentTrackTitle
+		const totalDurMs = props.durationMs || AudioMain.currentTrackDurationSeconds * 1000;
 
-	/**
-	 * @name renderBufferProgress
-	 * @description: Renders the progress counter and its callback side effect
-	 */
-	renderBufferProgress(props: { run: number, startOffset: number, key?: string, totalDurMs: number }) {
-		let {
-			run = 1,
-			startOffset = 0,
+		const progressSignal = bufferProgress({
 			key,
 			totalDurMs,
-		} = props;
+			run: trigger as number,
+			updateInterval: 10,
+			startOffset
+		})
 
-		AudioMain.controlRender(
-			bufferProgress({
-				key,
-				totalDurMs,
-				run,
-				updateInterval: 10,
-				startOffset
-			})
-		);
+		AudioMain.controlRender(progressSignal);
 	}
 
 	/**
-	 * @name updateVFStoCore
+	 * @name playSpeechFromVFS
+	 */
+	playSpeechFromVFS(gate: Number = 1): void {
+		const { vfsPath, duration = 1000 } = AudioMain._currentTrackMetadata as AssetMetadata;
+		const phasingSpeech = driftingSamplesPlayer(
+			{
+				vfsPath,
+				trigger: gate as number,
+				rate: 0.901,
+				drift: 1.0e-3,
+				monoSum: true,
+				durationMs: duration,
+				rendererId: 'speech'
+			});
+		console.log('speech -> ', vfsPath);
+
+		AudioMain.master('speech',
+			{ left: el.meter(phasingSpeech.left), right: phasingSpeech.right },
+			{ attenuator: AudioMain._voiceVolume, compressor: { bypassCompressor: true } });
+	}
+
+
+	/**
+	 * @name updateVFStoRenderer
 	 * @description Elementary Audio Renderers use a virtual file system to reference audio * files in memory.
 	 * https://www.elementary.audio/docs/packages/web-renderer#virtual-file-system
 	 * Update the virtual file system using data loaded from a load() function.
@@ -368,14 +402,14 @@ export class MainAudioClass {
 	 * header and body ArrayBufferContainer - will be decoded to audio buffer for VFS use
 	 * @param playlistStore
 	 * a Writable that holds titles and other data derived from the buffers
-	 * @param core
+	 * @param renderer
 	 * the Elementary core which will register and use the VFS dictionary entry.
 	 * 🚨 Guard against race conditions by only updating the VFS when the core is loaded.
 	 */
 
-	async updateVFStoCore(
+	async updateVFStoRenderer(
 		container: StructuredAssetContainer,
-		core: WebAudioRenderer
+		renderer: ExtendedWebRenderer
 	) {
 		// decoder
 		AudioMain.decodeRawBuffer(container).then((data) => {
@@ -387,11 +421,8 @@ export class MainAudioClass {
 			// adds a channel extension, starts at 1 (not 0)
 			for (let i = 0; i < decoded.numberOfChannels; i++) {
 				const vfsKey = get(VFS_PATH_PREFIX) + title + channelExtensionFor(i + 1);
-				const vfsDictionaryEntry =
-				{
-					[vfsKey]: decoded.getChannelData(i)
-				};
-				core.updateVirtualFileSystem(vfsDictionaryEntry);
+				const vfsDictionaryEntry = { [vfsKey]: decoded.getChannelData(i) };
+				renderer.updateVirtualFileSystem(vfsDictionaryEntry);
 			}
 			// update the DurationElement in the playlist store Map
 			PlaylistMusic.update(($plist) => {
@@ -488,7 +519,7 @@ export class MainAudioClass {
 		};
 	}
 	get progress() {
-		return AudioMain._currentMetadata?.progress || 0;
+		return AudioMain._currentTrackMetadata?.progress || 0;
 	}
 	get sidechain() {
 		return this._sidechain;
@@ -497,16 +528,16 @@ export class MainAudioClass {
 		return AudioMain._scrubbing;
 	}
 	get currentTrackDurationSeconds(): number {
-		return AudioMain._currentMetadata?.duration || -1;
+		return AudioMain._currentTrackMetadata?.duration || -1;
 	}
 	get currentVFSPath(): string {
-		return AudioMain._currentMetadata?.vfsPath || 'no VFS path';
+		return AudioMain._currentTrackMetadata?.vfsPath || 'no VFS path';
 	}
 	get buffersReady(): boolean {
 		return get(Decoded).done
 	}
 	get currentTrackTitle(): string {
-		return AudioMain._currentMetadata?.title || '';
+		return AudioMain._currentTrackMetadata?.title || '';
 	}
 	get masterVolume(): number | NodeRepr_t {
 		return get(AudioMain._masterVolume);
@@ -543,7 +574,7 @@ export class MainAudioClass {
 
 	set progress(newProgress: number) {
 		if (!newProgress) return;
-		AudioMain._currentMetadata = { ...AudioMain._currentMetadata, progress: newProgress };
+		AudioMain._currentTrackMetadata = { ...AudioMain._currentTrackMetadata, progress: newProgress };
 	}
 	set masterVolume(normLevel: number | NodeRepr_t) {
 		AudioMain._masterVolume.update(() => normLevel);

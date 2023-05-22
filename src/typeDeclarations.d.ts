@@ -1,5 +1,6 @@
 import type { DurationsMapElement } from '$lib/stores/stores';
 import type { NodeRepr_t } from '@elemaudio/core';
+import type WebAudioRenderer from '@elemaudio/web-renderer';
 import type { Writable } from 'svelte/store';
 
 //-════════╡ Music and Speech ╞═══════
@@ -24,6 +25,7 @@ interface PlaylistContainer {
 
 type SamplerOptions = {
 	vfsPath?: string; // defaults to current track
+	rendererId?: RendererIdentifiers;
 	trigger?: Signal | number;
 	rate?: Signal | number;
 	durationMs?: number;
@@ -109,6 +111,7 @@ type EventExpressionsForNamedRenderer = Map<NamedRenderers, AudioEventExpression
 interface MessageEvent { data: number, source: string }
 interface MeterEvent extends MessageEvent { min: number, max: number }
 interface AudioEvent extends MessageEvent, MeterEvent { };
+interface ExtendedWebRenderer extends WebAudioRenderer { masterBuss: StereoSignal, id: NamedRenderers };
 
 interface RendererInitialisationProps {
 	namedRenderer: NamedWebAudioRenderer,
@@ -127,7 +130,7 @@ type Signal = NodeRepr_t;
 type StereoSignal = { left: NodeRepr_t; right: NodeRepr_t };
 type Functionality = Function
 type RendererIdentifiers = 'silent' | 'music' | 'speech'
-type NamedWebAudioRenderer = { id: RendererIdentifiers, renderer: WebAudioRenderer }
+type NamedWebAudioRenderer = { id: RendererIdentifiers, renderer: ExtendedWebRenderer }
 
 type RawFFT = { real: Float32Array; imag: Float32Array };
 type MainAudioStatus =

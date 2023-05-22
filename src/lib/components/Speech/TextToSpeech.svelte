@@ -1,20 +1,15 @@
 <script lang="ts">
 
-/**
- * @todo this is a demo, has hardcoded VFS path
-*/
 
     import { Icon } from '@steeze-ui/svelte-icon';
     import { VoiceActivate } from'@steeze-ui/carbon-icons';
-    import {VoiceOver} from '$lib/classes/Speech';
     import ElevenLabsLogo from '$lib/images/ElevenLabsLogo.svelte';
 	import { ProgressBar, SlideToggle } from '@skeletonlabs/skeleton';
     import { VFS_PATH_PREFIX, OutputMeters, PlaylistMusic } from '$lib/stores/stores';
-	import { onMount } from 'svelte';
-	import { get } from 'svelte/store';
-	
     import { tweened } from 'svelte/motion';
 	import {  bounceInOut } from 'svelte/easing';
+	import type { ExtendedWebRenderer } from '../../../typeDeclarations';
+	import { AudioMain } from '$lib/classes/Audio';
 
     let activated: boolean = false;
 
@@ -26,23 +21,16 @@
 	});
 
     function voiceActivated(e: any) {
-        if (VoiceOver.status === 'suspended') {
-			VoiceOver.resumeContext();
-		}
-     	PlaylistMusic.update(($p) => {
-			$p.currentChapter ={...$p.currentChapter, 
+     	PlaylistMusic.update((p) => {
+			p.currentChapter ={...p.currentChapter, 
                 title: e.currentTarget.name,
-                vfsPath: get(VFS_PATH_PREFIX) + e.currentTarget.name,
+                vfsPath: $VFS_PATH_PREFIX + e.currentTarget.name,
                 progress: 0 
             };
-			return $p;
+			return p;
 		});
-        VoiceOver.playSpeechFromVFS( activated ? 1 : 0);
+        AudioMain.playSpeechFromVFS( activated ? 1 : 0);
     }
-
-    onMount(() => {     
-       //  VoiceOver.init();
-        })
 
 
 </script>

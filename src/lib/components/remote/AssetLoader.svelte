@@ -22,7 +22,7 @@
 	import { ContextSampleRate, Decoded, VFS_Entries } from '$lib/stores/stores';
 	import { Utils, stripTags } from '$lib/classes/Utils';
 	import { AudioMain } from '$lib/classes/Audio';
-	import { assign, coreForCategory, sumLengthsOfAllArraysInVFSStore as VFS_Entries_Checksum } from '$lib/classes/Assets';
+	import { assign, getRendererForCategory, sumLengthsOfAllArraysInVFSStore as VFS_Entries_Checksum } from '$lib/classes/Assets';
 
  	export let metadata: PageData;
 	export let rangeLengthSeconds = 60;
@@ -57,7 +57,7 @@
 					const storedVFSDictionaryForCategory:Array<StructuredAssetContainer> = $VFS_Entries[key as AssetCategories];
 					try {
 						storedVFSDictionaryForCategory.forEach((entry) => {
-						AudioMain.updateVFStoCore(entry, coreForCategory(key as AssetCategories));
+						AudioMain.updateVFStoRenderer(entry, getRendererForCategory(key as AssetCategories));
 						});
 					} catch (error) {
 						console.warn( 'Bounds reached, finishing initialisation.' )
