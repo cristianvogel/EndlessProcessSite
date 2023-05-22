@@ -3,6 +3,14 @@ import { AudioMain } from "$lib/classes/Audio";
 import { hannEnvelope } from "$lib/audio/AudioFunctions";
 import type { MessageEvent, MeterEvent, EventExpressionsForNamedRenderer } from "../../typeDeclarations";
 
+/**
+ * EventExpressoions are functions that are called when an event is received 
+ * from an Elementary audio renderer instance via the Event emitting interface of 
+ * that instance.
+ * At v2.0.0 a standard core fires 
+ * el.meter, el.snapshot, el.fft, el.scope
+ */
+
 const eventExpressions: EventExpressionsForNamedRenderer = new Map()
 
 const speechRenderer = {

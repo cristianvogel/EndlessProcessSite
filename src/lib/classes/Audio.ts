@@ -412,13 +412,10 @@ export class MainAudioClass {
 		while (!container) await new Promise((resolve) => setTimeout(resolve, 100));
 		const { body, header } = container;
 		let decoded: AudioBuffer | null = null;
-		// while (!AudioMain.actx) {
-		// 	await new Promise((resolve) => setTimeout(resolve, 50));
-		// }
 		try {
 			decoded = await AudioMain.actx.decodeAudioData(body as ArrayBuffer);
 		} catch (error) {
-			console.warn('Decoding skipped ', error);
+			console.warn('Decoding skipped, dummy buffer created ', error);
 			decoded = AudioMain.actx?.createBuffer(1, 1, 44100);
 		} finally {
 			header.bytes = decoded?.getChannelData(0).length || 0;
