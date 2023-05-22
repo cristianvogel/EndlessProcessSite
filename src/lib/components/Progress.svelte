@@ -33,6 +33,7 @@
 		const x = clientX - left;
 		const percent = x / width;
 		startOffset = percent
+		console.log('startOffset', startOffset)
 		AudioMain.playWithScrub( {...samplerParams('stop'), startOffset} );
 	}
 
