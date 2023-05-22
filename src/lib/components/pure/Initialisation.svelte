@@ -37,7 +37,7 @@ import { CablesAudioContext, MusicCoreLoaded, SpeechCoreLoaded } from "$lib/stor
 				id: 'speech',
 				renderer: VoiceOver._core
 			},
-			ctx: $CablesAudioContext,
+			
 			options: {
 				connectTo: { 
 					sidechain: true, 
@@ -60,8 +60,8 @@ function done( element: HTMLElement, answer: boolean){
 
 {#if $CablesAudioContext}
 	{#await initialiseAudioRenderers()}
-	<div > Intialising audio renderers. </div>
+	<div data-comment> Intialising audio renderers. </div>
 	{:then answer }
-	<div use:done={answer} > done. </div>
+	<div data-comment use:done={answer} />
 	{/await}
 {/if}
