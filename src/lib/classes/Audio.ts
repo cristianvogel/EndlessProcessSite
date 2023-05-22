@@ -203,7 +203,7 @@ export class MainAudioClass {
 
 	registerCallbacksFor(namedRenderer: NamedWebAudioRenderer, eventExpressions?: any) {
 		const { renderer } = namedRenderer;
-		// fires when the renderet is ready, returns 
+		// fires when the renderer is ready, returns 
 		// some info about the renderer
 		renderer.on('load', () => {
 			ForceAudioContextResume.update(($f) => { $f = resumeContext; return $f });
