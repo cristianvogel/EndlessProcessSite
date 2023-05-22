@@ -24,6 +24,7 @@ import { CablesAudioContext, MusicCoreLoaded, SpeechCoreLoaded } from "$lib/stor
 					id:'silent', 
 					renderer: AudioMain._silentCore 
 				}, 
+				ctx: $CablesAudioContext,
 				options: {
 					connectTo: {
 						nothing: true
@@ -36,6 +37,7 @@ import { CablesAudioContext, MusicCoreLoaded, SpeechCoreLoaded } from "$lib/stor
 				id: 'speech',
 				renderer: VoiceOver._core
 			},
+			ctx: $CablesAudioContext,
 			options: {
 				connectTo: { 
 					sidechain: true, 
@@ -58,8 +60,8 @@ function done( element: HTMLElement, answer: boolean){
 
 {#if $CablesAudioContext}
 	{#await initialiseAudioRenderers()}
-	<div data-comment> Intialising audio renderers. </div>
+	<div > Intialising audio renderers. </div>
 	{:then answer }
-	<div data-comment use:done={answer} />
+	<div use:done={answer} > done. </div>
 	{/await}
 {/if}
