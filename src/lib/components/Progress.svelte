@@ -82,12 +82,7 @@
 			$Scrubbing = true;
 			handleScrub(e);
 		}}
-		on:touchstart|preventDefault|stopPropagation={(e) => {
-			$Scrubbing = true;
-			handleScrub(e);
-		}}
-		on:touchmove|preventDefault={handleScrub}
-		on:touchend={replay}
+
 		on:mousemove|preventDefault={handleScrub}
 		on:mouseup={replay}
 		on:mouseleave={replay}  
