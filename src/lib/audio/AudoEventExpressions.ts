@@ -14,7 +14,7 @@ import type { MessageEvent, MeterEvent, EventExpressionsForNamedRenderer } from 
 const eventExpressions: EventExpressionsForNamedRenderer = new Map()
 
 const speechRenderer = {
-    meter(e: MeterEvent) {
+    meter: (e: MeterEvent) => {
         OutputMeters.update(($o) => {
             const absMax = Math.max(e.max, Math.abs(e.min));
             $o = { ...$o, SpeechAudible: absMax };
@@ -24,7 +24,7 @@ const speechRenderer = {
 }
 
 const silentRenderer = {
-    snapshot(e: MessageEvent) {
+    snapshot: (e: MessageEvent) => {
         switch (e.source) {
             case 'progress':
                 AudioMain.updateOutputLevelWith(hannEnvelope(AudioMain.progress));

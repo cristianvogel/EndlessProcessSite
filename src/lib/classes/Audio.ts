@@ -134,7 +134,6 @@ export class MainAudioClass {
 	*/
 	async initialiseRenderer(props: RendererInitialisationProps): Promise<void> {
 		const { namedRenderer, ctx, options = {} } = props;
-		const { renderer, id } = namedRenderer;
 		const { connectTo, eventExpressions } = options;
 
 		// first, there should only be one base AudioContext throughout the app
@@ -152,6 +151,7 @@ export class MainAudioClass {
 
 		// initialise the named WebAudioRenderer instance & connect 
 		// it's end node according to user options
+		const { renderer, id } = namedRenderer;
 		console.log('initialising renderer ', id)
 		const endNode = await renderer
 			.initialize(AudioMain.actx, {
