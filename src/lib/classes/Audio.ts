@@ -87,6 +87,7 @@ export class MainAudioClass {
 		});
 		PlaylistMusic.subscribe(($p) => {
 			this._currentTrackMetadata = $p.currentTrack as AssetMetadata;
+			this._currentSpeechMetadata = $p.currentChapter as AssetMetadata;
 		});
 		Scrubbing.subscribe(($scrubbing) => {
 			this._scrubbing = $scrubbing;
@@ -150,14 +151,12 @@ export class MainAudioClass {
 			AudioMain.actx = new AudioContext();
 			console.warn('No AudioContext passed. Creating new one.');
 		}
-
 		console.log('Using AudioContext ', AudioMain.actx.sampleRate, AudioMain.actx.state);
 
 		// set the sample rate for the app
 		ContextSampleRate.set(AudioMain.actx.sampleRate)
 
-		// initialise the named WebAudioRenderer instance & connect 
-		// its end node according to user options
+		// initialise the named WebAudioRenderer instance 
 		const { renderer, id } = namedRenderer;
 		console.log('initialising renderer ', id)
 		const endNode = await renderer
@@ -168,6 +167,7 @@ export class MainAudioClass {
 			}).then((node: AudioNode) => { return node })
 
 
+		// set routing
 		console.groupCollapsed('Routing for:', id)
 		if (connectTo) {
 			if (connectTo.destination) {
@@ -182,7 +182,6 @@ export class MainAudioClass {
 				console.log('✅ sidechain')
 				AudioMain.connectToSidechain(endNode)
 			} else {
-				// connect to nothing
 				console.log('⟤ connecting to nothing')
 			}
 		}; console.groupEnd();
@@ -374,7 +373,7 @@ export class MainAudioClass {
 	 * @name playSpeechFromVFS
 	 */
 	playSpeechFromVFS(gate: Number = 1): void {
-		const { vfsPath, duration = 1000 } = AudioMain._currentTrackMetadata as AssetMetadata;
+		const { vfsPath, duration = 1000 } = AudioMain._currentSpeechMetadata as AssetMetadata;
 		const phasingSpeech = driftingSamplesPlayer(
 			{
 				vfsPath,

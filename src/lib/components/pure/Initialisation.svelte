@@ -2,8 +2,8 @@
 import eventExpressions from "$lib/audio/AudoEventExpressions";
 import { AudioMain } from "$lib/classes/Audio";
 import { CablesAudioContext, MusicCoreLoaded, SpeechCoreLoaded } from "$lib/stores/stores";
-	import WebAudioRenderer from "@elemaudio/web-renderer";
-	import type { ExtendedWebRenderer } from "../../../typeDeclarations";
+import WebAudioRenderer from "@elemaudio/web-renderer";
+import type { ExtendedWebRenderer } from "../../../typeDeclarations";
 
  async function initialiseAudioRenderers() {
 			await AudioMain.initialiseRenderer({
