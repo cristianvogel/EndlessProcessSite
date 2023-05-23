@@ -25,7 +25,6 @@ interface PlaylistContainer {
 
 type SamplerOptions = {
 	vfsPath?: string; // defaults to current track
-	rendererId?: RendererIdentifiers;
 	trigger?: Signal | number;
 	rate?: Signal | number;
 	durationMs?: number;

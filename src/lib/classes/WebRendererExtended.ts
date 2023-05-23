@@ -14,7 +14,7 @@ export default class WebRendererExtended extends WebAudioRenderer {
     constructor(id: NamedRenderers) {
         super();
         this._id = id;
-        this._masterVolume = 1;
+        this._masterVolume = 0.808;
         this._masterBuss = { left: SignalConstants.ZERO, right: SignalConstants.ZERO };
     }
 
@@ -36,12 +36,12 @@ export default class WebRendererExtended extends WebAudioRenderer {
             compressor?: { useExtSidechain?: boolean, bypassCompressor?: boolean }
         }): void {
         const { attenuator, compressor } = options || {};
-        const { useExtSidechain = true, bypassCompressor = false } = compressor || {};;
+        const { useExtSidechain = false, bypassCompressor = true } = compressor || {};;
 
         if (stereoSignal) {
             this.masterBuss = stereoSignal;
         }
-        const sc = useExtSidechain ? el.in({ channel: 0 }) : this.masterBuss.left;
+        const sc = useExtSidechain ? el.in({ channel: 0 }) : el.mul(0.5, this.masterBuss.left);
 
         const dynamics = bypassCompressor ? this.masterBuss : {
             left: el.compress(20, 160, -35, 90, sc, this.masterBuss.left),

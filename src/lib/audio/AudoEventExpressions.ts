@@ -23,21 +23,26 @@ const speech = {
     },
 }
 
-const control = {
+const data = {
     snapshot: (e: MessageEvent) => {
-        if (e.source === 'progress') {
-            const musicRenderer = AudioMain._renderersMap.get('music') as ExtendedWebRenderer
-            AudioMain.attenuateRendererWith(musicRenderer, hannEnvelope(AudioMain.progress));
-            PlaylistMusic.update(($pl) => {
-                $pl.currentTrack.progress = e.data as number;
-                return $pl
-            })
+        if (e.source === 'progress') {  
+            updateTrackPosition(e.data)
         } else console.log('control renderer received snapshot from source: ', e.source, e.data);
     }
 }
 
 eventExpressions.set('music', {})
 eventExpressions.set('speech', speech)
-eventExpressions.set('control', control)
+eventExpressions.set('data', data)
 
 export default eventExpressions
+
+function updateTrackPosition(data: any) {
+    PlaylistMusic.update(($pl) => {
+        const prevPosition = $pl.currentTrack.progress
+        const currentPosition = data as number;
+        AudioMain.attenuateRendererWith('music', hannEnvelope(prevPosition as number));
+        $pl.currentTrack.progress = currentPosition;
+        return $pl
+    })
+}

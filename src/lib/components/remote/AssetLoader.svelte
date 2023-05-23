@@ -113,7 +113,6 @@
 							out:fade>
 							{`${edge.node.title} ${edge.node.fileSize} bytes`}<br />
 							╰{@html caption ? caption : 'no detail'} <br />
-							{`╰ ${Utils.scrambleString(edge.node.mediaItemUrl)}`}<br />
 						</li>
 					{/await}
 				{/await}

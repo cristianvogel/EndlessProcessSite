@@ -237,8 +237,6 @@ export class MainAudioClass {
 		renderer.mainOut(renderer.masterBuss, { attenuator: node });
 	};
 
-
-
 	/**
 	 * @name renderDataSignal
 	 * @description ideally a silent render of a control signal using a 'data' WebAudioRenderer,
@@ -270,7 +268,7 @@ export class MainAudioClass {
 	 * @description 
 	 */
 	playProgressBar(props: SamplerOptions) {
-		const { trigger, startOffset } = props;
+		const { trigger, startOffset = 0 } = props;
 		const key = AudioMain.currentTrackTitle
 		const totalDurMs = props.durationMs || AudioMain.currentTrackDurationSeconds * 1000;
 
@@ -289,16 +287,14 @@ export class MainAudioClass {
 	 */
 	playSpeechFromVFS(gate: Number = 1): void {
 		const { vfsPath, duration = 1000 } = AudioMain._currentSpeechMetadata as AssetMetadata;
-		const phasingSpeech = driftingSamplesPlayer(
-			{
-				vfsPath,
-				trigger: gate as number,
-				rate: 0.901,
-				drift: 1.0e-3,
-				monoSum: true,
-				durationMs: duration,
-				rendererId: 'speech'
-			});
+		const phasingSpeech = driftingSamplesPlayer({
+			vfsPath,
+			trigger: gate as number,
+			rate: 0.901,
+			drift: 1.0e-3,
+			monoSum: true,
+			durationMs: duration
+		});
 		console.log('speech playing from -> ', vfsPath);
 
 		AudioMain.renderThrough('speech').mainOut(
@@ -339,7 +335,6 @@ export class MainAudioClass {
 			for (let i = 0; i < decoded.numberOfChannels; i++) {
 				const vfsKey = get(VFS_PATH_PREFIX) + title + channelExtensionFor(i + 1);
 				const vfsDictionaryEntry = { [vfsKey]: decoded.getChannelData(i) };
-				console.log('VFS updated with -> ', vfsKey + ' -> ', renderer.id);
 				AudioMain.attachToRenderer(id).updateVirtualFileSystem(vfsDictionaryEntry);
 			}
 			// update the DurationElement in the playlist store Map
