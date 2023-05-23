@@ -103,7 +103,22 @@ type ResolvedPageData = CategoryMapping<AssetCategories> & {
 
 //════════╡ AudioEngine ╞═══════
 type NamedRenderers = "data" | "music" | "speech";
+type RendererStatus =
+	| 'suspended'
+	| 'loading'
+	| 'resuming'
+	| 'playing'
+	| 'paused'
+	| 'closed '
+	| 'running'
+	| 'ready'
+	| 'scrubbing'
+	| 'error';
+type RendererObservables = {
+	[K in NamedRenderers]: RendererStatus
+}
 type StandardAudioEvents = "meter" | "snapshot" | "fft" | "load" | "scope";
+
 type Expression = (event: AudioEvent) => void;
 type AudioEventExpressions = Partial<Record<StandardAudioEvents, Expression>>;
 type EventExpressionsForNamedRenderer = Map<NamedRenderers, AudioEventExpressions>;
@@ -135,14 +150,3 @@ type Signal = NodeRepr_t;
 type StereoSignal = { left: NodeRepr_t; right: NodeRepr_t };
 type Functionality = Function
 type RawFFT = { real: Float32Array; imag: Float32Array };
-type MainAudioStatus =
-	| 'suspended'
-	| 'loading'
-	| 'resuming'
-	| 'playing'
-	| 'paused'
-	| 'closed '
-	| 'running'
-	| 'ready'
-	| 'scrubbing'
-	| 'error';

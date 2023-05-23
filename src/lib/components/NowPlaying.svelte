@@ -1,13 +1,12 @@
 <script lang='ts'>
-	import {PlaylistMusic} from '$lib/stores/stores';
-	import {AudioMain} from '$lib/classes/Audio';
+	import {PlaylistMusic, RendererStatus} from '$lib/stores/stores';
 	import DescriptionList from './DescriptionList.svelte';
 	import { fade } from 'svelte/transition';
-	const { audioStatus } = AudioMain.stores
+	
 
 	export let show:boolean = false;
 
-	$: isPlaying = $audioStatus === 'playing';
+	$: isPlaying = $RendererStatus.music === 'playing';
 // @ts-ignore
 	$: currentTrack = $PlaylistMusic.currentTrack.title.replace('.mp3' || '.ogg', '')	
 

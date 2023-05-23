@@ -1,5 +1,5 @@
 import WebAudioRenderer from "@elemaudio/web-renderer";
-import type { NamedRenderers, Signal, StereoSignal } from "../../typeDeclarations";
+import type { RendererStatus, NamedRenderers, Signal, StereoSignal } from "../../typeDeclarations";
 import { el } from "@elemaudio/core";
 import { attenuateStereo } from "$lib/audio/AudioFunctions";
 import { SignalConstants } from "$lib/audio/Funktions";
@@ -9,12 +9,13 @@ export default class WebRendererExtended extends WebAudioRenderer {
     private _id: NamedRenderers;
     private _latestStereoRender: StereoSignal;
     private _masterVolume: number | Signal;
-
+    private _rendererStatus: RendererStatus;
 
     constructor(id: NamedRenderers) {
         super();
         this._id = id;
         this._masterVolume = 0.808;
+        this._rendererStatus = 'loading'
         this._latestStereoRender = { left: SignalConstants.ZERO, right: SignalConstants.ZERO };
     }
 
@@ -64,9 +65,15 @@ export default class WebRendererExtended extends WebAudioRenderer {
     get id(): NamedRenderers { return this._id }
     get latestStereoRender(): StereoSignal { return this._latestStereoRender }
     get masterVolume(): number | Signal { return this._masterVolume }
+    get status(): RendererStatus { return this._rendererStatus }
 
     // setters
     set latestStereoRender(stereoSignal: StereoSignal) { this._latestStereoRender = stereoSignal }
     set masterVolume(volume: number | Signal) { this._masterVolume = el.sm(volume) }
+    set status(updatedStatus: RendererStatus) {
+        this._rendererStatus = updatedStatus
+
+        console.log('Renderer ', this.id, ' status updated to ', this._rendererStatus)
+    }
 }
 

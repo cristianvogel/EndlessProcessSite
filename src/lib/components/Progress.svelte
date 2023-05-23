@@ -10,7 +10,7 @@
 		
 	let innerWidth:number;
 	let isPhone,isTablet = false;
-	let startOffset = 0;
+	let startOffset:number = 0;
 
 	$: isPhone = innerWidth < 400;
 	$: isTablet = innerWidth < 1024;
@@ -18,7 +18,6 @@
 	$: durationSecs = $PlaylistMusic.currentTrack?.duration || 0; // in seconds
 	$: samplerParams = ( command: 'start' | 'stop' ) => { return {
 			trigger: command === 'start' ? 1 : 0,
-			startOffset,
 			durationMs: durationSecs * 1000
 		}}
 	$: if (progress >= 0.99 && !$Scrubbing) {
@@ -27,7 +26,7 @@
 
 	function handleScrub(e: any) {
 		if (!$Scrubbing) return;
-		AudioMain.status = 'playing';
+		//AudioMain.status = 'playing';
 		const { clientX, target } = e;
 		const { left, width } = target.getBoundingClientRect();
 		const x = clientX - left;
@@ -48,7 +47,6 @@
 <svelte:window bind:innerWidth/>
 
 <div id="parent">
-	<div class='absolute info pt-0.5'>{Math.fround(progress * durationSecs).toPrecision(2)}</div>
 	{#if !$Scrubbing }	
 	<div in:fade >
 		<ProgressBar

@@ -1,7 +1,7 @@
 <script lang="ts">
-import eventExpressions from "$lib/audio/AudoEventExpressions";
+import eventExpressions from "$lib/audio/AudioEventExpressions";
 import { AudioMain } from "$lib/classes/Audio";
-import { CablesAudioContext, MusicCoreLoaded, SpeechCoreLoaded } from "$lib/stores/stores";
+import { CablesAudioContext, RendererStatus } from "$lib/stores/stores";
 
 
  async function initialiseAudioRenderers() {
@@ -15,7 +15,9 @@ import { CablesAudioContext, MusicCoreLoaded, SpeechCoreLoaded } from "$lib/stor
 					}
 				},
 				eventExpressions: eventExpressions.get('music')
-			});
+			}).then( () => {
+				$RendererStatus.music = 'ready';
+			})
 			await AudioMain.initialiseRenderer({
 				id:'data', 
 				ctx: $CablesAudioContext,
@@ -25,6 +27,8 @@ import { CablesAudioContext, MusicCoreLoaded, SpeechCoreLoaded } from "$lib/stor
 					}
 				},
 				eventExpressions: eventExpressions.get('data')
+			}).then( () => {
+				$RendererStatus.data = 'ready';
 			});
 			await AudioMain.initialiseRenderer({
 				id: 'speech',
@@ -36,15 +40,14 @@ import { CablesAudioContext, MusicCoreLoaded, SpeechCoreLoaded } from "$lib/stor
 					}
 				},
 				eventExpressions: eventExpressions.get('speech')
-			});
-
+			}).then( () => {
+				$RendererStatus.speech = 'ready';
+			})
 		return Promise.resolve(true)
         }
 
 function done( element: HTMLElement, answer: boolean){
 			console.log('Audio Renderers initialised?', answer)
-			$MusicCoreLoaded = true;
-			$SpeechCoreLoaded = true;
 		}
 
 </script>

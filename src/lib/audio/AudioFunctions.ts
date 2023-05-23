@@ -20,9 +20,10 @@ import { get } from 'svelte/store';
 
 
 
-const SR = get(ContextSampleRate);
+let $SR = get(ContextSampleRate);
 let $scrubbing = false;
 Scrubbing.subscribe(($s) => $scrubbing = $s);
+ContextSampleRate.subscribe(($s) => $SR = $s);
 
 /**════════════════════════════════════════════════
  * @name hannEnvelope
@@ -78,10 +79,9 @@ export function meter(signal: StereoSignal, gain: number = 20): Signal {
  */
 
 export function scrubbingSamplesPlayer(props: SamplerOptions): StereoSignal {
-
 	let { trigger = 1, rate = 1, startOffset = 0, durationMs = 0 } = props;
 	let selectTriggerSignal = $scrubbing ? 0 : 1;
-	const startOffsetSamps: number = Math.round(startOffset * durationMs * (SR / 1000));
+	const startOffsetSamps: number = Math.round(startOffset * durationMs * ($SR / 1000));
 	const scrubRate = el.sm(el.latch(el.train(50), el.rand()));
 	const scrub: Signal = el.train(el.mul(50, scrubRate)) as Signal;
 	const targetVFSPath = props.vfsPath || AudioMain.currentVFSPath;
@@ -126,8 +126,7 @@ export function driftingSamplesPlayer(props: SamplerOptions): StereoSignal {
 		startOffset = 0,
 		vfsPath,
 		monoSum = false,
-		drift = 0,
-		rendererId = 'speech' } = props;
+		drift = 0 } = props;
 
 	let kr, kl, path, rateWithDrift;
 	let left, right;
@@ -146,7 +145,7 @@ export function driftingSamplesPlayer(props: SamplerOptions): StereoSignal {
 			key: kl,
 			path,
 			mode: 'gate',
-			startOffset: startOffset * 44.1
+			startOffset: startOffset * ($SR / 1000)
 		},
 		trigger,
 		rate
@@ -160,7 +159,7 @@ export function driftingSamplesPlayer(props: SamplerOptions): StereoSignal {
 			key: kr,
 			path,
 			mode: 'gate',
-			startOffset: startOffset * 44.1
+			startOffset: startOffset * ($SR / 1000)
 		},
 		trigger,
 		rateWithDrift as number

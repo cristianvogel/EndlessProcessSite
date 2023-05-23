@@ -1,16 +1,13 @@
 <script lang="ts">
-import { AudioMain } from '$lib/classes/Audio';
 
-const { audioStatus } = AudioMain.stores
+import { RendererStatus } from '$lib/stores/stores';
 
-$: isPlaying = $audioStatus === 'playing';
+$: isPlaying = $RendererStatus.music === 'playing';
 
 const svgClass: Array<string> = [
 	"mx-auto -ml-5 hover:stroke-secondary-700",
 	"mx-auto -ml-5 hover:stroke-secondary-500 stroke-secondary-800"
 ]; 
-
-
 
 </script>
 

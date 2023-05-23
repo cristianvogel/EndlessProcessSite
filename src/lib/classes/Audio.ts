@@ -1,6 +1,5 @@
-import { derived, get, writable, type Writable } from 'svelte/store';
+import { get, writable, type Writable } from 'svelte/store';
 import type {
-	MainAudioStatus,
 	Signal,
 	AssetMetadata,
 	StructuredAssetContainer,
@@ -16,11 +15,10 @@ import {
 	PlaylistMusic,
 	Scrubbing,
 	OutputMeters,
-	MusicCoreLoaded,
+	RendererStatus,
 	VFS_PATH_PREFIX,
 	Decoded,
 	ContextSampleRate,
-	ForceAudioContextResume,
 	MusicAssetsReady,
 	EndNodes
 } from '$lib/stores/stores';
@@ -33,7 +31,6 @@ import { el, type NodeRepr_t } from '@elemaudio/core';
 
 export class MainAudioClass {
 	_renderersMap: Map<NamedRenderers, WebRendererExtended>;
-	_MainAudioStatus: Writable<MainAudioStatus>;
 	_contextIsRunning: Writable<boolean>;
 	_audioContext: Writable<AudioContext>;
 	_endNodes: Map<string, AudioNode>;
@@ -47,7 +44,6 @@ export class MainAudioClass {
 
 	constructor() {
 		this._masterVolume = writable(0.808); // default master volume
-		this._MainAudioStatus = writable('loading');
 		this._contextIsRunning = writable(false);
 		this._audioContext = writable();
 		this._renderersMap = new Map()
@@ -116,6 +112,14 @@ export class MainAudioClass {
 		console.log('initialising renderer ', id)
 		AudioMain._renderersMap.set(id, new WebRendererExtended(id));
 
+		// add any extra functionality for a 
+		// named renderer as event handlers then
+		// register them with the renderer
+		AudioMain.registerCallbacksFor(id, eventExpressions);
+
+		// ok, add listener for base AudioContext state changes
+		AudioMain.actx.addEventListener('statechange', AudioMain.stateChangeHandler);
+
 		// initialise the WASM worklet and get an AudioNode back
 		const endNode = await AudioMain.attachToRenderer(id)
 			.initialize(AudioMain.actx, {
@@ -123,7 +127,8 @@ export class MainAudioClass {
 				numberOfOutputs: 1,
 				outputChannelCount: [2]
 			}).then((node: AudioNode) => {
-				console.log('✅ initialised renderer ', AudioMain.renderThrough(id))
+				console.log('✅ initialised renderer ', id)
+				AudioMain.getRenderer(id).status = 'ready';
 				return node
 			})
 
@@ -154,39 +159,15 @@ export class MainAudioClass {
 		};
 		console.groupEnd();
 
-		// add any extra functionality for a 
-		// named renderer as event handlers then
-		// register them with the renderer
-		AudioMain.registerCallbacksFor(id, eventExpressions);
-
-		// ok, add listener for base AudioContext state changes
-		AudioMain.actx.addEventListener('statechange', AudioMain.stateChangeHandler);
-
 		// done
 		return Promise.resolve();
 	}
 
-	registerCallbacksFor(id: NamedRenderers, eventExpressions?: any) {
+	registerCallbacksFor(id: NamedRenderers, eventExpressions: any) {
 		const renderer = AudioMain.attachToRenderer(id);
-		// fires when the renderer is ready,
-		// prepares to un-suspend the AudioContext
-		renderer.on('load', () => {
-			ForceAudioContextResume.update(($f) => { $f = resumeContext; return $f });
-			console.log(`${renderer.id} loaded 🔊`)
-		});
-
-		// error reporting from the WASM module
-		renderer.on('error', function (e: unknown) {
-			console.error(`🔇 ${renderer.id} -> Error`);
-			console.groupCollapsed('Error details ▶︎');
-			console.log(e)
-			console.groupEnd();
-		});
-
 		// any audio Event-Driven functionality can be added
 		// emitted by el.snapshot, el.meter etc
 		if (eventExpressions) {
-			console.group('Adding Audio Event Expressions to', renderer.id)
 			Object.keys(eventExpressions).forEach((name: string) => {
 				const event = { name, expression: eventExpressions[name] }
 				console.log(` ╠ ${event.name}`)
@@ -194,6 +175,7 @@ export class MainAudioClass {
 			});
 			console.groupEnd();
 		};
+		console.group('Added Audio Event Expressions to', renderer)
 	}
 
 	/**
@@ -245,6 +227,7 @@ export class MainAudioClass {
 	 * which we don't want to hear as it will likely sound horrible or cause DC offset.
 	 */
 	renderDataSignal(dataSignal: Signal): void {
+		AudioMain.getRenderer('data').status = 'playing';
 		AudioMain.renderThrough('data').dataOut(el.mul(dataSignal, 0) as Signal);
 	}
 
@@ -253,7 +236,7 @@ export class MainAudioClass {
 	 * @description: Plays samples from a VFS path, with scrubbing
 	 */
 	renderMusicWithScrub(props: SamplerOptions) {
-		AudioMain.playProgressBar(props);
+		AudioMain.getRenderer('music').status = 'playing';
 		AudioMain.renderThrough('music').mainOut(
 			scrubbingSamplesPlayer(props), {
 			compressor: {
@@ -261,13 +244,14 @@ export class MainAudioClass {
 				}
 			}
 		);
+		AudioMain.renderProgressBar(props);
 	}
 
 	/**
 	 * @name playProgressBar
 	 * @description 
 	 */
-	playProgressBar(props: SamplerOptions) {
+	renderProgressBar(props: SamplerOptions) {
 		const { trigger, startOffset = 0 } = props;
 		const key = AudioMain.currentTrackTitle
 		const totalDurMs = props.durationMs || AudioMain.currentTrackDurationSeconds * 1000;
@@ -286,6 +270,7 @@ export class MainAudioClass {
 	 * @name playSpeechFromVFS
 	 */
 	playSpeechFromVFS(gate: Number = 1): void {
+		AudioMain.getRenderer('speech').status = 'playing';
 		const { vfsPath, duration = 1000 } = AudioMain._currentSpeechMetadata as AssetMetadata;
 		const phasingSpeech = driftingSamplesPlayer({
 			vfsPath,
@@ -376,7 +361,7 @@ export class MainAudioClass {
 	 * @description Main way the music starts playing, from a user interaction.
 	 */
 	unmute(): void {
-		AudioMain.status = 'playing';
+		RendererStatus.update(($s) => { $s = { ...$s, music: 'playing' }; return $s });
 		AudioMain.renderMusicWithScrub({
 			vfsPath: AudioMain.currentVFSPath,
 			trigger: 1,
@@ -386,23 +371,22 @@ export class MainAudioClass {
 
 	/**
 	 * @name pause
-	 * @description Stop sounding but keep the audio context running
-	 * , send a Mute message to Cables patch
+	 * @description Stop sounding the music renderer and update its state store.
+	 * maybe send a throttle or pause message to Cables patch?
 	 */
 	pause(pauseCables: boolean = false): void {
+		RendererStatus.update(($s) => { $s = { ...$s, music: 'paused' }; return $s });
 		// release gate on the current track
 		AudioMain.renderMusicWithScrub({
 			vfsPath: AudioMain.currentVFSPath,
 			trigger: 0,
 			durationMs: AudioMain.currentTrackDurationSeconds * 1000
 		});
-
-		AudioMain.status = 'paused';
-		if (pauseCables) AudioMain.pauseCables('pause');
+		if (pauseCables) AudioMain.pauseCables('throttle');
 	}
 
-	// todo: pause or resume Cables patch
-	pauseCables(state: 'pause' | 'resume'): void { }
+	// todo: pause,resume or throttle Cables patch
+	pauseCables(state: 'throttle' | 'pause' | 'resume'): void { }
 
 	/*--- handlers --------------------------------*/
 
@@ -414,33 +398,31 @@ export class MainAudioClass {
 		AudioMain._contextIsRunning.update(() => {
 			return AudioMain.actx.state === 'running';
 		});
-		AudioMain._MainAudioStatus.update(() => {
-			console.log('Base context state change: ', AudioMain.baseState);
-			return AudioMain.baseState;
-		});
 	};
 
 	/*---- getters  --------------------------------*/
 
 	renderThrough(id: NamedRenderers): WebRendererExtended {
-		return (AudioMain._renderersMap.get(id)) as WebRendererExtended;
+		return this.getRenderer(id);
 	}
 
 	attachToRenderer(id: NamedRenderers): WebRendererExtended {
-		return (AudioMain._renderersMap.get(id)) as WebRendererExtended;
+		return this.getRenderer(id);
+	}
+
+	getRenderer(id: NamedRenderers): WebRendererExtended {
+		return AudioMain._renderersMap.get(id) as WebRendererExtended;
 	}
 
 	get stores() {
 		// todo: refactor these to Tan-Li Hau's subsciber pattern
 		// https://www.youtube.com/watch?v=oiWgqk8zG18
 		return {
-			audioStatus: AudioMain._MainAudioStatus,
 			isRunning: AudioMain._contextIsRunning,
 			actx: AudioMain._audioContext,
 			masterVolume: AudioMain._masterVolume
 		};
 	}
-
 	get progress() {
 		return AudioMain._currentTrackMetadata?.progress || 0;
 	}
@@ -465,33 +447,19 @@ export class MainAudioClass {
 	get masterVolume(): number | NodeRepr_t {
 		return get(AudioMain._masterVolume);
 	}
-	get contextAndStatus() {
-		return derived([AudioMain._audioContext, AudioMain._MainAudioStatus], ([$audioContext, $status]) => {
-			return { context: $audioContext, status: $status };
-		});
-	}
 	get actx() {
-		return get(AudioMain.contextAndStatus).context;
+		return get(AudioMain._audioContext);
 	}
-	get status() {
-		console.log('get status', get(AudioMain._MainAudioStatus));
-		return get(AudioMain._MainAudioStatus);
-	}
-	get elemLoaded() {
-		return get(MusicCoreLoaded);
+	get baseState() {
+		return get(AudioMain._audioContext).state ?? 'suspended';
 	}
 	get isRunning(): boolean {
 		return get(AudioMain._contextIsRunning);
 	}
-	get isMuted(): boolean {
-		return AudioMain.status !== ('playing' || 'running') || !AudioMain.isRunning;
-	}
 	get endNodes(): Map<string, AudioNode> {
 		return AudioMain._endNodes;	
 	}
-	get baseState(): MainAudioStatus {
-		return AudioMain.actx.state as MainAudioStatus;
-	}
+
 
 	/*---- setters --------------------------------*/
 
@@ -504,9 +472,6 @@ export class MainAudioClass {
 	}
 	set actx(newCtx: AudioContext) {
 		AudioMain._audioContext.update(() => newCtx);
-	}
-	set status(newStatus: MainAudioStatus) {
-		AudioMain._MainAudioStatus.update(() => newStatus);
 	}
 }
 
