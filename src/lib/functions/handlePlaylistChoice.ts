@@ -28,6 +28,6 @@ export function handlePlaylistChoice(e?: any, name?: string) {
     });
 
     AudioMain.status = 'playing';
-    AudioMain.playWithScrub({ trigger: 0, startOffset: 0 });
-    AudioMain.playWithScrub({ trigger: 1, startOffset: 0 });
+    AudioMain.renderMusicWithScrub({ trigger: 0, startOffset: 0 });
+    AudioMain.renderMusicWithScrub({ trigger: 1, startOffset: 0 });
 }

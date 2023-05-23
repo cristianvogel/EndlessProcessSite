@@ -21,33 +21,23 @@ const speech = {
             return $o
         })
     },
-    fft: (e: MessageEvent) => { },
-    scope: (e: MessageEvent) => { },
-    snapshot: (e: MessageEvent) => { },
 }
 
-const silent = {
-    meter: (e: MeterEvent) => { },
-    fft: (e: MessageEvent) => { },
-    scope: (e: MessageEvent) => { },
+const control = {
     snapshot: (e: MessageEvent) => {
-        switch (e.source) {
-            case 'progress':
-                AudioMain.updateOutputLevelWith(AudioMain._renderers.get('music') as ExtendedWebRenderer, hannEnvelope(AudioMain.progress));
-                PlaylistMusic.update(($pl) => {
-                    if (!$pl.currentTrack || !e.data) return $pl;
-                    $pl.currentTrack.progress = e.data as number;
-                    return $pl
-                });
-                break
-            default:
-                console.log('silentRenderer received snapshot from source: ', e.source, e.data);
-        }
+        if (e.source === 'progress') {
+            const musicRenderer = AudioMain._renderersMap.get('music') as ExtendedWebRenderer
+            AudioMain.attenuateRendererWith(musicRenderer, hannEnvelope(AudioMain.progress));
+            PlaylistMusic.update(($pl) => {
+                $pl.currentTrack.progress = e.data as number;
+                return $pl
+            })
+        } else console.log('control renderer received snapshot from source: ', e.source, e.data);
     }
 }
 
 eventExpressions.set('music', {})
 eventExpressions.set('speech', speech)
-eventExpressions.set('silent', silent)
+eventExpressions.set('control', control)
 
 export default eventExpressions

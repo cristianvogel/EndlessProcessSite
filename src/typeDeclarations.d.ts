@@ -15,8 +15,8 @@ type AssetMetadata = {
 }
 
 interface PlaylistContainer {
-	currentTrack?: AssetMetadata;
-	currentChapter?: AssetMetadata;
+	currentTrack: AssetMetadata;
+	currentChapter: AssetMetadata;
 	audioAssetPaths: { music?: Array<string> | undefined, speech: Array<string> | undefined };
 	titles: { music: Array<string>, speech: Array<string> }
 	show?: boolean;
@@ -103,25 +103,31 @@ type ResolvedPageData = CategoryMapping<AssetCategories> & {
 }
 
 //════════╡ AudioEngine ╞═══════
-type NamedRenderers = "silent" | "music" | "speech";
-type StandardAudioEvents = "meter" | "snapshot" | "fft";
+type NamedRenderers = "data" | "music" | "speech";
+type StandardAudioEvents = "meter" | "snapshot" | "fft" | "load" | "scope";
 type Expression = (event: AudioEvent) => void;
 type AudioEventExpressions = Partial<Record<StandardAudioEvents, Expression>>;
 type EventExpressionsForNamedRenderer = Map<NamedRenderers, AudioEventExpressions>;
 interface MessageEvent { data: number, source: string }
 interface MeterEvent extends MessageEvent { min: number, max: number }
 interface AudioEvent extends MessageEvent, MeterEvent { };
-interface ExtendedWebRenderer extends WebAudioRenderer { masterBuss: StereoSignal, id: NamedRenderers };
+interface WebRendererExtended extends WebAudioRenderer {
+	masterBuss: StereoSignal,
+	id: NamedRenderers,
+	master(): void,
+};
 
-interface RendererInitialisationProps {
-	namedRenderer: NamedWebAudioRenderer,
+interface RendererInitialisation {
+	id: NamedRenderers,
 	ctx?: AudioContext,
-	options?: InitialisationOptions
-}
-interface InitialisationOptions {
-	connectTo?: { destination?: boolean, visualiser?: boolean, sidechain?: boolean, nothing?: boolean },
 	eventExpressions?: any,
+	options?: {
+		connectTo?: {
+			destination?: boolean, visualiser?: boolean, sidechain?: boolean, nothing?: boolean
+		}
+	}
 }
+
 interface stereoOut {
 	props: {};
 	stereoSignal: StereoSignal;
@@ -129,9 +135,6 @@ interface stereoOut {
 type Signal = NodeRepr_t;
 type StereoSignal = { left: NodeRepr_t; right: NodeRepr_t };
 type Functionality = Function
-type RendererIdentifiers = 'silent' | 'music' | 'speech'
-type NamedWebAudioRenderer = { id: RendererIdentifiers, renderer: ExtendedWebRenderer }
-
 type RawFFT = { real: Float32Array; imag: Float32Array };
 type MainAudioStatus =
 	| 'suspended'

@@ -64,5 +64,5 @@ export function sumLengthsOfAllArraysInVFSStore() {
 }
 
 export function getRendererForCategory(category: AssetCategories): ExtendedWebRenderer {
-    return AudioMain._renderers.get(category) as ExtendedWebRenderer
+    return AudioMain._renderersMap.get(category) as ExtendedWebRenderer
 };

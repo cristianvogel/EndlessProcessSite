@@ -18,7 +18,7 @@
 	import { fade, fly } from 'svelte/transition';
 	import { ProgressBar } from '@skeletonlabs/skeleton';
 	import type { PageData } from '../../../routes/$types';
-	import type { AssetCategories, StructuredAssetContainer } from '../../../typeDeclarations';
+	import type { AssetCategories, NamedRenderers, StructuredAssetContainer } from '../../../typeDeclarations';
 	import { ContextSampleRate, Decoded, VFS_Entries } from '$lib/stores/stores';
 	import { Utils, stripTags } from '$lib/classes/Utils';
 	import { AudioMain } from '$lib/classes/Audio';
@@ -57,7 +57,7 @@
 					const storedVFSDictionaryForCategory:Array<StructuredAssetContainer> = $VFS_Entries[key as AssetCategories];
 					try {
 						storedVFSDictionaryForCategory.forEach((entry) => {
-						AudioMain.updateVFStoRenderer(entry, getRendererForCategory(key as AssetCategories));
+						AudioMain.updateVFStoRenderer(entry, (key as NamedRenderers));
 						});
 					} catch (error) {
 						console.warn( 'Bounds reached, finishing initialisation.' )

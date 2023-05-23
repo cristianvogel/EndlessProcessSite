@@ -13,12 +13,12 @@ import type { Signal, StereoSignal } from '../../typeDeclarations';
  * @description Useful signal constants for normalised system
  */
 export const SignalConstants = {
-	one: el.const({ key: 'one', value: 1 }),
-	negativeOne: el.const({ key: 'minusOne', value: -1 }),
-	zero: el.const({ key: 'zero', value: 0 }),
-	half: el.const({ key: 'half', value: 0.5 }),
-	negativeHalf: el.const({ key: 'minusHalf', value: -0.5 }),
-	halfSR: el.mul(0.5, el.sr())
+	ONE: el.const({ key: 'one', value: 1 }),
+	MINUS_ONE: el.const({ key: 'minusOne', value: -1 }),
+	ZERO: el.const({ key: 'zero', value: 0 }),
+	HALF: el.const({ key: 'half', value: 0.5 }),
+	MINUS_HALF: el.const({ key: 'minusHalf', value: -0.5 }),
+	HALF_SR: el.mul(0.5, el.sr())
 }
 
 /** 
@@ -50,7 +50,7 @@ export function stereoizeSignal(signal: Signal): StereoSignal {
 
 /**
  * ╠══════════════════════════════════════════╣
- * @name numberToSignal
+ * @name numberToConstant
  * @description 
  * Cast a number to constant Signal
  * ╠══════════════════════════════════════════╣
@@ -158,7 +158,7 @@ export function clippedHann(
 		index: Signal | number,
 	}
 ): Signal {
-	let { key = 'clippedHann', gain = SignalConstants.one, index } = props;
+	let { key = 'clippedHann', gain = SignalConstants.ONE, index } = props;
 	index = isNode(index) ? index : resolve(numberToConstant(key, index as unknown as number))
 	return resolve(
 		clipTo01(
@@ -182,7 +182,7 @@ export function clipTo01(
 	},
 	input: Signal): Signal {
 
-	const { prescale = SignalConstants.one, fullRangeInput = false } = props;
+	const { prescale = SignalConstants.ONE, fullRangeInput = false } = props;
 	const positiveRange = fullRangeInput ? fullRangeTo01(input) as Signal : input;
 	const final = el.mul(prescale, positiveRange) as Signal;
 	return resolve(
@@ -199,7 +199,7 @@ export function clipTo01(
  */
 export function fullRangeTo01(input: Signal): Signal {
 	return resolve(
-		el.add(SignalConstants.half, el.mul(SignalConstants.half, input))
+		el.add(SignalConstants.HALF, el.mul(SignalConstants.HALF, input))
 	)
 }
 

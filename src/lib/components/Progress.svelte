@@ -33,13 +33,13 @@
 		const x = clientX - left;
 		const percent = x / width;
 		startOffset = percent
-		AudioMain.playWithScrub( {...samplerParams('stop'), startOffset} );
+		AudioMain.renderMusicWithScrub( {...samplerParams('stop'), startOffset} );
 	}
 
 	function replay() {
 		if (!$Scrubbing) return;
 		$Scrubbing = false;
-		AudioMain.playWithScrub( {...samplerParams('start'), startOffset})
+		AudioMain.renderMusicWithScrub( {...samplerParams('start'), startOffset})
 		}
 
 

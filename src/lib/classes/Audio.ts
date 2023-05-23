@@ -1,18 +1,15 @@
 import { derived, get, writable, type Writable } from 'svelte/store';
 import type {
-	StereoSignal,
 	MainAudioStatus,
 	Signal,
 	AssetMetadata,
-	NamedWebAudioRenderer,
-	RendererInitialisationProps,
 	StructuredAssetContainer,
 	SamplerOptions,
-	RendererIdentifiers,
-	ExtendedWebRenderer
+	NamedRenderers,
+	RendererInitialisation
 } from '../../typeDeclarations';
 
-import { scrubbingSamplesPlayer, bufferProgress, attenuateStereo, driftingSamplesPlayer } from '$lib/audio/AudioFunctions';
+import { scrubbingSamplesPlayer, bufferProgress, driftingSamplesPlayer } from '$lib/audio/AudioFunctions';
 import { channelExtensionFor } from '$lib/classes/Utils';
 import {
 	CablesPatch,
@@ -27,7 +24,7 @@ import {
 	MusicAssetsReady,
 	EndNodes
 } from '$lib/stores/stores';
-import WebAudioRenderer from '@elemaudio/web-renderer';
+import WebRendererExtended from '$lib/classes/WebRendererExtended';
 import { el, type NodeRepr_t } from '@elemaudio/core';
 
 
@@ -35,7 +32,7 @@ import { el, type NodeRepr_t } from '@elemaudio/core';
 // ════════╡ Music WebAudioRenderer Core ╞═══════
 
 export class MainAudioClass {
-	_renderers: Map<RendererIdentifiers, ExtendedWebRenderer>;
+	_renderersMap: Map<NamedRenderers, WebRendererExtended>;
 	_MainAudioStatus: Writable<MainAudioStatus>;
 	_contextIsRunning: Writable<boolean>;
 	_audioContext: Writable<AudioContext>;
@@ -45,21 +42,15 @@ export class MainAudioClass {
 	_currentSpeechMetadata: AssetMetadata;
 	_scrubbing: boolean;
 	_sidechain: number | Signal;
-	_masterBuss: StereoSignal
 	_assetsReady: boolean;
-	_voiceVolume: number | Signal;
+
 
 	constructor() {
 		this._masterVolume = writable(0.808); // default master volume
-		this._voiceVolume = 0.727;
 		this._MainAudioStatus = writable('loading');
 		this._contextIsRunning = writable(false);
 		this._audioContext = writable();
-		this._masterBuss = { left: 0 as unknown as Signal, right: 0 as unknown as Signal };
-		this._renderers = new Map()
-			.set('music', new WebAudioRenderer())
-			.set('silent', new WebAudioRenderer()) // rename to control...?
-			.set('speech', new WebAudioRenderer());
+		this._renderersMap = new Map()
 
 		// these here below are dynamically set from store subscriptions
 		this._endNodes = get(EndNodes) as Map<string, AudioNode>;
@@ -103,46 +94,10 @@ export class MainAudioClass {
 	● instantiate a named renderer
 	● set routing 
 	● register event driven expressions
-	@param {AudioContext} ctx 
-	@param {NamedWebAudioRenderer} namedRenderer
-	@param {RendererInitialisationProps} props 
-	@returns {Promise<void>}  could be used to report init errors...not implemented yet
-	@exampleCall
-		  await AudioMain.initialiseRenderer({
-				namedRenderer: { id:'music', renderer: AudioMain._core }, 
-				ctx: $CablesAudioContext,
-				options: {
-					connectTo: {
-						destination: true,
-						visualiser: true,
-					},
-				}
-			});
-	Example above would:
-	● initialise a WebRenderer instance identifed as 'music'
-	● store inside the Audio class as a property called _core
-	● route to the main output destination and to a visualiser
-
-	@exampleCall
-		await AudioMain.initialiseRenderer({
-			namedRenderer: { id:'silent', renderer: AudioMain._silentCore }, 
-			ctx: $CablesAudioContext,
-			options: {
-				connectTo: {
-					nothing: true,
-				},
-				eventExpressions: eventExpressions.get('silent')
-			}
-		});
-	Example above would:
-	● initialise a WebRenderer instance identifed as 'silent'
-	● store inside the Audio class as a property called _silentCore
-	● route to nothing
-	● register any audio event listeners defined in an EventExpressionsForNamedRenderer
 	*/
-	async initialiseRenderer(props: RendererInitialisationProps): Promise<void> {
-		const { namedRenderer, ctx, options = {} } = props;
-		const { connectTo, eventExpressions } = options;
+	async initialiseRenderer(props: RendererInitialisation): Promise<void> {
+		const { id, ctx, eventExpressions, options } = props;
+		const { connectTo } = options ?? { connectTo: { nothing: true } };
 
 		// first, there should only be one base AudioContext throughout the app
 		if (!AudioMain.actx && ctx?.sampleRate) {
@@ -156,16 +111,28 @@ export class MainAudioClass {
 		// set the sample rate for the app
 		ContextSampleRate.set(AudioMain.actx.sampleRate)
 
-		// initialise the named WebAudioRenderer instance 
-		const { renderer, id } = namedRenderer;
+		// instantiate a named WebAudioRenderer instance 
+		// and store it in the Map
 		console.log('initialising renderer ', id)
-		const endNode = await renderer
+		AudioMain._renderersMap.set(id, new WebRendererExtended(id));
+
+		// initialise the WASM worklet and get an AudioNode back
+		const endNode = await AudioMain.attachToRenderer(id)
 			.initialize(AudioMain.actx, {
 				numberOfInputs: 1,
 				numberOfOutputs: 1,
 				outputChannelCount: [2]
-			}).then((node: AudioNode) => { return node })
+			}).then((node: AudioNode) => {
+				console.log('✅ initialised renderer ', AudioMain.renderThrough(id))
+				return node
+			})
 
+		// update stored Map with reference to the last node of the initialised 
+		// renderer for routing from one renderer to another
+		EndNodes.update((_nodesMap) => {
+			_nodesMap.set(id, endNode);
+			return _nodesMap;
+		})
 
 		// set routing
 		console.groupCollapsed('Routing for:', id)
@@ -184,41 +151,25 @@ export class MainAudioClass {
 			} else {
 				console.log('⟤ connecting to nothing')
 			}
-		}; console.groupEnd();
-
-		// extend renderer with custom id property
-		Object.defineProperty(renderer, 'id', { value: id, writable: false });
-
-		// extend renderer with custom Master Output Buss
-		const newMasterBuss: StereoSignal = { left: 0 as unknown as Signal, right: 0 as unknown as Signal };
-		Object.defineProperty(renderer, 'masterBuss', { value: newMasterBuss, writable: true });
+		};
+		console.groupEnd();
 
 		// add any extra functionality for a 
 		// named renderer as event handlers then
 		// register them with the renderer
-		AudioMain.registerCallbacksFor({ renderer: renderer, id: id }, eventExpressions);
+		AudioMain.registerCallbacksFor(id, eventExpressions);
 
 		// ok, add listener for base AudioContext state changes
 		AudioMain.actx.addEventListener('statechange', AudioMain.stateChangeHandler);
-
-		// update the EndNodes store a reference to the last node of the initialised 
-		// renderer for further routing
-		EndNodes.update((_nodesDict) => {
-			_nodesDict.set(id, endNode);
-			return _nodesDict;
-		})
-
-		// store the renderer in the AudioMain Map
-		AudioMain._renderers.set(id, renderer);
 
 		// done
 		return Promise.resolve();
 	}
 
-	registerCallbacksFor(namedRenderer: NamedWebAudioRenderer, eventExpressions?: any) {
-		const { renderer } = namedRenderer;
-		// fires when the renderer is ready, returns 
-		// some info about the renderer
+	registerCallbacksFor(id: NamedRenderers, eventExpressions?: any) {
+		const renderer = AudioMain.attachToRenderer(id);
+		// fires when the renderer is ready,
+		// prepares to un-suspend the AudioContext
 		renderer.on('load', () => {
 			ForceAudioContextResume.update(($f) => { $f = resumeContext; return $f });
 			console.log(`${renderer.id} loaded 🔊`)
@@ -238,7 +189,7 @@ export class MainAudioClass {
 			console.group('Adding Audio Event Expressions to', renderer.id)
 			Object.keys(eventExpressions).forEach((name: string) => {
 				const event = { name, expression: eventExpressions[name] }
-				console.log(` ╠ ${event.name} -> ${event.expression}`)
+				console.log(` ╠ ${event.name}`)
 				renderer.on(event.name, event.expression);
 			});
 			console.groupEnd();
@@ -275,98 +226,62 @@ export class MainAudioClass {
 	}
 
 	/**
-	 * @name updateOutputLevelWith
+	 * @name attenuateRendererWith
 	 * @description a useful Elem render call which will scale
 	 * a renderers output level with the passed node. Useful for 
 	 * premaster level, fades etc.
 	 */
 
-	updateOutputLevelWith(renderer: ExtendedWebRenderer, node: Signal): void {
-		AudioMain.master(renderer.id, undefined, { attenuator: node });
+	attenuateRendererWith(id: NamedRenderers, node: Signal): void {
+		const renderer: WebRendererExtended = AudioMain.renderThrough(id);
+		renderer.mainOut(renderer.masterBuss, { attenuator: node });
 	};
 
-	/**
-	* @name master
-	* @description Audible Master buss
-	* Includes a stereo compressor, which is ducked by any signal routed to the sidechain   
-	* initialisation option, arriving at el.in({channel:0})
-	* @param stereoSignal optional stereo signal to render through the Master. 
-	* If passed, it is stored in the AudioMain._out buss updating whatever was patched before.
-	* @param attenuator optional attenuator signal which will smoothly scale the signal just
-	* before final output, which is hard coded to be smooth scaled by the overall master volume. 
-	* @param useExtSidechain optional boolean to use an external sidechain signal,
-	* @param bypassCompressor optional boolean to bypass the compressor
-	*/
-	master(rendererId: RendererIdentifiers,
-		stereoSignal?: StereoSignal | undefined,
-		options?: {
-			attenuator?: Signal | number | undefined,
-			compressor?: { useExtSidechain?: boolean, bypassCompressor?: boolean }
-		}): void {
-		const { attenuator, compressor } = options || {};
-		const { useExtSidechain = true, bypassCompressor = false } = compressor || {};	
 
-		let targetRenderer: ExtendedWebRenderer = AudioMain._renderers.get(rendererId) as ExtendedWebRenderer;	
-
-		if (stereoSignal) {
-			targetRenderer.masterBuss = stereoSignal;
-		} 
-		const sc = useExtSidechain ? el.in({ channel: 0 }) : targetRenderer.masterBuss.left;
-
-		const dynamics = bypassCompressor ? targetRenderer.masterBuss : {
-			left: el.compress(20, 160, -35, 90, sc, targetRenderer.masterBuss.left),
-			right: el.compress(20, 160, -35, 90, sc, targetRenderer.masterBuss.right)
-		} 
-
-		let master = attenuator ? attenuateStereo(dynamics, attenuator) : dynamics;
-		master = attenuateStereo(master, AudioMain.masterVolume)
-		const result = targetRenderer.render(master.left, master.right);
-		console.groupCollapsed('Updated graph for ', rendererId, ' ፨ ', result)
-	}
 
 	/**
-	 * @name controlRender
-	 * @description silent render of a control signal using the secondary 'silent core' WebAudioRenderer,
-	 * for rendering a signal with a side effect. For example the play progress counter, 
-	 * which emits an event _and_ an audiorate signal, which we don't want to hear as it will likely 
-	 * cause DC offset.
+	 * @name renderDataSignal
+	 * @description ideally a silent render of a control signal using a 'data' WebAudioRenderer,
+	 * Use to generate an audio rate control signal with a side effect. 
+	 * For example the play progress counter emits an event _and_ an audiorate data signal, 
+	 * which we don't want to hear as it will likely sound horrible or cause DC offset.
 	 */
-	controlRender(controlSignal: Signal): void {
-		AudioMain._renderers.get('silent')?.render(el.mul(controlSignal, 0));
+	renderDataSignal(dataSignal: Signal): void {
+		AudioMain.renderThrough('data').dataOut(el.mul(dataSignal, 0) as Signal);
 	}
 
 	/**
-	 * @name playWithScrub
+	 * @name renderMusicWithScrub
 	 * @description: Plays samples from a VFS path, with scrubbing
 	 */
-	playWithScrub(props: SamplerOptions) {
-		AudioMain.master(
-			'music', scrubbingSamplesPlayer(props),
-			{
-				compressor: { useExtSidechain: true, bypassCompressor: false }
+	renderMusicWithScrub(props: SamplerOptions) {
+		AudioMain.playProgressBar(props);
+		AudioMain.renderThrough('music').mainOut(
+			scrubbingSamplesPlayer(props), {
+			compressor: {
+				useExtSidechain: true, bypassCompressor: false
+			}
 			}
 		);
-		AudioMain.playProgressBar(props);
 	}
 
 	/**
 	 * @name playProgressBar
-	 * @description todo
+	 * @description 
 	 */
 	playProgressBar(props: SamplerOptions) {
 		const { trigger, startOffset } = props;
 		const key = AudioMain.currentTrackTitle
 		const totalDurMs = props.durationMs || AudioMain.currentTrackDurationSeconds * 1000;
 
-		const progressSignal = bufferProgress({
+		const progress = bufferProgress({
 			key,
 			totalDurMs,
 			run: trigger as number,
 			updateInterval: 10,
 			startOffset
 		})
-
-		AudioMain.controlRender(progressSignal);
+		AudioMain.renderDataSignal(progress);
 	}
 
 	/**
@@ -384,11 +299,12 @@ export class MainAudioClass {
 				durationMs: duration,
 				rendererId: 'speech'
 			});
-		console.log('speech -> ', vfsPath);
+		console.log('speech playing from -> ', vfsPath);
 
-		AudioMain.master('speech',
+		AudioMain.renderThrough('speech').mainOut(
 			{ left: el.meter(phasingSpeech.left), right: phasingSpeech.right },
-			{ attenuator: AudioMain._voiceVolume, compressor: { bypassCompressor: true } });
+			{ compressor: { bypassCompressor: true } }
+		);
 	}
 
 
@@ -408,7 +324,7 @@ export class MainAudioClass {
 
 	async updateVFStoRenderer(
 		container: StructuredAssetContainer,
-		renderer: ExtendedWebRenderer
+		id: NamedRenderers
 	) {
 		// decoder
 		AudioMain.decodeRawBuffer(container).then((data) => {
@@ -417,11 +333,14 @@ export class MainAudioClass {
 				console.warn('Decoding skipped.');
 				return;
 			}
+
+			const renderer = AudioMain.attachToRenderer(id);
 			// adds a channel extension, starts at 1 (not 0)
 			for (let i = 0; i < decoded.numberOfChannels; i++) {
 				const vfsKey = get(VFS_PATH_PREFIX) + title + channelExtensionFor(i + 1);
 				const vfsDictionaryEntry = { [vfsKey]: decoded.getChannelData(i) };
-				renderer.updateVirtualFileSystem(vfsDictionaryEntry);
+				console.log('VFS updated with -> ', vfsKey + ' -> ', renderer.id);
+				AudioMain.attachToRenderer(id).updateVirtualFileSystem(vfsDictionaryEntry);
 			}
 			// update the DurationElement in the playlist store Map
 			PlaylistMusic.update(($plist) => {
@@ -463,7 +382,7 @@ export class MainAudioClass {
 	 */
 	unmute(): void {
 		AudioMain.status = 'playing';
-		AudioMain.playWithScrub({
+		AudioMain.renderMusicWithScrub({
 			vfsPath: AudioMain.currentVFSPath,
 			trigger: 1,
 			durationMs: AudioMain.currentTrackDurationSeconds * 1000
@@ -477,7 +396,7 @@ export class MainAudioClass {
 	 */
 	pause(pauseCables: boolean = false): void {
 		// release gate on the current track
-		AudioMain.playWithScrub({
+		AudioMain.renderMusicWithScrub({
 			vfsPath: AudioMain.currentVFSPath,
 			trigger: 0,
 			durationMs: AudioMain.currentTrackDurationSeconds * 1000
@@ -507,6 +426,15 @@ export class MainAudioClass {
 	};
 
 	/*---- getters  --------------------------------*/
+
+	renderThrough(id: NamedRenderers): WebRendererExtended {
+		return (AudioMain._renderersMap.get(id)) as WebRendererExtended;
+	}
+
+	attachToRenderer(id: NamedRenderers): WebRendererExtended {
+		return (AudioMain._renderersMap.get(id)) as WebRendererExtended;
+	}
+
 	get stores() {
 		// todo: refactor these to Tan-Li Hau's subsciber pattern
 		// https://www.youtube.com/watch?v=oiWgqk8zG18
@@ -517,6 +445,7 @@ export class MainAudioClass {
 			masterVolume: AudioMain._masterVolume
 		};
 	}
+
 	get progress() {
 		return AudioMain._currentTrackMetadata?.progress || 0;
 	}

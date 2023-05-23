@@ -2,51 +2,41 @@
 import eventExpressions from "$lib/audio/AudoEventExpressions";
 import { AudioMain } from "$lib/classes/Audio";
 import { CablesAudioContext, MusicCoreLoaded, SpeechCoreLoaded } from "$lib/stores/stores";
-import WebAudioRenderer from "@elemaudio/web-renderer";
-import type { ExtendedWebRenderer } from "../../../typeDeclarations";
+
 
  async function initialiseAudioRenderers() {
 			await AudioMain.initialiseRenderer({
-				namedRenderer: { 
-					id:'music', 
-					renderer: new WebAudioRenderer() as ExtendedWebRenderer
-				}, 
+				id:'music', 
 				ctx: $CablesAudioContext,
 				options: {
 					connectTo: {
 						destination: true,
 						visualiser: true,
-					},
-					eventExpressions: eventExpressions.get('music')
-				}
+					}
+				},
+				eventExpressions: eventExpressions.get('music')
 			});
 			await AudioMain.initialiseRenderer({
-				namedRenderer: { 
-					id:'silent', 
-					renderer: new WebAudioRenderer() as ExtendedWebRenderer
-				}, 
+				id:'data', 
 				ctx: $CablesAudioContext,
 				options: {
 					connectTo: {
 						nothing: true
-					},
-					eventExpressions: eventExpressions.get('silent')
-				}
+					}
+				},
+				eventExpressions: eventExpressions.get('data')
 			});
 			await AudioMain.initialiseRenderer({
-				namedRenderer: {
 				id: 'speech',
-				renderer: new WebAudioRenderer() as ExtendedWebRenderer
-			},
-			ctx: $CablesAudioContext,
-			options: {
-				connectTo: { 
-					sidechain: true, 
-					destination: true 
+				ctx: $CablesAudioContext,
+				options: {
+					connectTo: { 
+						sidechain: true, 
+						destination: true 
+					}
 				},
 				eventExpressions: eventExpressions.get('speech')
-			}
-		});
+			});
 
 		return Promise.resolve(true)
         }
