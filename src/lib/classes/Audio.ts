@@ -234,7 +234,7 @@ export class MainAudioClass {
 
 	attenuateRendererWith(id: NamedRenderers, node: Signal): void {
 		const renderer: WebRendererExtended = AudioMain.renderThrough(id);
-		renderer.mainOut(renderer.masterBuss, { attenuator: node });
+		renderer.mainOut(undefined, { attenuator: node });
 	};
 
 	/**
@@ -258,7 +258,7 @@ export class MainAudioClass {
 			scrubbingSamplesPlayer(props), {
 			compressor: {
 				useExtSidechain: true, bypassCompressor: false
-			}
+				}
 			}
 		);
 	}

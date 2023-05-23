@@ -7,7 +7,7 @@ import { SignalConstants } from "$lib/audio/Funktions";
 export default class WebRendererExtended extends WebAudioRenderer {
 
     private _id: NamedRenderers;
-    private _masterBuss: StereoSignal;
+    private _latestStereoRender: StereoSignal;
     private _masterVolume: number | Signal;
 
 
@@ -15,11 +15,11 @@ export default class WebRendererExtended extends WebAudioRenderer {
         super();
         this._id = id;
         this._masterVolume = 0.808;
-        this._masterBuss = { left: SignalConstants.ZERO, right: SignalConstants.ZERO };
+        this._latestStereoRender = { left: SignalConstants.ZERO, right: SignalConstants.ZERO };
     }
 
     /**
-    * @name master
+    * @name mainOut
     * @description Audible Master buss
     * Includes a stereo compressor, which is ducked by any signal routed to the sidechain   
     * initialisation option, arriving at el.in({channel:0})
@@ -36,36 +36,37 @@ export default class WebRendererExtended extends WebAudioRenderer {
             compressor?: { useExtSidechain?: boolean, bypassCompressor?: boolean }
         }): void {
         const { attenuator, compressor } = options || {};
-        const { useExtSidechain = false, bypassCompressor = true } = compressor || {};;
+        const { useExtSidechain = true, bypassCompressor = false } = compressor || {};;   
 
         if (stereoSignal) {
-            this.masterBuss = stereoSignal;
+            this.latestStereoRender = stereoSignal;
         }
-        const sc = useExtSidechain ? el.in({ channel: 0 }) : el.mul(0.5, this.masterBuss.left);
+        const sc = useExtSidechain ? el.in({ channel: 0 }) : 0
 
-        const dynamics = bypassCompressor ? this.masterBuss : {
-            left: el.compress(20, 160, -35, 90, sc, this.masterBuss.left),
-            right: el.compress(20, 160, -35, 90, sc, this.masterBuss.right)
+        const dynamics = bypassCompressor ? this.latestStereoRender : {
+            left: el.compress(20, 160, -35, 90, sc, this.latestStereoRender.left),
+            right: el.compress(20, 160, -35, 90, sc, this.latestStereoRender.right)
         }
 
-        this.masterBuss = attenuator ? attenuateStereo(dynamics, attenuator) : dynamics;
-        this.masterBuss = attenuateStereo(this.masterBuss, this.masterVolume)
-        const result = this.render(this.masterBuss.left, this.masterBuss.right);
-        console.groupCollapsed('Updated graph for ', this.id, ' ፨ ', result)
+        let final = attenuator ? attenuateStereo(dynamics, attenuator) : dynamics;
+        final = attenuateStereo(final, this.masterVolume)
+        const result = this.render(final.left, final.right)
+        //console.log('Updated mainOut graph for ', this.id, ' ፨ '); console.log(result);
     }
 
     dataOut(signal: Signal): void {
-        this.render(signal)
+        const result = this.render(signal)
+        //console.groupCollapsed('Updated dataOut graph for ', this.id, ' ፨ '); console.log(result); console.groupEnd()
     }
 
 
     /// getters
     get id(): NamedRenderers { return this._id }
-    get masterBuss(): StereoSignal { return this._masterBuss }
+    get latestStereoRender(): StereoSignal { return this._latestStereoRender }
     get masterVolume(): number | Signal { return this._masterVolume }
 
     // setters
-    set masterBuss(stereoSignal: StereoSignal) { this._masterBuss = stereoSignal }
+    set latestStereoRender(stereoSignal: StereoSignal) { this._latestStereoRender = stereoSignal }
     set masterVolume(volume: number | Signal) { this._masterVolume = el.sm(volume) }
 }
 
