@@ -13,8 +13,8 @@
 import { AudioMain } from '$lib/classes/Audio';
 import { el } from '@elemaudio/core';
 import { channelExtensionFor, clipTo0 } from '$lib/classes/Utils';
-import { attenuate, clippedHann, progress } from '$lib/audio/Funktions';
-import type { StereoSignal, SamplerOptions, ProgressOptions, Signal } from '../../typeDeclarations';
+import { attenuate, clippedHann } from '$lib/audio/Funktions';
+import type { StereoSignal, SamplerOptions, Signal } from '../../typeDeclarations';
 import { ContextSampleRate, RendererStatus } from '$lib/stores/stores';
 import { get } from 'svelte/store';
 
@@ -52,15 +52,15 @@ export function attenuateStereo(signal: StereoSignal, level: Signal | number, ke
 	}
 }
 
-/**════════════════════════════════════════════════
- * @name bufferProgress
- * @description Buffer progress as audio rate signal
- * ════════════════════════════════════════════════
- */
+// /**════════════════════════════════════════════════
+//  * @name bufferProgress
+//  * @description Buffer progress as audio rate signal
+//  * ════════════════════════════════════════════════
+//  */
 
-export function bufferProgress(props: ProgressOptions): Signal {
-	return progress(props);
-}
+// export function bufferProgress(props: ProgressOptions): Signal {
+// 	return progress(props);
+// }
 
 /**════════════════════════════════════════════════
  * @name meter

@@ -9,7 +9,7 @@ import type {
 	RendererStatus
 } from '../../typeDeclarations';
 
-import { scrubbingSamplesPlayer, bufferProgress, driftingSamplesPlayer } from '$lib/audio/AudioFunctions';
+import { scrubbingSamplesPlayer, driftingSamplesPlayer } from '$lib/audio/AudioFunctions';
 import { channelExtensionFor } from '$lib/classes/Utils';
 import {
 	CablesPatch,
@@ -24,6 +24,7 @@ import {
 } from '$lib/stores/stores';
 import WebRendererExtended from '$lib/classes/WebRendererExtended';
 import { el, type NodeRepr_t } from '@elemaudio/core';
+import { progress } from '$lib/audio/Funktions';
 
 
 
@@ -228,7 +229,7 @@ export class MainAudioClass {
 	 */
 	renderDataSignal(dataSignal: Signal): void {
 		AudioMain.updateRendererState('data', 'playing');
-		AudioMain.renderThrough('data').dataOut(el.mul(dataSignal, 0) as Signal);
+		AudioMain.renderThrough('data').dataOut(dataSignal);
 	}
 
 	/**
@@ -238,7 +239,8 @@ export class MainAudioClass {
 	renderMusicWithScrub(props: SamplerOptions) {
 		const isScrubbing = AudioMain.getRendererState('music') === 'scrubbing';
 		// keep music play state handler here
-		AudioMain.updateRendererState('music', isScrubbing ? 'scrubbing' : props.trigger as number === 0 ? 'paused' : 'playing')
+		const state = isScrubbing ? 'scrubbing' : props.trigger as number === 0 ? 'paused' : 'playing'
+		AudioMain.updateRendererState('music', state)
 		// render the scrubbable music player, full bhuna
 		AudioMain.renderThrough('music').mainOut(
 			scrubbingSamplesPlayer(props), {
@@ -247,25 +249,24 @@ export class MainAudioClass {
 				}
 			}
 		);
-		AudioMain.renderProgressBar(props);
+		AudioMain.renderProgressBar({ ...props, run: props.trigger as number });
 	}
 
 	/**
 	 * @name playProgressBar
 	 * @description 
 	 */
-	renderProgressBar(props: SamplerOptions) {
-		const { trigger, startOffset = 0 } = props;
+	renderProgressBar(props: SamplerOptions & { run: number }) {
+		const { run, startOffset } = props;
 		const key = AudioMain.currentTrackTitle
 		const totalDurMs = props.durationMs || AudioMain.currentTrackDurationSeconds * 1000;
-		const progress = bufferProgress({
+		const progressSignal: Signal = progress({
 			key,
 			totalDurMs,
-			run: trigger as number,
-			updateInterval: 10,
+			run,
 			startOffset
 		})
-		AudioMain.renderDataSignal(progress);
+		AudioMain.renderDataSignal(progressSignal);
 	}
 
 	/**

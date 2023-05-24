@@ -62,6 +62,17 @@ export function numberToConstant(key: string, value: number): Signal {
 	return el.const({ key, value: value });
 }
 
+/**
+ * ╠═══
+ * @name sumToMono
+ * @description
+ * Sum a StereoSignal to a Mono Signal
+ * ╠═══
+ */
+
+export function sumToMono(signal: StereoSignal): Signal {
+	return resolve(el.add(el.mul(0.5, signal.left), el.mul(0.5, signal.right)));
+}
 
 /**
  * ╠══════════════════════════════════════════╣
@@ -104,8 +115,8 @@ export function attenuate(
  * it with a secondary Elementary core, which is not 
  * connected to the audio output, and then use the snapshot 
  * to drive a UI progress bar or anything else code wise. 
- * The advantage of this approach is that the progress signal 
- * can be further modified or controlled by signal processing.
+ * The advantage of this approach is that the progress data 
+ * can be further modified or debounced by signal processing.
  * ╠══════════════════════════════════════════╣
  * @param props { run, totalDurMs, rate, startOffset }
  * @param run [ signal or number ] :: run or pause the counter
@@ -120,12 +131,12 @@ export function progress(props: {
 	key?: string;
 	totalDurMs?: number;
 	run: Signal | number;
-	rate?: number;
+	updateRate?: number;
 	startOffset?: number;
 }): Signal {
 	let { run,
 		totalDurMs = 0,
-		rate = 1000,
+		updateRate: rate = 1000,
 		startOffset,
 		key = 'progress'
 	} = props;
@@ -135,7 +146,7 @@ export function progress(props: {
 	let pausingRateSignal = el.mul(run, el.const({ key: key + '_rate', value: freqHz }))
 	const reset = pausingRateSignal
 
-	let progress = el.add(el.phasor(pausingRateSignal, reset), el.sm(numberToConstant('startOffset', startOffset as number)));
+	let progress = el.add(el.phasor(pausingRateSignal, reset), el.sm(numberToConstant('s_o', startOffset as number)));
 	let trig = el.train(el.mul(rate, run))
 	return (
 		el.snapshot({ key, name: 'progress' }, trig, progress)

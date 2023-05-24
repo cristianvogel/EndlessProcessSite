@@ -35,17 +35,16 @@
 			<hr class="!border-t-4 !border-double" />
 		{/if}
 		{#if !postView && !blogPostsView }
-			
-			{#if !hide }			
+			{#if !ready }			
 				<h2 class="gradient-text" >
 				<div out:fade>{lofiAnim}</div>	
 				</h2>
-				{:else}			
+			{/if}
+			{#if ready}
 				<h2 class="gradient-text" >	
 				<div in:fly={{ y:-200, duration: 500}}>Welcome.</div>
 				</h2>
-			{/if}
-			
+			{/if}		
 			<a href='/blog' data-sveltekit-noscroll>
 	  		<Icon src={CaretSortDown} 
 			class="h-8 animate-pulse"/>

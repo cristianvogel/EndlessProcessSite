@@ -1,8 +1,8 @@
 import WebAudioRenderer from "@elemaudio/web-renderer";
 import type { RendererStatus, NamedRenderers, Signal, StereoSignal } from "../../typeDeclarations";
-import { el } from "@elemaudio/core";
+import { el, resolve } from "@elemaudio/core";
 import { attenuateStereo } from "$lib/audio/AudioFunctions";
-import { SignalConstants } from "$lib/audio/Funktions";
+import { SignalConstants, sumToMono } from "$lib/audio/Funktions";
 
 export default class WebRendererExtended extends WebAudioRenderer {
 
@@ -36,6 +36,8 @@ export default class WebRendererExtended extends WebAudioRenderer {
             attenuator?: Signal | number | undefined,
             compressor?: { useExtSidechain?: boolean, bypassCompressor?: boolean }
         }): void {
+
+        if (this.id === 'data') { this.dataOut(sumToMono(stereoSignal as StereoSignal)) } 
         const { attenuator, compressor } = options || {};
         const { useExtSidechain = true, bypassCompressor = false } = compressor || {};;   
 
@@ -52,12 +54,13 @@ export default class WebRendererExtended extends WebAudioRenderer {
         let final = attenuator ? attenuateStereo(dynamics, attenuator) : dynamics;
         final = attenuateStereo(final, this.masterVolume)
         const result = this.render(final.left, final.right)
-        //console.log('Updated mainOut graph for ', this.id, ' ፨ '); console.log(result);
+        //console.log('Updated mainOut for ', this.id, ' ፨ '); console.log(result);
     }
 
     dataOut(signal: Signal): void {
+
         const result = this.render(signal)
-        //console.groupCollapsed('Updated dataOut graph for ', this.id, ' ፨ '); console.log(result); console.groupEnd()
+        console.group('Updated dataOut in ', this.id, ' ፨ '); console.log(result); console.groupEnd()
     }
 
 

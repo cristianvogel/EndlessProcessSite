@@ -76,7 +76,7 @@
 </script>
 
 {#if !hide}
-<span class="timer"> {ready ? 'Done.    ' : 'Loading.'} {lofiAnim} </span>
+<span class="timer"> {ready ? 'Done ' : 'Currently '} accessing network. </span>
    <ul>
 	<div class="fileinfo"  in:fade>
 		{#await metadata.streamedMetaData.MPEGs}
@@ -89,7 +89,7 @@
 			{@const headers = setHeadersFor(updatedCategory) }
 			{#await fetch( edge.node.mediaItemUrl, { method: 'GET', headers} )}
 					{#if index === 0}
-					   {lofiAnim}
+					   <i class='info'>Experiencing network problems, please wait or reload.</i>
 					{/if}
 				{:then responseObject}
 					{#await responseObject.arrayBuffer()}
