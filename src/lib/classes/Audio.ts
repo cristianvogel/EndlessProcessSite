@@ -5,7 +5,8 @@ import type {
 	StructuredAssetContainer,
 	SamplerOptions,
 	NamedRenderers,
-	RendererInitialisation
+	RendererInitialisation,
+	RendererStatus
 } from '../../typeDeclarations';
 
 import { scrubbingSamplesPlayer, bufferProgress, driftingSamplesPlayer } from '$lib/audio/AudioFunctions';
@@ -13,9 +14,8 @@ import { channelExtensionFor } from '$lib/classes/Utils';
 import {
 	CablesPatch,
 	PlaylistMusic,
-	Scrubbing,
 	OutputMeters,
-	RendererStatus,
+	RendererStatus as $RendererStatus,
 	VFS_PATH_PREFIX,
 	Decoded,
 	ContextSampleRate,
@@ -52,7 +52,7 @@ export class MainAudioClass {
 		this._endNodes = get(EndNodes) as Map<string, AudioNode>;
 		this._currentTrackMetadata = get(PlaylistMusic).currentTrack as AssetMetadata;
 		this._currentSpeechMetadata = get(PlaylistMusic).currentChapter as AssetMetadata;
-		this._scrubbing = get(Scrubbing) as boolean;
+		this._scrubbing = false;
 		this._assetsReady = get(MusicAssetsReady) as boolean;
 		this._sidechain = el.sm(0) as Signal;
 		this.subscribeToStores();
@@ -76,8 +76,8 @@ export class MainAudioClass {
 			this._currentTrackMetadata = $p.currentTrack as AssetMetadata;
 			this._currentSpeechMetadata = $p.currentChapter as AssetMetadata;
 		});
-		Scrubbing.subscribe(($scrubbing) => {
-			this._scrubbing = $scrubbing;
+		$RendererStatus.subscribe(($scrubbing) => {
+			this._scrubbing = Object.values($scrubbing).includes('scrubbing') 
 		});
 		OutputMeters.subscribe(($meters) => {
 			this._sidechain = el.sm($meters.SpeechAudible as number) as Signal;
@@ -128,7 +128,7 @@ export class MainAudioClass {
 				outputChannelCount: [2]
 			}).then((node: AudioNode) => {
 				console.log('✅ initialised renderer ', id)
-				AudioMain.getRenderer(id).status = 'ready';
+				$RendererStatus.update(($s) => { $s[id] = 'ready'; return $s }) 
 				return node
 			})
 
@@ -227,7 +227,7 @@ export class MainAudioClass {
 	 * which we don't want to hear as it will likely sound horrible or cause DC offset.
 	 */
 	renderDataSignal(dataSignal: Signal): void {
-		AudioMain.getRenderer('data').status = 'playing';
+		AudioMain.updateRendererState('data', 'playing');
 		AudioMain.renderThrough('data').dataOut(el.mul(dataSignal, 0) as Signal);
 	}
 
@@ -236,7 +236,10 @@ export class MainAudioClass {
 	 * @description: Plays samples from a VFS path, with scrubbing
 	 */
 	renderMusicWithScrub(props: SamplerOptions) {
-		AudioMain.getRenderer('music').status = 'playing';
+		const isScrubbing = AudioMain.getRendererState('music') === 'scrubbing';
+		// keep music play state handler here
+		AudioMain.updateRendererState('music', isScrubbing ? 'scrubbing' : props.trigger as number === 0 ? 'paused' : 'playing')
+		// render the scrubbable music player, full bhuna
 		AudioMain.renderThrough('music').mainOut(
 			scrubbingSamplesPlayer(props), {
 			compressor: {
@@ -269,8 +272,9 @@ export class MainAudioClass {
 	/**
 	 * @name playSpeechFromVFS
 	 */
-	playSpeechFromVFS(gate: Number = 1): void {
-		AudioMain.getRenderer('speech').status = 'playing';
+	playSpeechFromVFS(gate: number = 1): void {
+
+		this.updateRendererState('speech', (gate as number < 1) ? 'playing' : 'paused');
 		const { vfsPath, duration = 1000 } = AudioMain._currentSpeechMetadata as AssetMetadata;
 		const phasingSpeech = driftingSamplesPlayer({
 			vfsPath,
@@ -361,7 +365,6 @@ export class MainAudioClass {
 	 * @description Main way the music starts playing, from a user interaction.
 	 */
 	unmute(): void {
-		RendererStatus.update(($s) => { $s = { ...$s, music: 'playing' }; return $s });
 		AudioMain.renderMusicWithScrub({
 			vfsPath: AudioMain.currentVFSPath,
 			trigger: 1,
@@ -375,7 +378,6 @@ export class MainAudioClass {
 	 * maybe send a throttle or pause message to Cables patch?
 	 */
 	pause(pauseCables: boolean = false): void {
-		RendererStatus.update(($s) => { $s = { ...$s, music: 'paused' }; return $s });
 		// release gate on the current track
 		AudioMain.renderMusicWithScrub({
 			vfsPath: AudioMain.currentVFSPath,
@@ -405,15 +407,15 @@ export class MainAudioClass {
 	renderThrough(id: NamedRenderers): WebRendererExtended {
 		return this.getRenderer(id);
 	}
-
 	attachToRenderer(id: NamedRenderers): WebRendererExtended {
 		return this.getRenderer(id);
 	}
-
 	getRenderer(id: NamedRenderers): WebRendererExtended {
 		return AudioMain._renderersMap.get(id) as WebRendererExtended;
 	}
-
+	getRendererState(id: NamedRenderers): RendererStatus {
+		return get($RendererStatus)[id];
+	}
 	get stores() {
 		// todo: refactor these to Tan-Li Hau's subsciber pattern
 		// https://www.youtube.com/watch?v=oiWgqk8zG18
@@ -463,6 +465,9 @@ export class MainAudioClass {
 
 	/*---- setters --------------------------------*/
 
+	updateRendererState(id: NamedRenderers, status: RendererStatus) {
+		$RendererStatus.update(($s) => { $s[id] = status; return $s })
+	}
 	set progress(newProgress: number) {
 		if (!newProgress) return;
 		AudioMain._currentTrackMetadata = { ...AudioMain._currentTrackMetadata, progress: newProgress };

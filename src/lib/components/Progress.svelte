@@ -2,7 +2,7 @@
 	import { PlaylistMusic } from '$lib/stores/stores';
 	import { AudioMain } from '$lib/classes/Audio';
 	import { ProgressBar } from '@skeletonlabs/skeleton';
-	import { Scrubbing } from '$lib/stores/stores';
+	import { RendererStatus } from '$lib/stores/stores';
 	import { createEventDispatcher } from 'svelte';
 	import { fade } from 'svelte/transition';
 
@@ -12,6 +12,7 @@
 	let isPhone,isTablet = false;
 	let startOffset:number = 0;
 
+	$: musicScrubbing = $RendererStatus.music === 'scrubbing';
 	$: isPhone = innerWidth < 400;
 	$: isTablet = innerWidth < 1024;
 	$: progress = Math.fround($PlaylistMusic.currentTrack?.progress as number) ;
@@ -20,13 +21,12 @@
 			trigger: command === 'start' ? 1 : 0,
 			durationMs: durationSecs * 1000
 		}}
-	$: if (progress >= 0.99 && !$Scrubbing) {
+	$: if (progress >= 0.99 && !musicScrubbing) {
 		dispatch('cueNext', $PlaylistMusic.currentTrack?.title);
 	}
 
 	function handleScrub(e: any) {
-		if (!$Scrubbing) return;
-		//AudioMain.status = 'playing';
+		if (!musicScrubbing) return;
 		const { clientX, target } = e;
 		const { left, width } = target.getBoundingClientRect();
 		const x = clientX - left;
@@ -36,8 +36,8 @@
 	}
 
 	function replay() {
-		if (!$Scrubbing) return;
-		$Scrubbing = false;
+		if (!musicScrubbing) return;
+		$RendererStatus.music = 'playing';
 		AudioMain.renderMusicWithScrub( {...samplerParams('start'), startOffset})
 		}
 
@@ -47,7 +47,7 @@
 <svelte:window bind:innerWidth/>
 
 <div id="parent">
-	{#if !$Scrubbing }	
+	{#if !musicScrubbing }	
 	<div in:fade >
 		<ProgressBar
 			label="Progress Bar"
@@ -73,18 +73,14 @@
 	</div>
 	{/if}
 	<!-- svelte-ignore a11y-click-events-have-key-events -->
-	<div
-		
-		id="invisible-div"
+	<div id="invisible-div"
 		on:mousedown|preventDefault|stopPropagation={(e) => {
-			$Scrubbing = true;
+			$RendererStatus.music = 'scrubbing';
 			handleScrub(e);
 		}}
-
 		on:mousemove|preventDefault={handleScrub}
 		on:mouseup={replay}
 		on:mouseleave={replay}  
-		
 	/>
 </div>
 

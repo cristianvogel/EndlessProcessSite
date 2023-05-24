@@ -27,7 +27,6 @@ export function handlePlaylistChoice(e?: any, name?: string) {
         return $pl;
     });
 
-    AudioMain.status = 'playing';
     AudioMain.renderMusicWithScrub({ trigger: 0, startOffset: 0 });
     AudioMain.renderMusicWithScrub({ trigger: 1, startOffset: 0 });
 }

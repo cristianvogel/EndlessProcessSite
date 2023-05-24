@@ -15,14 +15,14 @@ import { el } from '@elemaudio/core';
 import { channelExtensionFor, clipTo0 } from '$lib/classes/Utils';
 import { attenuate, clippedHann, progress } from '$lib/audio/Funktions';
 import type { StereoSignal, SamplerOptions, ProgressOptions, Signal } from '../../typeDeclarations';
-import { ContextSampleRate, Scrubbing } from '$lib/stores/stores';
+import { ContextSampleRate, RendererStatus } from '$lib/stores/stores';
 import { get } from 'svelte/store';
 
 
 
 let $SR = get(ContextSampleRate);
-let $scrubbing = false;
-Scrubbing.subscribe(($s) => $scrubbing = $s);
+let musicScrubbing = false;
+RendererStatus.subscribe(($s) => musicScrubbing = $s.music === 'scrubbing');
 ContextSampleRate.subscribe(($s) => $SR = $s);
 
 /**════════════════════════════════════════════════
@@ -80,7 +80,7 @@ export function meter(signal: StereoSignal, gain: number = 20): Signal {
 
 export function scrubbingSamplesPlayer(props: SamplerOptions): StereoSignal {
 	let { trigger = 1, rate = 1, startOffset = 0, durationMs = 0 } = props;
-	let selectTriggerSignal = $scrubbing ? 0 : 1;
+	let selectTriggerSignal = musicScrubbing ? 0 : 1;
 	const startOffsetSamps: number = Math.round(startOffset * durationMs * ($SR / 1000));
 	const scrubRate = el.sm(el.latch(el.train(50), el.rand()));
 	const scrub: Signal = el.train(el.mul(50, scrubRate)) as Signal;

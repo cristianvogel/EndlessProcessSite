@@ -8,7 +8,6 @@
     import { VFS_PATH_PREFIX, OutputMeters, PlaylistMusic } from '$lib/stores/stores';
     import { tweened } from 'svelte/motion';
 	import {  bounceInOut } from 'svelte/easing';
-	import type { ExtendedWebRenderer } from '../../../typeDeclarations';
 	import { AudioMain } from '$lib/classes/Audio';
 
     let activated: boolean = false;

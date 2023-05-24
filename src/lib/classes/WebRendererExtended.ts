@@ -72,7 +72,6 @@ export default class WebRendererExtended extends WebAudioRenderer {
     set masterVolume(volume: number | Signal) { this._masterVolume = el.sm(volume) }
     set status(updatedStatus: RendererStatus) {
         this._rendererStatus = updatedStatus
-
         console.log('Renderer ', this.id, ' status updated to ', this._rendererStatus)
     }
 }
