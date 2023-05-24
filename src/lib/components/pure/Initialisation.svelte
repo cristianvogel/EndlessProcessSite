@@ -47,7 +47,7 @@ import { CablesAudioContext, RendererStatus } from "$lib/stores/stores";
         }
 
 function done( element: HTMLElement, answer: boolean){
-			console.log('Audio Renderers initialised?', answer)
+			//console.log('Audio Renderers initialised?', answer)
 		}
 
 </script>

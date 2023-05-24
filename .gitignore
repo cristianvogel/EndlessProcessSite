@@ -3,6 +3,9 @@ node_modules
 .vercel
 .vscode
 .eslintrc.cjs
+.eslintignore
+.npmrc
+.package-lock.json
 .prettierignore
 .prettierrc
 .DS_Store

@@ -19,7 +19,7 @@
 	import type { PageData } from '../../../routes/$types';
 	import type { AssetCategories, NamedRenderers, StructuredAssetContainer } from '../../../typeDeclarations';
 	import { ContextSampleRate, Decoded, VFS_Entries } from '$lib/stores/stores';
-	import { Utils, stripTags } from '$lib/classes/Utils';
+	import { stripTags } from '$lib/classes/Utils';
 	import { AudioMain } from '$lib/classes/Audio';
 	import { assign, sumLengthsOfAllArraysInVFSStore as VFS_Entries_Checksum } from '$lib/classes/Assets';
 
@@ -122,8 +122,8 @@
 <style>
 	.fileinfo {
 		position: absolute;
-		top: 50%;
-		left: 33%;
+		top: 8em;
+		left: 1em;
 	}
 
 	.timer {

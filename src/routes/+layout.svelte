@@ -12,14 +12,14 @@
 	import EndProcAppBar from '$lib/components/EndProcAppBar.svelte';
 	import SplashPage from '$lib/components/SplashPage.svelte';
 	import PageFooter from '$lib/components/Footer.svelte';
-	import CanvasBody from '$lib/components/CanvasBody.svelte';
+	import CanvasBody from '$lib/components/layout/CanvasBody.svelte';
 
 	$: spin = false;
 
 	/**
 	 * @name cablesScroller
 	 * @description
-	 * a cool interactive effect for the Cables canvas
+	 * interactive effect for the Cables canvas
 	 * triggers a spin animation on page scrolling
 	*/
 	function cablesScroller() {

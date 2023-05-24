@@ -2,7 +2,7 @@
 	import { Icon } from '@steeze-ui/svelte-icon';
 	import { PauseOutline, PlayOutline, QueryQueue } from '@steeze-ui/carbon-icons';
 	import { Decoded, PlaylistMusic, RendererStatus } from '$lib/stores/stores';
-	import PlaylistView from './PlaylistView.svelte';
+	import PlaylistView from '../PlaylistView.svelte';
 	import { onDestroy } from 'svelte';
 
 	let trackTitles: Array<string>;
