@@ -126,7 +126,6 @@ export function attenuate(
  * ╠══════════════════════════════════════════╣
  */
 
-
 export function progress(props: {
 	key?: string;
 	totalDurMs?: number;
@@ -147,7 +146,6 @@ export function progress(props: {
 	const reset = pausingRateSignal
 	let _progress = el.add(el.phasor(pausingRateSignal, reset), el.sm(numberToConstant('s_o', startOffset)));
 	let trig = el.train(el.mul(rate, run))
-	console.log('inside progress ', _progress, reset, trig)
 	return (
 		el.snapshot({ key, name: 'progress' }, trig, _progress)
 	);

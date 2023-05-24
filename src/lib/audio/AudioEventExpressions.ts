@@ -21,7 +21,6 @@ const speech = {
 
 const data = {
     snapshot: (e: MessageEvent) => {
-        console.log('snapshot', e)
         if (e.source === 'progress') {
             updateTrackPosition(e.data)
         }
@@ -51,7 +50,7 @@ function errorReporting(e: unknown, id: NamedRenderers) {
 function updateTrackPosition(data: any) {
     PlaylistMusic.update(($pl) => {
         const currentPosition = data as number;
-        console.log(' position ', currentPosition)
+        //console.log(' position ', currentPosition)
         AudioMain.attenuateRendererWith('music', hannEnvelope(currentPosition as number));
         $pl.currentTrack.progress = currentPosition;
         return $pl
