@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { Icon } from '@steeze-ui/svelte-icon';
-	import { PauseOutline, PlayOutline, QueryQueue } from '@steeze-ui/carbon-icons';
 	import { Decoded, PlaylistMusic, RendererStatus } from '$lib/stores/stores';
-	import PlaylistView from './PlaylistView.svelte';
+	import { PauseOutline, PlayOutline, QueryQueue } from '@steeze-ui/carbon-icons';
+	import { Icon } from '@steeze-ui/svelte-icon';
 	import { onDestroy } from 'svelte';
+	import PlaylistView from '$lib/components/gui/PlaylistView.svelte';
 
 	let trackTitles: Array<string>;
 

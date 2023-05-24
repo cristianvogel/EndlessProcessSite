@@ -5,10 +5,13 @@
 			CablesText,
 			CablesIsLoaded,
 			CablesAudioContext,
+			Decoded,
+			RendererStatus,
 		} from '$lib/stores/stores';
-	import Initialisation from './pure/Initialisation.svelte';
 	import { onMount } from 'svelte';
 	import { Utils } from '$lib/classes/Utils'
+	import { tweened } from 'svelte/motion';
+	import { expoIn, expoInOut } from 'svelte/easing';
 
 	export let patch: string;
 	export let bg: boolean = false;
@@ -16,9 +19,13 @@
 	
 	let pathPatch: string = `/cables/${patch}/patch.js`;	
 
+	const fadeUp = tweened(0, {
+		duration: 1000,
+		easing: expoInOut
+	});
 	$: if (spin) { 
 		CablesText.set( [ Utils.rotateString($CablesText[0]), Utils.rotateString($CablesText[1]) ] )
-		spinText($CablesText) 
+		cablesScrollerText($CablesText) 
 	}
 
 	const initializeCables =  () => {
@@ -42,43 +49,43 @@
 	};
 
 	function showError(errId: number, errMsg: string) {
-		alert('An error occured: ' + errId + ', ' + errMsg);
+		alert('Cables error occured: ' + errId + ', ' + errMsg);
 	}
 
-	function patchInitialized() {
-		console.log('Cables Patch initialized');
-	} 
+	function patchInitialized() { } 
 
 	async function  patchFinishedLoading() {
-		$CablesIsLoaded = true;
+		CablesIsLoaded.update( ($flag) => {$flag = true; return $flag} );
 		CABLES.WEBAUDIO.getAudioContext().suspend()
 		$CablesAudioContext = CABLES.WEBAUDIO.getAudioContext()
-		spinText();	
+		cablesScrollerText();	
 	}
 
-	function spinText(  prompts:string[] = ["End","Proc"]  ) {
+	function cablesScrollerText(  prompts:string[] = ["End","Proc"]  ) {
 	if ( $CablesIsLoaded ) {
 			$CablesPatch.config.spinAndPrompt('',prompts[0],prompts[1]) // bug in Cables won't pass first arg
 		}
 	}
 
-	onMount( () => {
-		initializeCables();
-		})
-
+	function done(element: HTMLElement) {fadeUp.set(1)};
+	
+	onMount( () => { initializeCables() })
 	</script>
 
 <svelte:head>
-	<!-- todo: move this data load server side -->
+	<!-- todo: move this data load server side? -->
 	<script src={pathPatch}></script>
 </svelte:head>
-
-<div class="mb-4 ">
+{#if ($RendererStatus.speech === 'ready') && $Decoded.done }
+ <div data-comment use:done />
+{/if}
+<div class="mb-4 " style='opacity: {$fadeUp}'>
 	<canvas 
 		id="cables_{patch}"
 		width="100%"
 		height="100%"
-		style="width: 100%; height: 100%; z-index: {bg? -137: 0}; position: fixed;"
-	/>
-	<Initialisation />
+		style="	width: 100%; height: 100%; 
+				z-index: {bg? -137: 0}; 
+				position: fixed;"
+	  />
 </div>

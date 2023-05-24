@@ -1,17 +1,17 @@
 <script lang="ts">
-	import { fade } from 'svelte/transition';
-	import { AppBar } from '@skeletonlabs/skeleton';
-	import { Icon } from '@steeze-ui/svelte-icon';
-	import { ChartRadial } from '@steeze-ui/carbon-icons';
-	import ElementaryPlayer from '$lib/components/ElementaryPlayer.svelte';
-	import Progress from '$lib/components/Progress.svelte';
-	import { CablesIsLoaded, PlaysCount, PlaylistMusic, VFS_PATH_PREFIX, Decoded, RendererStatus } from '$lib/stores/stores';
 	import { AudioMain } from '$lib/classes/Audio';
+	import Progress from '$lib/components/gui/Progress.svelte';
+	import TextToSpeech from '$lib/components/Speech/TextToSpeech.svelte';
+	import ElementaryPlayer from '$lib/components/gui/ElementaryPlayer.svelte';
+	import NowPlaying from '$lib/components/gui/NowPlaying.svelte';
+	import { handlePlaylistChoice } from '$lib/functions/handlePlaylistChoice';
+	import { CablesIsLoaded, Decoded, PlaylistMusic, PlaysCount, RendererStatus, VFS_PATH_PREFIX } from '$lib/stores/stores';
+	import { AppBar } from '@skeletonlabs/skeleton';
+	import { ChartRadial } from '@steeze-ui/carbon-icons';
+	import { Icon } from '@steeze-ui/svelte-icon';
 	import { createEventDispatcher } from 'svelte';
 	import { get } from 'svelte/store';
-	import { handlePlaylistChoice } from '$lib/functions/handlePlaylistChoice';
-	import NowPlaying from '$lib/components/NowPlaying.svelte';
-	import TextToSpeech from '$lib/components/Speech/TextToSpeech.svelte';
+	import { fade } from 'svelte/transition';
 
 	const dispatch = createEventDispatcher();
 
@@ -73,6 +73,8 @@
 		const nextIndex = (playlist.indexOf(e.detail) + 1) % end
 		console.log('Next track:', playlist[nextIndex])
 		handlePlaylistChoice(undefined, playlist[nextIndex])
+		AudioMain.renderMusicWithScrub({ trigger: 0, startOffset: 0 });
+    	AudioMain.renderMusicWithScrub({ trigger: 1, startOffset: 0 });
 	}
 
 </script>

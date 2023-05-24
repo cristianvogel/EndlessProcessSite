@@ -1,7 +1,7 @@
 <script lang='ts'>
-	import {PlaylistMusic, RendererStatus} from '$lib/stores/stores';
-	import DescriptionList from './DescriptionList.svelte';
+	import { PlaylistMusic, RendererStatus } from '$lib/stores/stores';
 	import { fade } from 'svelte/transition';
+	import DescriptionList from '$lib/components/gui/DescriptionList.svelte';
 	
 
 	export let show:boolean = false;

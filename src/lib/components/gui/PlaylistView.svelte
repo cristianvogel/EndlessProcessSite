@@ -2,12 +2,12 @@
 /**
  @todo: improve with https://www.skeleton.dev/utilities/popups
  */
-import { ListBox, ListBoxItem } from '@skeletonlabs/skeleton';
-import { Icon } from '@steeze-ui/svelte-icon';
-import  {CircleDash, CircleFilled} from '@steeze-ui/carbon-icons';
-import {AudioMain} from '$lib/classes/Audio';
+import { AudioMain } from '$lib/classes/Audio';
 import { Utils, formatTitleFromGlobalPath } from '$lib/classes/Utils';
 import { handlePlaylistChoice } from '$lib/functions/handlePlaylistChoice';
+import { ListBox, ListBoxItem } from '@skeletonlabs/skeleton';
+import { CircleDash, CircleFilled } from '@steeze-ui/carbon-icons';
+import { Icon } from '@steeze-ui/svelte-icon';
 
 export let tracklisting:Array<string>;
 
