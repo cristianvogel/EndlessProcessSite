@@ -21,7 +21,6 @@ const speech = {
 
 const data = {
     snapshot: (e: MessageEvent) => {
-        console.log('snapshot', e)
         if (e.source === 'progress') {
             updateTrackPosition(e.data)
         }
