@@ -5,7 +5,7 @@
 	import { ChartRadial } from '@steeze-ui/carbon-icons';
 	import ElementaryPlayer from '$lib/components/ElementaryPlayer.svelte';
 	import Progress from '$lib/components/Progress.svelte';
-	import { CablesIsLoaded, PlaysCount, PlaylistMusic, VFS_PATH_PREFIX, Decoded } from '$lib/stores/stores';
+	import { CablesIsLoaded, PlaysCount, PlaylistMusic, VFS_PATH_PREFIX, Decoded, RendererStatus } from '$lib/stores/stores';
 	import { AudioMain } from '$lib/classes/Audio';
 	import { createEventDispatcher } from 'svelte';
 	import { get } from 'svelte/store';
@@ -15,23 +15,18 @@
 
 	const dispatch = createEventDispatcher();
 
-	const { audioStatus } = AudioMain.stores;
-
 	$: audioBuffersReady = $Decoded.done;
-	$: isPlaying = $audioStatus === 'playing';
+	$: trackIsPlaying = $RendererStatus.music === 'playing';
 
 	/**
 	 * @description ----------------------------------------------
 	 * interactivity handler for the player controls
 	 */
 	function handleAudioControls(e: any) {
-		// check if the click was on the playlist button
-
 		if (e.currentTarget.id === 'playlist'){
 			$PlaylistMusic.show = !$PlaylistMusic.show;
 			dispatch('playlistChanged', $PlaylistMusic.show);
 		}
-		
 		if (e.currentTarget.id === 'transport') {
 			playPauseLogic();
 		}
@@ -58,10 +53,8 @@
 									}
 								$PlaysCount += 1; // todo: A modal prompting to buy the music after a number of plays ?
 								}
-
 								console.log('Cued track:', $PlaylistMusic.currentTrack?.title)
-
-		if ($audioStatus === 'playing') {
+		if (trackIsPlaying) {
 			AudioMain.pause();
 			return;
 		} else {
@@ -89,15 +82,12 @@
 	background="endproc-card-bg"
 	border="-mb-2"
 	gridColumns="grid-cols-3 grid-rows-1 grid-flow-col"
-
 	slotLead="grid md:grid-cols-4 sm:grid-cols-2 grid-rows-1 gap-2"
 	slotDefault="grid grid-cols-1 grid-rows-1 grid-flow-col pt-2.5"
 	slotTrail="grid grid-cols-1"
-
 	regionRowHeadline="indent-10 z-10"
 >
 	<svelte:fragment slot="lead" >
-
 		<!-- Persistent Audio controls  -->
 		{#if audioBuffersReady && $CablesIsLoaded}
 			<ElementaryPlayer on:click={handleAudioControls} />
@@ -109,9 +99,7 @@
 		
 
 	</svelte:fragment>
-
-	<NowPlaying show={ audioBuffersReady && $CablesIsLoaded && isPlaying} />	
-
+	<NowPlaying show={ audioBuffersReady && $CablesIsLoaded && trackIsPlaying} />	
 	<!--  progress bar -->
 	<svelte:fragment slot="headline">
 		{#if audioBuffersReady && $CablesIsLoaded}
@@ -120,7 +108,6 @@
 		</span>
 		{/if}
 		</svelte:fragment>
-
 
 	<!--  nav buttons -->
 	<svelte:fragment slot="trail">

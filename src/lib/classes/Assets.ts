@@ -4,10 +4,9 @@ import {
     Decoded
 } from "$lib/stores/stores";
 import { get } from "svelte/store";
-import type { AssetCategories, AudioAssetMetadata, StructuredAssetContainer } from "../../typeDeclarations";
-import type WebAudioRenderer from "@elemaudio/web-renderer";
-import { AudioMain as Music } from "./Audio";
-import { VoiceOver as Speech } from "./Speech";
+import type { AssetCategories, AudioAssetMetadata, ExtendedWebRenderer, StructuredAssetContainer } from "../../typeDeclarations";
+import { AudioMain } from "./Audio";
+
 
 export function assign(
     element: HTMLElement,
@@ -64,13 +63,6 @@ export function sumLengthsOfAllArraysInVFSStore() {
     return sum
 }
 
-export function coreForCategory(category: AssetCategories): WebAudioRenderer {
-    switch (category) {
-        case 'music':
-            return Music._core;
-        case 'speech':
-            return Speech._core;
-        default:
-            return Music._core;
-    }
+export function getRendererForCategory(category: AssetCategories): ExtendedWebRenderer {
+    return AudioMain._renderersMap.get(category) as ExtendedWebRenderer
 };

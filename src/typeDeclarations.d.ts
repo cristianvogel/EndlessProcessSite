@@ -1,5 +1,6 @@
 import type { DurationsMapElement } from '$lib/stores/stores';
 import type { NodeRepr_t } from '@elemaudio/core';
+import type WebAudioRenderer from '@elemaudio/web-renderer';
 import type { Writable } from 'svelte/store';
 
 //-════════╡ Music and Speech ╞═══════
@@ -14,8 +15,8 @@ type AssetMetadata = {
 }
 
 interface PlaylistContainer {
-	currentTrack?: AssetMetadata;
-	currentChapter?: AssetMetadata;
+	currentTrack: AssetMetadata;
+	currentChapter: AssetMetadata;
 	audioAssetPaths: { music?: Array<string> | undefined, speech: Array<string> | undefined };
 	titles: { music: Array<string>, speech: Array<string> }
 	show?: boolean;
@@ -101,36 +102,8 @@ type ResolvedPageData = CategoryMapping<AssetCategories> & {
 }
 
 //════════╡ AudioEngine ╞═══════
-type NamedRenderers = "silent" | "music" | "speech";
-type StandardAudioEvents = "meter" | "snapshot" | "fft";
-type Expression = (event: AudioEvent) => void;
-type AudioEventExpressions = Partial<Record<StandardAudioEvents, Expression>>;
-type EventExpressionsForNamedRenderer = Map<NamedRenderers, AudioEventExpressions>;
-interface MessageEvent { data: number, source: string }
-interface MeterEvent extends MessageEvent { min: number, max: number }
-interface AudioEvent extends MessageEvent, MeterEvent { };
-
-interface RendererInitialisationProps {
-	namedRenderer: NamedWebAudioRenderer,
-	ctx?: AudioContext,
-	options?: InitialisationOptions
-}
-interface InitialisationOptions {
-	connectTo?: { destination?: boolean, visualiser?: boolean, sidechain?: boolean, nothing?: boolean },
-	eventExpressions?: any,
-}
-interface stereoOut {
-	props: {};
-	stereoSignal: StereoSignal;
-}
-type Signal = NodeRepr_t;
-type StereoSignal = { left: NodeRepr_t; right: NodeRepr_t };
-type Functionality = Function
-type RendererIdentifiers = 'silent' | 'music' | 'speech'
-type NamedWebAudioRenderer = { id: RendererIdentifiers, renderer: WebAudioRenderer }
-
-type RawFFT = { real: Float32Array; imag: Float32Array };
-type MainAudioStatus =
+type NamedRenderers = "data" | "music" | "speech";
+type RendererStatus =
 	| 'suspended'
 	| 'loading'
 	| 'resuming'
@@ -141,3 +114,39 @@ type MainAudioStatus =
 	| 'ready'
 	| 'scrubbing'
 	| 'error';
+type RendererObservables = {
+	[K in NamedRenderers]: RendererStatus
+}
+type StandardAudioEvents = "meter" | "snapshot" | "fft" | "load" | "scope";
+
+type Expression = (event: AudioEvent) => void;
+type AudioEventExpressions = Partial<Record<StandardAudioEvents, Expression>>;
+type EventExpressionsForNamedRenderer = Map<NamedRenderers, AudioEventExpressions>;
+interface MessageEvent { data: number, source: string }
+interface MeterEvent extends MessageEvent { min: number, max: number }
+interface AudioEvent extends MessageEvent, MeterEvent { };
+interface WebRendererExtended extends WebAudioRenderer {
+	masterBuss: StereoSignal,
+	id: NamedRenderers,
+	master(): void,
+};
+
+interface RendererInitialisation {
+	id: NamedRenderers,
+	ctx?: AudioContext,
+	eventExpressions?: any,
+	options?: {
+		connectTo?: {
+			destination?: boolean, visualiser?: boolean, sidechain?: boolean, nothing?: boolean
+		}
+	}
+}
+
+interface stereoOut {
+	props: {};
+	stereoSignal: StereoSignal;
+}
+type Signal = NodeRepr_t;
+type StereoSignal = { left: NodeRepr_t; right: NodeRepr_t };
+type Functionality = Function
+type RawFFT = { real: Float32Array; imag: Float32Array };

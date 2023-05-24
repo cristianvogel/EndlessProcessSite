@@ -1,15 +1,14 @@
 // This file defines the stores used in the app
 
 import { writable, type Readable, type Writable, readable } from 'svelte/store';
-import type { SinglePost, RawFFT, PlaylistContainer, MetersContainer, AssetCategoryContainers, RendererIdentifiers } from '../../typeDeclarations';
+import type { SinglePost, RawFFT, PlaylistContainer, MetersContainer, AssetCategoryContainers, NamedRenderers, RendererObservables } from '../../typeDeclarations';
 
 //---- UX / State related -------------------
 export const Decoded: Writable<{ done: boolean; bounds?: number }> = writable({
 	done: false,
 	bounds: 0
 });
-export const MusicCoreLoaded: Writable<boolean> = writable(false);
-export const SpeechCoreLoaded: Writable<boolean> = writable(false);
+export const RendererStatus: Writable<RendererObservables> = writable({ music: 'loading', speech: 'loading', data: 'loading' });
 export const MusicAssetsReady: Writable<boolean> = writable(false);
 
 //---- Blog related -------------------
@@ -33,12 +32,7 @@ export const CablesText: Writable<Array<string>> = writable(['Endless', 'Process
 //---- Audio related -------------------
 export const ForceAudioContextResume: Writable<any> = writable(() => { console.log('ForceAudioContextResume not initialised') })
 export const ContextSampleRate: Writable<number> = writable(44100);
-export const OutputMeters: Writable<MetersContainer> = writable(
-	{
-		MusicAudible: 0,
-		SpeechAudible: 0,
-	}
-)
+export const OutputMeters: Writable<MetersContainer> = writable({ MusicAudible: 0, SpeechAudible: 0 })
 
 /**
  * @Important  path prefix used as key for the Virtual File System (VFS)
@@ -82,12 +76,12 @@ export const PlaylistMusic: Writable<PlaylistContainer> = writable({
 });
 export type DurationsMapElement = { key: string; value: number };
 export const PlaysCount: Writable<number> = writable(0);
-export const Scrubbing: Writable<boolean> = writable(false);
+
 
 
 
 //----------------- WebAudio -----------------------
-export const EndNodes: Writable<Map<RendererIdentifiers, AudioNode>> = writable(new Map<RendererIdentifiers, AudioNode>());
+export const EndNodes: Writable<Map<NamedRenderers, AudioNode>> = writable(new Map<NamedRenderers, AudioNode>());
 
 
 //---------- deprecating zone --- 🚮 --------------------

@@ -1,57 +1,53 @@
 <script lang="ts">
-import eventExpressions from "$lib/audio/AudoEventExpressions";
+import eventExpressions from "$lib/audio/AudioEventExpressions";
 import { AudioMain } from "$lib/classes/Audio";
-import { VoiceOver } from "$lib/classes/Speech";
-import { CablesAudioContext, MusicCoreLoaded, SpeechCoreLoaded } from "$lib/stores/stores";
+import { CablesAudioContext, RendererStatus } from "$lib/stores/stores";
+
 
  async function initialiseAudioRenderers() {
 			await AudioMain.initialiseRenderer({
-				namedRenderer: { 
-					id:'music', 
-					renderer: AudioMain._core 
-				}, 
+				id:'music', 
 				ctx: $CablesAudioContext,
 				options: {
 					connectTo: {
 						destination: true,
 						visualiser: true,
-					},
-					eventExpressions: eventExpressions.get('music')
-				}
-			});
+					}
+				},
+				eventExpressions: eventExpressions.get('music')
+			}).then( () => {
+				$RendererStatus.music = 'ready';
+			})
 			await AudioMain.initialiseRenderer({
-				namedRenderer: { 
-					id:'silent', 
-					renderer: AudioMain._silentCore 
-				}, 
+				id:'data', 
+				ctx: $CablesAudioContext,
 				options: {
 					connectTo: {
 						nothing: true
-					},
-					eventExpressions: eventExpressions.get('silent')
-				}
+					}
+				},
+				eventExpressions: eventExpressions.get('data')
+			}).then( () => {
+				$RendererStatus.data = 'ready';
 			});
-			await VoiceOver.initialiseRenderer({
-				namedRenderer: {
+			await AudioMain.initialiseRenderer({
 				id: 'speech',
-				renderer: VoiceOver._core
-			},
-			options: {
-				connectTo: { 
-					sidechain: true, 
-					destination: true 
+				ctx: $CablesAudioContext,
+				options: {
+					connectTo: { 
+						sidechain: true, 
+						destination: true 
+					}
 				},
 				eventExpressions: eventExpressions.get('speech')
-			}
-		});
-
+			}).then( () => {
+				$RendererStatus.speech = 'ready';
+			})
 		return Promise.resolve(true)
         }
 
 function done( element: HTMLElement, answer: boolean){
 			console.log('Audio Renderers initialised?', answer)
-			$MusicCoreLoaded = true;
-			$SpeechCoreLoaded = true;
 		}
 
 </script>

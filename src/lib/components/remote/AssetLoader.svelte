@@ -16,13 +16,12 @@
  * @todo catch offline and other connection errrors
 */
 	import { fade, fly } from 'svelte/transition';
-	import { ProgressBar } from '@skeletonlabs/skeleton';
 	import type { PageData } from '../../../routes/$types';
-	import type { AssetCategories, StructuredAssetContainer } from '../../../typeDeclarations';
+	import type { AssetCategories, NamedRenderers, StructuredAssetContainer } from '../../../typeDeclarations';
 	import { ContextSampleRate, Decoded, VFS_Entries } from '$lib/stores/stores';
 	import { Utils, stripTags } from '$lib/classes/Utils';
 	import { AudioMain } from '$lib/classes/Audio';
-	import { assign, coreForCategory, sumLengthsOfAllArraysInVFSStore as VFS_Entries_Checksum } from '$lib/classes/Assets';
+	import { assign, sumLengthsOfAllArraysInVFSStore as VFS_Entries_Checksum } from '$lib/classes/Assets';
 
  	export let metadata: PageData;
 	export let rangeLengthSeconds = 60;
@@ -47,7 +46,6 @@
 			hide = true;
 		}, 3 * 1.0e3);
 	};
-	$: lofiAnim = ((ticker % 2) === 0 ? Utils.scrambleString('▂▃▄▅▆▇▆▅▄▃▂') : Utils.scrambleString(lofiAnim))
 
 	function checkThenComplete ( element: HTMLElement, params: {category: AssetCategories | string}) {
 			if (!ready) return
@@ -57,7 +55,7 @@
 					const storedVFSDictionaryForCategory:Array<StructuredAssetContainer> = $VFS_Entries[key as AssetCategories];
 					try {
 						storedVFSDictionaryForCategory.forEach((entry) => {
-						AudioMain.updateVFStoCore(entry, coreForCategory(key as AssetCategories));
+						AudioMain.updateVFStoRenderer(entry, (key as NamedRenderers));
 						});
 					} catch (error) {
 						console.warn( 'Bounds reached, finishing initialisation.' )
@@ -78,12 +76,11 @@
 </script>
 
 {#if !hide}
-<span class="timer"> {ready ? 'Done.    ' : 'Loading.'} {lofiAnim} </span>
+<span class="timer"> {ready ? 'Done ' : 'Currently '} accessing network. </span>
    <ul>
 	<div class="fileinfo"  in:fade>
 		{#await metadata.streamedMetaData.MPEGs}
 			<div in:fade><h2>Initialising.</h2></div>
-				{lofiAnim}
 		{:then responseObject}
 			{@const bounds = responseObject.data.mediaItems.edges.length}
 			<!-- <ProgressBar value={loadProgress} max={bounds} /> -->
@@ -92,7 +89,7 @@
 			{@const headers = setHeadersFor(updatedCategory) }
 			{#await fetch( edge.node.mediaItemUrl, { method: 'GET', headers} )}
 					{#if index === 0}
-					   {lofiAnim}
+					   <i class='info'>Experiencing network problems, please wait or reload.</i>
 					{/if}
 				{:then responseObject}
 					{#await responseObject.arrayBuffer()}
@@ -113,7 +110,6 @@
 							out:fade>
 							{`${edge.node.title} ${edge.node.fileSize} bytes`}<br />
 							╰{@html caption ? caption : 'no detail'} <br />
-							{`╰ ${Utils.scrambleString(edge.node.mediaItemUrl)}`}<br />
 						</li>
 					{/await}
 				{/await}
@@ -126,7 +122,8 @@
 <style>
 	.fileinfo {
 		position: absolute;
-		bottom: 16rem;
+		top: 50%;
+		left: 33%;
 	}
 
 	.timer {

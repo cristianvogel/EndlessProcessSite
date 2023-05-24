@@ -2,7 +2,7 @@
 	import { PlaylistMusic } from '$lib/stores/stores';
 	import { AudioMain } from '$lib/classes/Audio';
 	import { ProgressBar } from '@skeletonlabs/skeleton';
-	import { Scrubbing } from '$lib/stores/stores';
+	import { RendererStatus } from '$lib/stores/stores';
 	import { createEventDispatcher } from 'svelte';
 	import { fade } from 'svelte/transition';
 
@@ -10,36 +10,35 @@
 		
 	let innerWidth:number;
 	let isPhone,isTablet = false;
-	let startOffset = 0;
+	let startOffset:number = 0;
 
+	$: musicScrubbing = $RendererStatus.music === 'scrubbing';
 	$: isPhone = innerWidth < 400;
 	$: isTablet = innerWidth < 1024;
 	$: progress = Math.fround($PlaylistMusic.currentTrack?.progress as number) ;
 	$: durationSecs = $PlaylistMusic.currentTrack?.duration || 0; // in seconds
 	$: samplerParams = ( command: 'start' | 'stop' ) => { return {
 			trigger: command === 'start' ? 1 : 0,
-			startOffset,
 			durationMs: durationSecs * 1000
 		}}
-	$: if (progress >= 0.99 && !$Scrubbing) {
+	$: if (progress >= 0.99 && !musicScrubbing) {
 		dispatch('cueNext', $PlaylistMusic.currentTrack?.title);
 	}
 
 	function handleScrub(e: any) {
-		if (!$Scrubbing) return;
-		AudioMain.status = 'playing';
+		if (!musicScrubbing) return;
 		const { clientX, target } = e;
 		const { left, width } = target.getBoundingClientRect();
 		const x = clientX - left;
 		const percent = x / width;
 		startOffset = percent
-		AudioMain.playWithScrub( {...samplerParams('stop'), startOffset} );
+		AudioMain.renderMusicWithScrub( {...samplerParams('stop'), startOffset} );
 	}
 
 	function replay() {
-		if (!$Scrubbing) return;
-		$Scrubbing = false;
-		AudioMain.playWithScrub( {...samplerParams('start'), startOffset})
+		if (!musicScrubbing) return;
+		$RendererStatus.music = 'playing';
+		AudioMain.renderMusicWithScrub( {...samplerParams('start'), startOffset})
 		}
 
 
@@ -48,8 +47,7 @@
 <svelte:window bind:innerWidth/>
 
 <div id="parent">
-	<div class='absolute info pt-0.5'>{Math.fround(progress * durationSecs).toPrecision(2)}</div>
-	{#if !$Scrubbing }	
+	{#if !musicScrubbing }	
 	<div in:fade >
 		<ProgressBar
 			label="Progress Bar"
@@ -75,23 +73,14 @@
 	</div>
 	{/if}
 	<!-- svelte-ignore a11y-click-events-have-key-events -->
-	<div
-		
-		id="invisible-div"
+	<div id="invisible-div"
 		on:mousedown|preventDefault|stopPropagation={(e) => {
-			$Scrubbing = true;
+			$RendererStatus.music = 'scrubbing';
 			handleScrub(e);
 		}}
-		on:touchstart|preventDefault|stopPropagation={(e) => {
-			$Scrubbing = true;
-			handleScrub(e);
-		}}
-		on:touchmove|preventDefault={handleScrub}
-		on:touchend={replay}
 		on:mousemove|preventDefault={handleScrub}
 		on:mouseup={replay}
 		on:mouseleave={replay}  
-		
 	/>
 </div>
 

@@ -10,18 +10,20 @@
  * 
  */
 
-import { AudioMain, MainAudioClass } from '$lib/classes/Audio';
+import { AudioMain } from '$lib/classes/Audio';
 import { el } from '@elemaudio/core';
 import { channelExtensionFor, clipTo0 } from '$lib/classes/Utils';
-import { attenuate, clippedHann, progress } from '$lib/audio/Funktions';
-import type { StereoSignal, SamplerOptions, ProgressOptions, Signal } from '../../typeDeclarations';
-import { ContextSampleRate, Scrubbing } from '$lib/stores/stores';
+import { attenuate, clippedHann } from '$lib/audio/Funktions';
+import type { StereoSignal, SamplerOptions, Signal } from '../../typeDeclarations';
+import { ContextSampleRate, RendererStatus } from '$lib/stores/stores';
 import { get } from 'svelte/store';
 
 
-const SR = get(ContextSampleRate);
-let $scrubbing = false;
-Scrubbing.subscribe(($s) => $scrubbing = $s);
+
+let $SR = get(ContextSampleRate);
+let musicScrubbing = false;
+RendererStatus.subscribe(($s) => musicScrubbing = $s.music === 'scrubbing');
+ContextSampleRate.subscribe(($s) => $SR = $s);
 
 /**════════════════════════════════════════════════
  * @name hannEnvelope
@@ -30,8 +32,8 @@ Scrubbing.subscribe(($s) => $scrubbing = $s);
  * ════════════════════════════════════════════════
  */
 
-export function hannEnvelope(index: number): Signal {
-	return clippedHann({ gain: 60, index });
+export function hannEnvelope(index: number, key?: string): Signal {
+	return clippedHann({ key, gain: 60, index });
 }
 
 /**════════════════════════════════════════════════
@@ -51,16 +53,6 @@ export function attenuateStereo(signal: StereoSignal, level: Signal | number, ke
 }
 
 /**════════════════════════════════════════════════
- * @name bufferProgress
- * @description Buffer progress as audio rate signal
- * ════════════════════════════════════════════════
- */
-
-export function bufferProgress(props: ProgressOptions): Signal {
-	return progress(props);
-}
-
-/**════════════════════════════════════════════════
  * @name meter
  * @description trigger metering callback on one channel
  * ════════════════════════════════════════════════
@@ -77,17 +69,15 @@ export function meter(signal: StereoSignal, gain: number = 20): Signal {
  */
 
 export function scrubbingSamplesPlayer(props: SamplerOptions): StereoSignal {
-
 	let { trigger = 1, rate = 1, startOffset = 0, durationMs = 0 } = props;
-	let selectTriggerSignal = $scrubbing ? 0 : 1;
-	const startOffsetSamps: number = Math.round(startOffset * durationMs * (SR / 1000));
+	let selectTriggerSignal = musicScrubbing ? 0 : 1;
+	const startOffsetSamps: number = Math.round(startOffset * durationMs * ($SR / 1000));
 	const scrubRate = el.sm(el.latch(el.train(50), el.rand()));
 	const scrub: Signal = el.train(el.mul(50, scrubRate)) as Signal;
-
-	const currentVFSPath = AudioMain.currentVFSPath;
-	let path = currentVFSPath + channelExtensionFor(1);
-	let kl = currentVFSPath + '_left';
-	let kr = currentVFSPath + '_right';
+	const targetVFSPath = props.vfsPath || AudioMain.currentVFSPath;
+	let path = targetVFSPath + channelExtensionFor(1);
+	let kl = targetVFSPath + '_left';
+	let kr = targetVFSPath + '_right';
 	const left = el.sample(
 		{
 			key: kl,
@@ -99,7 +89,7 @@ export function scrubbingSamplesPlayer(props: SamplerOptions): StereoSignal {
 		rate
 	);
 
-	path = currentVFSPath + channelExtensionFor(2);
+	path = targetVFSPath + channelExtensionFor(2);
 	const right = el.sample(
 		{
 			key: kr,
@@ -120,46 +110,46 @@ export function scrubbingSamplesPlayer(props: SamplerOptions): StereoSignal {
  * ════════════════════════════════════════════════
  */
 
-export function driftingSamplesPlayer(coreClass: MainAudioClass, props: SamplerOptions): StereoSignal {
+export function driftingSamplesPlayer(props: SamplerOptions): StereoSignal {
 	let { trigger = 1,
 		rate = 1,
 		startOffset = 0,
-		vfsPath = coreClass.currentVFSPath,
+		vfsPath,
 		monoSum = false,
 		drift = 0 } = props;
 
 	let kr, kl, path, rateWithDrift;
 	let left, right;
-	const currentVFSPath = vfsPath;
+
 
 	if (typeof drift === 'number' && typeof rate === 'number') {
 		rateWithDrift = drift + rate;
 	}
 
 	startOffset = clipTo0(startOffset);
-	path = currentVFSPath + channelExtensionFor(1);
-	kl = currentVFSPath + '_left';
+	path = vfsPath + channelExtensionFor(1);
+	kl = vfsPath + '_left';
 
 	left = el.sample(
 		{
 			key: kl,
 			path,
 			mode: 'gate',
-			startOffset: startOffset * 44.1
+			startOffset: startOffset * ($SR / 1000)
 		},
 		trigger,
 		rate
 	);
 
-	path = currentVFSPath + channelExtensionFor(monoSum ? 1 : 2);
-	kr = currentVFSPath + '_right';
+	path = vfsPath + channelExtensionFor(monoSum ? 1 : 2);
+	kr = vfsPath + '_right';
 
 	right = el.sample(
 		{
 			key: kr,
 			path,
 			mode: 'gate',
-			startOffset: startOffset * 44.1
+			startOffset: startOffset * ($SR / 1000)
 		},
 		trigger,
 		rateWithDrift as number
