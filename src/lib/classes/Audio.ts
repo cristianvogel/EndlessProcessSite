@@ -258,7 +258,6 @@ export class MainAudioClass {
 		const { trigger, startOffset = 0 } = props;
 		const key = AudioMain.currentTrackTitle
 		const totalDurMs = props.durationMs || AudioMain.currentTrackDurationSeconds * 1000;
-
 		const progress = bufferProgress({
 			key,
 			totalDurMs,
@@ -273,8 +272,7 @@ export class MainAudioClass {
 	 * @name playSpeechFromVFS
 	 */
 	playSpeechFromVFS(gate: number = 1): void {
-
-		this.updateRendererState('speech', (gate as number < 1) ? 'playing' : 'paused');
+		this.updateRendererState('speech', (gate as number > 0.5) ? 'playing' : 'paused');
 		const { vfsPath, duration = 1000 } = AudioMain._currentSpeechMetadata as AssetMetadata;
 		const phasingSpeech = driftingSamplesPlayer({
 			vfsPath,

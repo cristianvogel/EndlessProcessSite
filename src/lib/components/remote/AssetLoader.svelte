@@ -16,13 +16,12 @@
  * @todo catch offline and other connection errrors
 */
 	import { fade, fly } from 'svelte/transition';
-	import { ProgressBar } from '@skeletonlabs/skeleton';
 	import type { PageData } from '../../../routes/$types';
 	import type { AssetCategories, NamedRenderers, StructuredAssetContainer } from '../../../typeDeclarations';
 	import { ContextSampleRate, Decoded, VFS_Entries } from '$lib/stores/stores';
 	import { Utils, stripTags } from '$lib/classes/Utils';
 	import { AudioMain } from '$lib/classes/Audio';
-	import { assign, getRendererForCategory, sumLengthsOfAllArraysInVFSStore as VFS_Entries_Checksum } from '$lib/classes/Assets';
+	import { assign, sumLengthsOfAllArraysInVFSStore as VFS_Entries_Checksum } from '$lib/classes/Assets';
 
  	export let metadata: PageData;
 	export let rangeLengthSeconds = 60;
@@ -47,7 +46,6 @@
 			hide = true;
 		}, 3 * 1.0e3);
 	};
-	$: lofiAnim = ((ticker % 2) === 0 ? Utils.scrambleString('▂▃▄▅▆▇▆▅▄▃▂') : Utils.scrambleString(lofiAnim))
 
 	function checkThenComplete ( element: HTMLElement, params: {category: AssetCategories | string}) {
 			if (!ready) return
@@ -83,7 +81,6 @@
 	<div class="fileinfo"  in:fade>
 		{#await metadata.streamedMetaData.MPEGs}
 			<div in:fade><h2>Initialising.</h2></div>
-				{lofiAnim}
 		{:then responseObject}
 			{@const bounds = responseObject.data.mediaItems.edges.length}
 			<!-- <ProgressBar value={loadProgress} max={bounds} /> -->
@@ -125,7 +122,8 @@
 <style>
 	.fileinfo {
 		position: absolute;
-		bottom: 16rem;
+		top: 50%;
+		left: 33%;
 	}
 
 	.timer {

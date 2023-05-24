@@ -1,18 +1,18 @@
 <script lang="ts">
 
-import { RendererStatus } from '$lib/stores/stores';
+import { Decoded, RendererStatus } from '$lib/stores/stores';
 
-$: isPlaying = $RendererStatus.music === 'playing';
+$: ready = $Decoded.done;
 
 const svgClass: Array<string> = [
-	"mx-auto -ml-5 hover:stroke-secondary-700",
+	"mx-auto -ml-5 opacity-20",
 	"mx-auto -ml-5 hover:stroke-secondary-500 stroke-secondary-800"
 ]; 
 
 </script>
 
 <!-- 3D EndProc Logo designed by Ramón -->
-<svg class={svgClass[ isPlaying ? 1: 0]} version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+<svg class={svgClass[ ready ? 1: 0]} version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
 	 viewBox="0 0 180 136"  xml:space="preserve">
 	
 	<filter id="hues">
