@@ -1,11 +1,11 @@
 <script>
 	// Splash opening
-	import SplashSVG from '$lib/components/images/SplashSVG.svelte';
-	import { Decoded, singlePost } from '$lib/stores/stores';
-	import { Icon } from '@steeze-ui/svelte-icon';
-	import { CaretSortDown } from '@steeze-ui/carbon-icons';
 	import { page } from '$app/stores';
 	import { Utils } from '$lib/classes/Utils';
+	import SplashSVG from '$lib/components/images/SplashSVG.svelte';
+	import { Decoded, singlePost } from '$lib/stores/stores';
+	import { CaretSortDown } from '@steeze-ui/carbon-icons';
+	import { Icon } from '@steeze-ui/svelte-icon';
 	import { fade, fly } from 'svelte/transition';
 
 	let ticker = 0;

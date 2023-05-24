@@ -1,8 +1,7 @@
 <script lang="ts">
-	import { PlaylistMusic } from '$lib/stores/stores';
 	import { AudioMain } from '$lib/classes/Audio';
+	import { PlaylistMusic, RendererStatus } from '$lib/stores/stores';
 	import { ProgressBar } from '@skeletonlabs/skeleton';
-	import { RendererStatus } from '$lib/stores/stores';
 	import { createEventDispatcher } from 'svelte';
 	import { fade } from 'svelte/transition';
 

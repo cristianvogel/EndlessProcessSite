@@ -1,15 +1,15 @@
 <script lang="ts">
 
 
-    import { Icon } from '@steeze-ui/svelte-icon';
-    import { VoiceActivate } from'@steeze-ui/carbon-icons';
+    import { AudioMain } from '$lib/classes/Audio';
     import ElevenLabsLogo from '$lib/images/ElevenLabsLogo.svelte';
-	import { ProgressBar, SlideToggle } from '@skeletonlabs/skeleton';
-    import { VFS_PATH_PREFIX, OutputMeters, PlaylistMusic, RendererStatus, Decoded } from '$lib/stores/stores';
+    import { Decoded, OutputMeters, PlaylistMusic, RendererStatus, VFS_PATH_PREFIX } from '$lib/stores/stores';
+    import { ProgressBar, SlideToggle } from '@skeletonlabs/skeleton';
+    import { VoiceActivate } from '@steeze-ui/carbon-icons';
+    import { Icon } from '@steeze-ui/svelte-icon';
+    import { bounceInOut } from 'svelte/easing';
     import { tweened } from 'svelte/motion';
-	import {  bounceInOut } from 'svelte/easing';
-	import { AudioMain } from '$lib/classes/Audio';
-	import { fade } from 'svelte/transition';
+    import { fade } from 'svelte/transition';
 
     let activated: boolean = false;
 

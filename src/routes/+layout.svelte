@@ -5,14 +5,14 @@
 	* class="h-full p-1 bg-gradient-to-br from-slate-500 to-stone-800" 
 	**/
 
-	import '../theme.postcss';
+	import EndProcAppBar from '$lib/components/layout/EndProcAppBar.svelte';
+	import PageFooter from '$lib/components/layout/Footer.svelte';
+	import SplashPage from '$lib/components/layout/SplashPage.svelte';
+	import CanvasBody from '$lib/components/layout/CanvasBody.svelte';
+	import { AppShell } from '@skeletonlabs/skeleton';
 	import '@skeletonlabs/skeleton/styles/all.css';
 	import '../app.postcss';
-	import { AppShell } from '@skeletonlabs/skeleton';
-	import EndProcAppBar from '$lib/components/EndProcAppBar.svelte';
-	import SplashPage from '$lib/components/SplashPage.svelte';
-	import PageFooter from '$lib/components/Footer.svelte';
-	import CanvasBody from '$lib/components/layout/CanvasBody.svelte';
+	import '../theme.postcss';
 
 	$: spin = false;
 

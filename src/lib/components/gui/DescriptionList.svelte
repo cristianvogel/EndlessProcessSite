@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Cube} from "@steeze-ui/carbon-icons";
+	import { Cube } from "@steeze-ui/carbon-icons";
 	import { Icon } from "@steeze-ui/svelte-icon";
 	export let show:boolean = false;	
 </script>
