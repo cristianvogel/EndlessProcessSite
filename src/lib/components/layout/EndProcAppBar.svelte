@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { AudioMain } from '$lib/classes/Audio';
-	import Progress from '$lib/components/Progress.svelte';
+	import Progress from '$lib/components/gui/Progress.svelte';
 	import TextToSpeech from '$lib/components/Speech/TextToSpeech.svelte';
 	import ElementaryPlayer from '$lib/components/gui/ElementaryPlayer.svelte';
 	import NowPlaying from '$lib/components/gui/NowPlaying.svelte';

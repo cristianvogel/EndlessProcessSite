@@ -9,7 +9,7 @@
 	*/
 
 	import Cables from '$lib/components/animation/Cables.svelte';
-	import Initialisation from '../pure/Initialisation.svelte';
+	import Initialisation from '$lib/components/pure/Initialisation.svelte';
 	export let spin: boolean;
 
 </script>
