@@ -52,16 +52,6 @@ export function attenuateStereo(signal: StereoSignal, level: Signal | number, ke
 	}
 }
 
-// /**════════════════════════════════════════════════
-//  * @name bufferProgress
-//  * @description Buffer progress as audio rate signal
-//  * ════════════════════════════════════════════════
-//  */
-
-// export function bufferProgress(props: ProgressOptions): Signal {
-// 	return progress(props);
-// }
-
 /**════════════════════════════════════════════════
  * @name meter
  * @description trigger metering callback on one channel

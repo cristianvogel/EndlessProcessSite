@@ -1,6 +1,6 @@
 import WebAudioRenderer from "@elemaudio/web-renderer";
 import type { RendererStatus, NamedRenderers, Signal, StereoSignal } from "../../typeDeclarations";
-import { el, resolve } from "@elemaudio/core";
+import { el } from "@elemaudio/core";
 import { attenuateStereo } from "$lib/audio/AudioFunctions";
 import { SignalConstants, sumToMono } from "$lib/audio/Funktions";
 

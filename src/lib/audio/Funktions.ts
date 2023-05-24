@@ -137,19 +137,19 @@ export function progress(props: {
 	let { run,
 		totalDurMs = 0,
 		updateRate: rate = 1000,
-		startOffset,
+		startOffset = 0,
 		key = 'progress'
 	} = props;
 	const durationSec = 0.001 * totalDurMs
 	const freqHz = 1 / durationSec
-	run = isNode(run) ? run : resolve(el.const({ key: key + '_run', value: (run as number || startOffset as number) }));
+	run = isNode(run) ? run : resolve(el.const({ key: key + '_run', value: (run as number || startOffset) }));
 	let pausingRateSignal = el.mul(run, el.const({ key: key + '_rate', value: freqHz }))
 	const reset = pausingRateSignal
-
-	let progress = el.add(el.phasor(pausingRateSignal, reset), el.sm(numberToConstant('s_o', startOffset as number)));
+	let _progress = el.add(el.phasor(pausingRateSignal, reset), el.sm(numberToConstant('s_o', startOffset)));
 	let trig = el.train(el.mul(rate, run))
+	console.log('inside progress ', _progress, reset, trig)
 	return (
-		el.snapshot({ key, name: 'progress' }, trig, progress)
+		el.snapshot({ key, name: 'progress' }, trig, _progress)
 	);
 }
 
