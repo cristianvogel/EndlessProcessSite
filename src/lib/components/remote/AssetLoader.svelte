@@ -29,7 +29,6 @@
 	const clipExcerptLength = rangeLengthSeconds * ($ContextSampleRate || 44100);
 	let hideTimer: NodeJS.Timeout;
 	let ticker: number;
-	let lofiAnim: string;
 	let loadProgress: number;
 	const tickerTimer = setInterval(() => {
 		ticker++;
@@ -83,7 +82,6 @@
 			<div in:fade><h2>Initialising.</h2></div>
 		{:then responseObject}
 			{@const bounds = responseObject.data.mediaItems.edges.length}
-			<!-- <ProgressBar value={loadProgress} max={bounds} /> -->
 			{#each responseObject.data.mediaItems.edges as edge, index}
 			{@const updatedCategory = edge.node.Speech.chapter ? 'speech' : 'music'}
 			{@const headers = setHeadersFor(updatedCategory) }

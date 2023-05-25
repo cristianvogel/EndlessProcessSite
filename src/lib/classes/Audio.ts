@@ -116,7 +116,7 @@ export class MainAudioClass {
 		// add any extra functionality for a 
 		// named renderer as event handlers then
 		// register them with the renderer
-		AudioMain.registerCallbacksFor(id, eventExpressions);
+		AudioMain.registerCoreListeners(id, eventExpressions);
 
 		// ok, add listener for base AudioContext state changes
 		AudioMain.actx.addEventListener('statechange', AudioMain.stateChangeHandler);
@@ -164,7 +164,7 @@ export class MainAudioClass {
 		return Promise.resolve();
 	}
 
-	registerCallbacksFor(id: NamedRenderers, eventExpressions: any) {
+	registerCoreListeners(id: NamedRenderers, eventExpressions: any) {
 		const renderer = AudioMain.attachToRenderer(id);
 		// any audio Event-Driven functionality can be added
 		// emitted by el.snapshot, el.meter etc
@@ -214,7 +214,6 @@ export class MainAudioClass {
 	 * a renderers output level with the passed node. Useful for 
 	 * premaster level, fades etc.
 	 */
-
 	attenuateRendererWith(id: NamedRenderers, node: Signal): void {
 		const renderer: WebRendererExtended = AudioMain.renderThrough(id);
 		renderer.mainOut(undefined, { attenuator: node });
@@ -228,37 +227,35 @@ export class MainAudioClass {
 	 * which we don't want to hear as it will likely sound horrible or cause DC offset.
 	 */
 	renderDataSignal(dataSignal: Signal): void {
-		AudioMain.updateRendererState('data', 'playing');
+		AudioMain.updateStateForRenderer('data', 'playing');
 		AudioMain.renderThrough('data').dataOut(dataSignal);
 	}
 
 	/**
-	 * @name renderMusicWithScrub
+	 * @name playMusicFromVFS
 	 * @description: Plays samples from a VFS path, with scrubbing
 	 */
-	renderMusicWithScrub(props: SamplerOptions) {
+	playMusicFromVFS(props: SamplerOptions) {
 		const isScrubbing = AudioMain.getRendererState('music') === 'scrubbing';
 		// keep music play state handler here
 		const state = isScrubbing ? 'scrubbing' : props.trigger as number === 0 ? 'paused' : 'playing'
-		AudioMain.updateRendererState('music', state)
-		// render the scrubbable music player, full bhuna
+		AudioMain.updateStateForRenderer('music', state)
+		// render the scrubbingSamplesPlayer using the 'music' renderer, full bhuna!
 		AudioMain.renderThrough('music').mainOut(
-			scrubbingSamplesPlayer(props), {
-			compressor: {
-				useExtSidechain: true, bypassCompressor: false
-				}
-			}
+			scrubbingSamplesPlayer(props),
+			{ compressor: { useExtSidechain: true, bypassCompressor: false } }
 		);
-		AudioMain.renderProgressBar({ ...props, run: props.trigger as number });
+		AudioMain.updateProgressBar({ ...props, run: props.trigger as number });
 	}
 
 	/**
-	 * @name playProgressBar
+	 * @name 	renderProgressBar(props: SamplerOptions & { run: number }) {
+
 	 * @description 
 	 */
-	renderProgressBar(props: SamplerOptions & { run: number }) {
+	updateProgressBar(props: SamplerOptions & { run: number }) {
 		const { run, startOffset } = props;
-		const key = AudioMain.currentTrackTitle
+		const key = 'progress'
 		const totalDurMs = props.durationMs || AudioMain.currentTrackDurationSeconds * 1000;
 		const progressSignal: Signal = progress({
 			key,
@@ -273,7 +270,7 @@ export class MainAudioClass {
 	 * @name playSpeechFromVFS
 	 */
 	playSpeechFromVFS(gate: number = 1): void {
-		this.updateRendererState('speech', (gate as number > 0.5) ? 'playing' : 'paused');
+		this.updateStateForRenderer('speech', (gate as number > 0.5) ? 'playing' : 'paused');
 		const { vfsPath, duration = 1000 } = AudioMain._currentSpeechMetadata as AssetMetadata;
 		const phasingSpeech = driftingSamplesPlayer({
 			vfsPath,
@@ -283,8 +280,6 @@ export class MainAudioClass {
 			monoSum: true,
 			durationMs: duration
 		});
-		console.log('speech playing from -> ', vfsPath);
-
 		AudioMain.renderThrough('speech').mainOut(
 			{ left: el.meter(phasingSpeech.left), right: phasingSpeech.right },
 			{ compressor: { bypassCompressor: true } }
@@ -317,7 +312,6 @@ export class MainAudioClass {
 				console.warn('Decoding skipped.');
 				return;
 			}
-
 			const renderer = AudioMain.attachToRenderer(id);
 			// adds a channel extension, starts at 1 (not 0)
 			for (let i = 0; i < decoded.numberOfChannels; i++) {
@@ -327,8 +321,6 @@ export class MainAudioClass {
 			}
 			// update the DurationElement in the playlist store Map
 			PlaylistMusic.update(($plist) => {
-				if (!decoded) return $plist;
-				if (!$plist.durations) return $plist;
 				$plist.durations.set(title as string, decoded.duration);
 				return $plist;
 			});
@@ -360,25 +352,27 @@ export class MainAudioClass {
 	}
 
 	/**
-	 * @name unmute aka 'Play'
+	 * @name playMusic
 	 * @description Main way the music starts playing, from a user interaction.
 	 */
-	unmute(): void {
-		AudioMain.renderMusicWithScrub({
+	unmute(): void { AudioMain.playMusicFrom() }
+	playMusicFrom(startOffset?: number): void {
+		AudioMain.playMusicFromVFS({
 			vfsPath: AudioMain.currentVFSPath,
+			startOffset: startOffset ? startOffset : 0,
 			trigger: 1,
 			durationMs: AudioMain.currentTrackDurationSeconds * 1000
 		});
 	}
 
 	/**
-	 * @name pause
+	 * @name pauseMusic
 	 * @description Stop sounding the music renderer and update its state store.
 	 * maybe send a throttle or pause message to Cables patch?
 	 */
-	pause(pauseCables: boolean = false): void {
+	pauseMusic(pauseCables: boolean = false): void {
 		// release gate on the current track
-		AudioMain.renderMusicWithScrub({
+		AudioMain.playMusicFromVFS({
 			vfsPath: AudioMain.currentVFSPath,
 			trigger: 0,
 			durationMs: AudioMain.currentTrackDurationSeconds * 1000
@@ -464,7 +458,7 @@ export class MainAudioClass {
 
 	/*---- setters --------------------------------*/
 
-	updateRendererState(id: NamedRenderers, status: RendererStatus) {
+	updateStateForRenderer(id: NamedRenderers, status: RendererStatus) {
 		$RendererStatus.update(($s) => { $s[id] = status; return $s })
 	}
 	set progress(newProgress: number) {

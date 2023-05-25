@@ -1,6 +1,6 @@
 <script lang="ts">
 
-import { Decoded, RendererStatus } from '$lib/stores/stores';
+import { Decoded } from '$lib/stores/stores';
 
 $: ready = $Decoded.done;
 

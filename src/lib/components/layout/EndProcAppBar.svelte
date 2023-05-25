@@ -55,7 +55,7 @@
 								}
 								console.log('Cued track:', $PlaylistMusic.currentTrack?.title)
 		if (trackIsPlaying) {
-			AudioMain.pause();
+			AudioMain.pauseMusic();
 			return;
 		} else {
 			AudioMain.unmute();
@@ -73,8 +73,8 @@
 		const nextIndex = (playlist.indexOf(e.detail) + 1) % end
 		console.log('Next track:', playlist[nextIndex])
 		handlePlaylistChoice(undefined, playlist[nextIndex])
-		AudioMain.renderMusicWithScrub({ trigger: 0, startOffset: 0 });
-    	AudioMain.renderMusicWithScrub({ trigger: 1, startOffset: 0 });
+		AudioMain.playMusicFromVFS({ trigger: 0, startOffset: 0 });
+    	AudioMain.playMusicFromVFS({ trigger: 1, startOffset: 0 });
 	}
 
 </script>

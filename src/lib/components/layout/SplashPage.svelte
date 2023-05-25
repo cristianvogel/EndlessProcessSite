@@ -6,10 +6,11 @@
 	import { Decoded, singlePost } from '$lib/stores/stores';
 	import { CaretSortDown } from '@steeze-ui/carbon-icons';
 	import { Icon } from '@steeze-ui/svelte-icon';
+	import { elasticInOut, expoOut } from 'svelte/easing';
 	import { fade, fly } from 'svelte/transition';
 
 	let ticker = 0;
-	let lofiAnim = ''
+	let lofiAnim = '▂▃▄▅▆▇▆▅▄▃▂'
 	let hide = false;
 	let hideTimer;
 	const tickerTimer = setInterval(() => { ticker++;}, 100);
@@ -22,7 +23,7 @@
 	$: postView = $singlePost.isOpen;
 	$: blogPostsView = $page.route.id?.includes( 'blog' );
 	$: ready = $Decoded.done;
-	$: lofiAnim = ((ticker % 2) === 0 ? Utils.scrambleString('▂▃▄▅▆▇▆▅▄▃▂') : Utils.scrambleString(lofiAnim))
+	$: lofiAnim = ((ticker % 2) === 0 ?  Utils.scrambleString (lofiAnim) : lofiAnim)
 
 </script>
 	
@@ -36,13 +37,13 @@
 		{/if}
 		{#if !postView && !blogPostsView }
 			{#if !ready }			
-				<h2 class="gradient-text" >
-				<div out:fade>{lofiAnim}</div>	
+				<h2 class="gradient-text" out:fade >
+				<div>{lofiAnim}</div>	
 				</h2>
 			{/if}
 			{#if ready}
 				<h2 class="gradient-text" >	
-				<div in:fly={{ y:-200, duration: 500}}>Welcome.</div>
+				<div>Welcome.</div>
 				</h2>
 			{/if}		
 			<a href='/blog' data-sveltekit-noscroll>
